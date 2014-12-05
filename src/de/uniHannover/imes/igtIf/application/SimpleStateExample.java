@@ -101,7 +101,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
     /** Tool mounted on the robots flange. */
     private PhysicalObject imesTool;
 
-    /** Runtime for controlling servo motion.*/
+    /** Runtime for controlling servo motion. */
     private ISmartServoRuntime smartServoRuntime;
     /**
      * Object of the State machine class.
@@ -331,43 +331,29 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 							     * isAlive() &&
 							     */
 		slicerVisualIf.VisualActive) {
-		    // if
-		    // the
-		    // visualization
-		    // is
-		    // running
-		    // and
-		    // the
-		    // the
-		    // Start
-		    // Visual
-		    // flag
-		    // is
-		    // false
-		    // and
-		    // the
-		    // interface
-		    // is
-		    // still
-		    // active
-		    // Set the VisualACtive flag to false - thereby, no more
-		    // data is send to the visualization
+		    /*
+		     * if the visualization is running and the the Start Visual
+		     * flag is false and the interface is still active Set the
+		     * VisualACtive flag to false - thereby, no more data is
+		     * send to the visualization
+		     */
+
 		    slicerVisualIf.VisualActive = false;
 
 		}
 
 		// If SlicerControl Interface Thread is running...
-		if (slicerControlIf.ControlRun) {
+		if (slicerControlIf.comIfActive) {
 
 		    i = 0;
 		    // Try to read new command String from SlicerControl (Alive)
 		    // Thread
 		    try {
-			slicerControlIf.ControlSemaphore.tryAcquire(1,
+			slicerControlIf.ctrlSema.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
-			imesStatemachine.CmdIGTmessage = slicerControlIf.CMD_StateM;
-			imesStatemachine.UID = slicerControlIf.UID;
-			slicerControlIf.ControlSemaphore.release();
+			imesStatemachine.CmdIGTmessage = slicerControlIf.cmdStateMsg;
+			imesStatemachine.UID = slicerControlIf.uId;
+			slicerControlIf.ctrlSema.release();
 
 		    } catch (InterruptedException e) {
 			errorMsg = "Couldn't acquire Semaphore!!";
@@ -423,13 +409,13 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		// Defining the Acknowledgement String for Control Interface
 		imesStatemachine.SetACKPacket();
 
-		if (slicerControlIf.ControlRun) {
+		if (slicerControlIf.comIfActive) {
 		    try {
-			slicerControlIf.ControlSemaphore.tryAcquire(1,
+			slicerControlIf.ctrlSema.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
 			// try to update the ACK String for the ControlIF Thread
-			slicerControlIf.ACK_StateM = imesStatemachine.AckIGTmessage;
-			slicerControlIf.ControlSemaphore.release();
+			slicerControlIf.ackStateMsg = imesStatemachine.AckIGTmessage;
+			slicerControlIf.ctrlSema.release();
 		    } catch (InterruptedException e) {
 			errorMsg = "Error: Couldn't Acquire ControlIF Semaphore!!";
 			if (!errorMsg.equals(lastPrintedError)) {
@@ -522,7 +508,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
 	    } // end while
 
-	    slicerControlIf.ControlRun = false;
+	    slicerControlIf.comIfActive = false;
 	    // StateControlTimer.cancel();
 	    slicerVisualIf.VisualRun = false;
 	    // VisualTimer.cancel();
@@ -530,7 +516,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	    System.out
 		    .println("Statistic Timing of Statemachine interface thread "
 			    + slicerControlIf.SMtiming);
-	    System.out.println("UID miss: " + slicerControlIf.UIDmiss);
+	    System.out.println("UID miss: " + slicerControlIf.uIdMissed);
 	    System.out
 		    .println("Statistic Timing of Visualisation interface thread "
 			    + slicerVisualIf.Visualtiming);
@@ -559,7 +545,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	} catch (Exception e) {
 	    System.out.println(e);
 	    e.printStackTrace();
-	    slicerControlIf.ControlRun = false;
+	    slicerControlIf.comIfActive = false;
 	    // StateControlTimer.cancel();
 	    slicerVisualIf.VisualRun = false;
 	    // VisualTimer.cancel();
@@ -602,7 +588,9 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
     /**
      * Auto-generated method stub. Do not modify the contents of this method.
-     * @param args unused string array
+     * 
+     * @param args
+     *            unused string array
      */
     public static void main(final String[] args) {
 	SimpleStateExample app = new SimpleStateExample();
