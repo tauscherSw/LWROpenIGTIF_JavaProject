@@ -95,9 +95,14 @@ import com.kuka.roboticsAPI.userInterface.ServoMotionUtilities;
  * @see
  */
 public class SimpleStateExample extends RoboticsAPIApplication {
-    private Controller lbrController_LBR4;
+
+    /** Robot object. */
     private LBR imesLBR;
+
+    /** Tool mounted on the robots flange. */
     private PhysicalObject ImesTool;
+
+    // TODO javadoc smart servo
     private ISmartServoRuntime SmartServoRuntime;
     /**
      * Object of the State machine class.
@@ -117,8 +122,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
     @Override
     /**
-     * In this function the robot, tool etc are initialized
-     * 
+     * In this function the robot, tool etc are initialized.
      **/
     public void initialize() {
 	System.out
@@ -152,7 +156,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
     /**
      * Move to an initial Position WARNING: MAKE SHURE, THAT the pose is
-     * collision free
+     * collision free.
      */
     public void moveToInitialPosition() {
 	System.out
@@ -167,9 +171,11 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	 */
 	if (SmartServo.validateForImpedanceMode(imesLBR) != true) {
 	    System.out
-		    .println("Validation of Torque Model failed - correct your mass property settings");
+		    .println("Validation of Torque Model failed "
+		    	+ "- correct your mass property settings");
 	    System.out
-		    .println("RealtimePTP will be available for position controlled mode only, until validation is performed");
+		    .println("RealtimePTP will be available for position "
+		    	+ "controlled mode only, until validation is performed");
 	}
     }
 
@@ -299,11 +305,14 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		    SlicerVisualIF.cartPose_StateM = imesStatemachine.curPose;
 		    System.out.println("Setting datatype");
 		    if (imesStatemachine.currentVisualIFDatatype == 1) {
-			SlicerVisualIF.datatype = LWRVisualizationInterface.VisualIFDatatypes.IMAGESPACE;
+			SlicerVisualIF.datatype = LWRVisualizationInterface
+				.VisualIFDatatypes.IMAGESPACE;
 		    } else if (imesStatemachine.currentVisualIFDatatype == 2) {
-			SlicerVisualIF.datatype = LWRVisualizationInterface.VisualIFDatatypes.ROBOTBASE;
+			SlicerVisualIF.datatype = LWRVisualizationInterface
+				.VisualIFDatatypes.ROBOTBASE;
 		    } else if (imesStatemachine.currentVisualIFDatatype == 3) {
-			SlicerVisualIF.datatype = LWRVisualizationInterface.VisualIFDatatypes.JOINTSPACE;
+			SlicerVisualIF.datatype = LWRVisualizationInterface
+				.VisualIFDatatypes.JOINTSPACE;
 
 		    }
 		    if (imesStatemachine.TransformRecieved) {
@@ -324,7 +333,9 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		    SlicerVisualIF.VisualActive = true;
 
 		} else if (!imesStatemachine.StartVisual
-			&& /* SlicerVisualIF.isAlive() && */SlicerVisualIF.VisualActive) {// if
+			&& /* SlicerVisualIF.isAlive() && */
+			SlicerVisualIF.VisualActive) {
+		    // if
 											  // the
 											  // visualization
 											  // is
@@ -438,16 +449,20 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 			SlicerVisualIF.VisualSemaphore.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
 			if (imesStatemachine.currentVisualIFDatatype == 1) {
-			    SlicerVisualIF.datatype = LWRVisualizationInterface.VisualIFDatatypes.IMAGESPACE;
+			    SlicerVisualIF.datatype = LWRVisualizationInterface
+				    .VisualIFDatatypes.IMAGESPACE;
 			    SlicerVisualIF.cartPose_StateM = imesStatemachine.curPose;
 			    if (imesStatemachine.TransformRecieved) {
-				SlicerVisualIF.T_IMGBASE_StateM = imesStatemachine.TransformRobotImage;
+				SlicerVisualIF.T_IMGBASE_StateM = imesStatemachine
+					.TransformRobotImage;
 			    }
 			} else if (imesStatemachine.currentVisualIFDatatype == 2) {
-			    SlicerVisualIF.datatype = LWRVisualizationInterface.VisualIFDatatypes.ROBOTBASE;
+			    SlicerVisualIF.datatype = LWRVisualizationInterface
+				    .VisualIFDatatypes.ROBOTBASE;
 			    SlicerVisualIF.cartPose_StateM = imesStatemachine.curPose;
 			} else if (imesStatemachine.currentVisualIFDatatype == 3) {
-			    SlicerVisualIF.datatype = LWRVisualizationInterface.VisualIFDatatypes.JOINTSPACE;
+			    SlicerVisualIF.datatype = LWRVisualizationInterface
+				    .VisualIFDatatypes.JOINTSPACE;
 			    SlicerVisualIF.jntPose_StateM = imesStatemachine.curJntPose;
 			}
 			SlicerVisualIF.VisualSemaphore.release();
@@ -541,9 +556,11 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
 	    if (timing.getMeanTimeMillis() > millisectoSleep + 5) {
 		System.out
-			.println("Statistic Timing is unexpected slow, you should try to optimize TCP/IP Transfer");
+			.println("Statistic Timing is unexpected slow, "
+				+ "you should try to optimize TCP/IP Transfer");
 		System.out
-			.println("Under Windows, you should play with the registry, see the e.g. the RealtimePTP Class javaDoc for details");
+			.println("Under Windows, you should play with the registry, "
+				+ "see the e.g. the RealtimePTP Class javaDoc for details");
 	    }
 	    if (imesStatemachine.Shutdown) {
 		// moveToInitialPosition();
@@ -562,6 +579,12 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
     }
 
+    /**
+     * Sets up an cartesian impedance control mode object. It is initialized
+     * with hard-coded parameters.
+     * 
+     * @return the cartesion impedance control mode object.
+     */
     protected CartesianImpedanceControlMode createCartImp() {
 	CartesianImpedanceControlMode cartImp = new CartesianImpedanceControlMode();
 	cartImp.parametrize(CartDOF.TRANSL).setStiffness(5000.);
@@ -596,11 +619,11 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
     @Override
     public void run() {
-	// TODO Automatisch generierter Methodenstub
+
 	// Initiliaze "instanz" of the RealtimePTP
-	// ///////////////////////////////////////////////////////////////////////////////////////////////
+
 	// Cartesian impedance sample
-	// ///////////////////////////////////////////////////////////////////////////////////////////////
+
 	moveToInitialPosition();
 
 	// Initialize Cartesian impedance mode
