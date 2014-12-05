@@ -5,15 +5,30 @@
 	<classpathentry kind="lib" path="Libs/Jama-1.0.2.jar"/>
 	<classpathentry kind="lib" path="Libs/nrsdk-3.8.8-jar-with-dependencies.jar"/>
 	<classpathentry kind="lib" path="Libs/nrsdk-3.9.1-jar-with-dependencies.jar"/>
-	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI-javadoc.zip"/>
-	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.directServo-javadoc.zip"/>
-	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.directServo.jar"/>
-	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.jar"/>
-	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.realtimePtp-javadoc.zip"/>
-	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.realtimePtp.jar"/>
-	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.smartServo-javadoc.zip"/>
-	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.smartServo.jar"/>
-	<classpathentry kind="lib" path="Libs/KUKA/common.utilities-javadoc.zip"/>
-	<classpathentry kind="lib" path="Libs/KUKA/common.utilities.jar"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.directServo.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/LWROpenIGTIF/Libs/KUKA/roboticsAPI.directServo-javadoc.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/LWROpenIGTIF/Libs/KUKA/roboticsAPI-javadoc.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.realtimePtp.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/LWROpenIGTIF/Libs/KUKA/roboticsAPI.realtimePtp-javadoc.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.smartServo.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/LWROpenIGTIF/Libs/KUKA/roboticsAPI.smartServo-javadoc.zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="Libs/KUKA/common.utilities.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:platform:/resource/LWROpenIGTIF/Libs/KUKA/common.utilities-javadoc.zip!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
