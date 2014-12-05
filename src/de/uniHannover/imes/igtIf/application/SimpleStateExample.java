@@ -100,10 +100,10 @@ public class SimpleStateExample extends RoboticsAPIApplication {
     private LBR imesLBR;
 
     /** Tool mounted on the robots flange. */
-    private PhysicalObject ImesTool;
+    private PhysicalObject imesTool;
 
     // TODO javadoc smart servo
-    private ISmartServoRuntime SmartServoRuntime;
+    private ISmartServoRuntime smartServoRuntime;
     /**
      * Object of the State machine class.
      * 
@@ -113,12 +113,12 @@ public class SimpleStateExample extends RoboticsAPIApplication {
     /**
      * number of loops to run with out any communication with the state control.
      */
-    private static int _numRuns = 1000;
+    private static final int N_OF_RUNS = 1000;
 
     /**
      * Cyclic time of each loop of the main (state machine) thread.
      */
-    int millisectoSleep = 15;
+    private static final int CYCLE_TIME = 15;
 
     @Override
     /**
@@ -131,14 +131,14 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	imesLBR = (LBR) ServoMotionUtilities.locateLBR(getContext());
 	// FIXME: Set proper Weights or use the plugin feature
 	// The Translation to the Tool Tip in mm
-	final double translationOfTool[] = { -5, 30.7, 216 };
+	final double[] translationOfTool = { -5, 30.7, 216 };
 	// and the mass in kg
 	final double mass = 0.6;
 
 	// First rough guess of the Center of Mass
-	final double centerOfMassInMillimeter[] = { 0, 0, 50 };
+	final double[] centerOfMassInMillimeter = { 0, 0, 50 };
 
-	ImesTool = ServoMotionUtilities.createTool(imesLBR,
+	imesTool = ServoMotionUtilities.createTool(imesLBR,
 		"SimpleJointMotionSampleTool", translationOfTool, mass,
 		centerOfMassInMillimeter);
 	ServoMotionUtilities.validateCurrentLoadSetting(imesLBR);
@@ -158,10 +158,10 @@ public class SimpleStateExample extends RoboticsAPIApplication {
      * Move to an initial Position WARNING: MAKE SHURE, THAT the pose is
      * collision free.
      */
-    public void moveToInitialPosition() {
-	System.out
-		.println("Move to initial start Position before the State machine Application starts");
-	ImesTool.move(ptp(0.0, Math.PI / 180 * 30., 0., -Math.PI / 180 * 60.,
+    public final void moveToInitialPosition() {
+	System.out.println("Move to initial start Position "
+		+ "before the State machine Application starts");
+	imesTool.move(ptp(0.0, Math.PI / 180 * 30., 0., -Math.PI / 180 * 60.,
 		0., Math.PI / 180 * 90., 0.).setJointVelocityRel(0.2));
 	/*
 	 * Note: The Validation itself justifies, that in this very time
@@ -170,12 +170,10 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	 * lifetime of this program
 	 */
 	if (SmartServo.validateForImpedanceMode(imesLBR) != true) {
-	    System.out
-		    .println("Validation of Torque Model failed "
-		    	+ "- correct your mass property settings");
-	    System.out
-		    .println("RealtimePTP will be available for position "
-		    	+ "controlled mode only, until validation is performed");
+	    System.out.println("Validation of Torque Model failed "
+		    + "- correct your mass property settings");
+	    System.out.println("RealtimePTP will be available for position "
+		    + "controlled mode only, until validation is performed");
 	}
     }
 
@@ -188,10 +186,10 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
     public void runRealtimeMotion(IMotionControlMode controlMode) {
 
-	String LastPrintedError = "";
-	String ErrorMessage = "";
+	String lastPrintedError = "";
+	String errorMsg = "";
 	// Flag to indicate if the Visualization is active or not
-	boolean VisualON = false;
+	boolean visualOnFlag = false;
 
 	// To set the Visualization active at the start of the program just set
 	// the StartVisual flag of the lwrStatemachine Object imesStatemachine
@@ -202,24 +200,24 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
 	// Declaration of a LWRStateMachineInterface Object for the
 	// communication with a State Control using OpenIGTLink
-	LWRStateMachineInterface SlicerControlIf = new LWRStateMachineInterface();
-	SlicerControlIf.setPriority(6);
+	LWRStateMachineInterface slicerControlIf = new LWRStateMachineInterface();
+	slicerControlIf.setPriority(6);
 	// Declaration of a LWRVisualizationInterface Object for the
 	// communication with Visualization using OpenIGTLink e.g. 3D Slicer
 	// OpenIGTIF
-	LWRVisualizationInterface SlicerVisualIF = new LWRVisualizationInterface();
-	SlicerVisualIF.setPriority(4);
+	LWRVisualizationInterface slicerVisualIf = new LWRVisualizationInterface();
+	slicerVisualIf.setPriority(4);
 	// Timer VisualTimer = new Timer(); // Instantiate Timer Object
 	// Timer StateControlTimer = new Timer(); // Instantiate Timer Object
 
 	// Setting the port for the Control Interface supported ports are 49001
 	// to 49005. Default Value is 49001
-	SlicerControlIf.port = 49001;
+	slicerControlIf.port = 49001;
 	// Setting the port for the Visualization Interface supported ports are
 	// 49001 to 49005. Default Value is 49002
-	SlicerVisualIF.port = 49002;
+	slicerVisualIf.port = 49002;
 
-	boolean StatemachineRun = true;
+	boolean stateMachineRun = true;
 	int i = 0;
 
 	long curTime = 0;
@@ -242,20 +240,20 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		+ controlMode.getClass().getName());
 
 	// Set the control mode as member of the realtime motion
-	ImesTool.getDefaultMotionFrame().moveAsync(
+	imesTool.getDefaultMotionFrame().moveAsync(
 		aRealtimeMotion.setMode(controlMode));
 
 	// Fetch the Runtime of the Motion part
 	// NOTE: the Runtime will exist AFTER motion command was issued
-	SmartServoRuntime = aRealtimeMotion.getRuntime();
-	SmartServoRuntime.setMinimumSynchronizationTime(5e-3);
+	smartServoRuntime = aRealtimeMotion.getRuntime();
+	smartServoRuntime.setMinimumSynchronizationTime(5e-3);
 
 	// SmartServoRuntime.setMinimumSynchronizationTime(3);
 
 	// For Roundtrip time measurement...
 
 	System.out.println("Starting Thread for state control communication ");
-	long curTime_millis = 0;
+	long curTimeMillis = 0;
 	// initializing and starting of the AliveThread for the Communication
 	// with the State controller
 	// SlicerControlIf.start();
@@ -263,23 +261,23 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	try {
 
 	    // Reading the current a couple of times for safety reasons
-	    SmartServoRuntime.updateWithRealtimeSystem();
-	    ThreadUtil.milliSleep(millisectoSleep);
-	    SmartServoRuntime.updateWithRealtimeSystem();
-	    ThreadUtil.milliSleep(millisectoSleep);
+	    smartServoRuntime.updateWithRealtimeSystem();
+	    ThreadUtil.milliSleep(CYCLE_TIME);
+	    smartServoRuntime.updateWithRealtimeSystem();
+	    ThreadUtil.milliSleep(CYCLE_TIME);
 
 	    // Setting the imes State machine member variables such as the
 	    // control Mode
 	    imesStatemachine.curPose = MatrixTransformation
-		    .of(SmartServoRuntime.getCartFrmMsrOnController());
+		    .of(smartServoRuntime.getCartFrmMsrOnController());
 	    imesStatemachine.controlMode = controlMode;
 	    imesStatemachine.cmdPose = MatrixTransformation
-		    .of(SmartServoRuntime.getCartFrmMsrOnController());
+		    .of(smartServoRuntime.getCartFrmMsrOnController());
 
 	    // Initialize some of the Visualization Interface member variables
-	    SlicerVisualIF.jntPose_StateM = SmartServoRuntime
+	    slicerVisualIf.jntPose_StateM = smartServoRuntime
 		    .getAxisQMsrOnController();
-	    SlicerVisualIF.cartPose_StateM = imesStatemachine.curPose;
+	    slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
 
 	    // Know entering the main loop. In this loop the Command from the
 	    // State Control is read, interpreted,
@@ -289,7 +287,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	    // Therefore, the LWRStatemachine, the LWRStateMachineInterface and
 	    // the LWRVisualization objects are used
 	    StatisticTimer timing = new StatisticTimer();
-	    while (StatemachineRun && i < _numRuns) {
+	    while (stateMachineRun && i < N_OF_RUNS) {
 		// loop Starting time for statistics
 		startTimeStamp = (long) (System.nanoTime());
 
@@ -298,97 +296,96 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
 		// If flags are set and VisualIF is not running yet start the
 		// Visual Thread
-		if (imesStatemachine.StartVisual && VisualON == false) {
+		if (imesStatemachine.StartVisual && visualOnFlag == false) {
 		    // System.out.println("Starting Visualization Interface thread");
 		    // Initialize the necessary member variables first
-		    SlicerVisualIF.jntPose_StateM = initialPosition;
-		    SlicerVisualIF.cartPose_StateM = imesStatemachine.curPose;
+		    slicerVisualIf.jntPose_StateM = initialPosition;
+		    slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
 		    System.out.println("Setting datatype");
 		    if (imesStatemachine.currentVisualIFDatatype == 1) {
-			SlicerVisualIF.datatype = LWRVisualizationInterface
-				.VisualIFDatatypes.IMAGESPACE;
+			slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.IMAGESPACE;
 		    } else if (imesStatemachine.currentVisualIFDatatype == 2) {
-			SlicerVisualIF.datatype = LWRVisualizationInterface
-				.VisualIFDatatypes.ROBOTBASE;
+			slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.ROBOTBASE;
 		    } else if (imesStatemachine.currentVisualIFDatatype == 3) {
-			SlicerVisualIF.datatype = LWRVisualizationInterface
-				.VisualIFDatatypes.JOINTSPACE;
+			slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.JOINTSPACE;
 
 		    }
 		    if (imesStatemachine.TransformRecieved) {
-			SlicerVisualIF.T_IMGBASE_StateM = imesStatemachine.TransformRobotImage;
+			slicerVisualIf.T_IMGBASE_StateM = imesStatemachine.TransformRobotImage;
 		    }
-		    SlicerVisualIF.VisualActive = true;
-		    SlicerVisualIF.start();
+		    slicerVisualIf.VisualActive = true;
+		    slicerVisualIf.start();
 		    // Start the Visualization thread
 		    // SlicerVisualIF.start();
-		    VisualON = true;
-		} else if (imesStatemachine.StartVisual && VisualON
-			&& !SlicerVisualIF.VisualActive) {// if Viuslaization
+		    visualOnFlag = true;
+		} else if (imesStatemachine.StartVisual && visualOnFlag
+			&& !slicerVisualIf.VisualActive) {// if Viuslaization
 							  // interface is
 							  // started, not active
 							  // but is set active
 		    // Change VisualActive to true. Thereby, the pose is send to
 		    // the visualization
-		    SlicerVisualIF.VisualActive = true;
+		    slicerVisualIf.VisualActive = true;
 
-		} else if (!imesStatemachine.StartVisual
-			&& /* SlicerVisualIF.isAlive() && */
-			SlicerVisualIF.VisualActive) {
+		} else if (!imesStatemachine.StartVisual && /*
+							     * SlicerVisualIF.
+							     * isAlive() &&
+							     */
+		slicerVisualIf.VisualActive) {
 		    // if
-											  // the
-											  // visualization
-											  // is
-											  // running
-											  // and
-											  // the
-											  // the
-											  // Start
-											  // Visual
-											  // flag
-											  // is
-											  // false
-											  // and
-											  // the
-											  // interface
-											  // is
-											  // still
-											  // active
+		    // the
+		    // visualization
+		    // is
+		    // running
+		    // and
+		    // the
+		    // the
+		    // Start
+		    // Visual
+		    // flag
+		    // is
+		    // false
+		    // and
+		    // the
+		    // interface
+		    // is
+		    // still
+		    // active
 		    // Set the VisualACtive flag to false - thereby, no more
 		    // data is send to the visualization
-		    SlicerVisualIF.VisualActive = false;
+		    slicerVisualIf.VisualActive = false;
 
 		}
 
 		// If SlicerControl Interface Thread is running...
-		if (SlicerControlIf.ControlRun) {
+		if (slicerControlIf.ControlRun) {
 
 		    i = 0;
 		    // Try to read new command String from SlicerControl (Alive)
 		    // Thread
 		    try {
-			SlicerControlIf.ControlSemaphore.tryAcquire(1,
+			slicerControlIf.ControlSemaphore.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
-			imesStatemachine.CmdIGTmessage = SlicerControlIf.CMD_StateM;
-			imesStatemachine.UID = SlicerControlIf.UID;
-			SlicerControlIf.ControlSemaphore.release();
+			imesStatemachine.CmdIGTmessage = slicerControlIf.CMD_StateM;
+			imesStatemachine.UID = slicerControlIf.UID;
+			slicerControlIf.ControlSemaphore.release();
 
 		    } catch (InterruptedException e) {
-			ErrorMessage = "Couldn't acquire Semaphore!!";
+			errorMsg = "Couldn't acquire Semaphore!!";
 
-			if (!ErrorMessage.equals(LastPrintedError)) {
-			    System.out.println(ErrorMessage);
-			    LastPrintedError = ErrorMessage;
+			if (!errorMsg.equals(lastPrintedError)) {
+			    System.out.println(errorMsg);
+			    lastPrintedError = errorMsg;
 			}
 
 		    }
 		} else { // if it is not to Error handling
 		    imesStatemachine.ErrorCode = 2;
-		    ErrorMessage = "Slicer Control Interface not Alive...";
+		    errorMsg = "Slicer Control Interface not Alive...";
 
-		    if (!ErrorMessage.equals(LastPrintedError)) {
-			System.out.println(ErrorMessage);
-			LastPrintedError = ErrorMessage;
+		    if (!errorMsg.equals(lastPrintedError)) {
+			System.out.println(errorMsg);
+			lastPrintedError = errorMsg;
 		    }
 		    i++;
 		}
@@ -413,85 +410,81 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		// Change the control mode settings of the robot and send a new
 		// Destination pose
 		try {
-		    SmartServoRuntime
+		    smartServoRuntime
 			    .changeControlModeSettings(imesStatemachine.controlMode);
-		    SmartServoRuntime.setDestination(imesStatemachine.cmdPose);
+		    smartServoRuntime.setDestination(imesStatemachine.cmdPose);
 		} catch (Exception e) {
-		    ErrorMessage = "Error: Failed to change Realtime Settings!!";
-		    if (!ErrorMessage.equals(LastPrintedError)) {
-			System.out.println(ErrorMessage);
-			LastPrintedError = ErrorMessage;
+		    errorMsg = "Error: Failed to change Realtime Settings!!";
+		    if (!errorMsg.equals(lastPrintedError)) {
+			System.out.println(errorMsg);
+			lastPrintedError = errorMsg;
 		    }
 		}
 
 		// Defining the Acknowledgement String for Control Interface
 		imesStatemachine.SetACKPacket();
 
-		if (SlicerControlIf.ControlRun) {
+		if (slicerControlIf.ControlRun) {
 		    try {
-			SlicerControlIf.ControlSemaphore.tryAcquire(1,
+			slicerControlIf.ControlSemaphore.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
 			// try to update the ACK String for the ControlIF Thread
-			SlicerControlIf.ACK_StateM = imesStatemachine.AckIGTmessage;
-			SlicerControlIf.ControlSemaphore.release();
+			slicerControlIf.ACK_StateM = imesStatemachine.AckIGTmessage;
+			slicerControlIf.ControlSemaphore.release();
 		    } catch (InterruptedException e) {
-			ErrorMessage = "Error: Couldn't Acquire ControlIF Semaphore!!";
-			if (!ErrorMessage.equals(LastPrintedError)) {
+			errorMsg = "Error: Couldn't Acquire ControlIF Semaphore!!";
+			if (!errorMsg.equals(lastPrintedError)) {
 			    // System.out.println(ErrorMessage);
-			    LastPrintedError = ErrorMessage;
+			    lastPrintedError = errorMsg;
 			}
 		    }
 		}
 		// if the Visualization Interface is active sending the Current
 		// Position to the Visualization
-		if (/* SlicerVisualIF.isAlive()&& */SlicerVisualIF.VisualRun) {
+		if (/* SlicerVisualIF.isAlive()&& */slicerVisualIf.VisualRun) {
 		    try {
-			SlicerVisualIF.VisualSemaphore.tryAcquire(1,
+			slicerVisualIf.VisualSemaphore.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
 			if (imesStatemachine.currentVisualIFDatatype == 1) {
-			    SlicerVisualIF.datatype = LWRVisualizationInterface
-				    .VisualIFDatatypes.IMAGESPACE;
-			    SlicerVisualIF.cartPose_StateM = imesStatemachine.curPose;
+			    slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.IMAGESPACE;
+			    slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
 			    if (imesStatemachine.TransformRecieved) {
-				SlicerVisualIF.T_IMGBASE_StateM = imesStatemachine
-					.TransformRobotImage;
+				slicerVisualIf.T_IMGBASE_StateM = imesStatemachine.TransformRobotImage;
 			    }
 			} else if (imesStatemachine.currentVisualIFDatatype == 2) {
-			    SlicerVisualIF.datatype = LWRVisualizationInterface
-				    .VisualIFDatatypes.ROBOTBASE;
-			    SlicerVisualIF.cartPose_StateM = imesStatemachine.curPose;
+			    slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.ROBOTBASE;
+			    slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
 			} else if (imesStatemachine.currentVisualIFDatatype == 3) {
-			    SlicerVisualIF.datatype = LWRVisualizationInterface
-				    .VisualIFDatatypes.JOINTSPACE;
-			    SlicerVisualIF.jntPose_StateM = imesStatemachine.curJntPose;
+			    slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.JOINTSPACE;
+			    slicerVisualIf.jntPose_StateM = imesStatemachine.curJntPose;
 			}
-			SlicerVisualIF.VisualSemaphore.release();
+			slicerVisualIf.VisualSemaphore.release();
 		    } catch (InterruptedException e) {
-			ErrorMessage = "Error: Couldn't acquire VisualIF Semaphore!!";
-			if (!ErrorMessage.equals(LastPrintedError)) {
+			errorMsg = "Error: Couldn't acquire VisualIF Semaphore!!";
+			if (!errorMsg.equals(lastPrintedError)) {
 			    // System.out.println(ErrorMessage);
-			    LastPrintedError = ErrorMessage;
+			    lastPrintedError = errorMsg;
 			}
 		    }
 		}
 
 		// Update with Realtime System (LWR)
 		try {
-		    SmartServoRuntime.updateWithRealtimeSystem();
+		    smartServoRuntime.updateWithRealtimeSystem();
 		    // Get the measured position in cartesian pose
 		    imesStatemachine.curPose = MatrixTransformation
-			    .of(SmartServoRuntime.getCartFrmMsrOnController());
+			    .of(smartServoRuntime.getCartFrmMsrOnController());
 		    // command pose equal to currently measured Pose as default
 		    // value
 		    imesStatemachine.cmdPose = imesStatemachine.curPose;
 		    // and the measured joint angles
-		    imesStatemachine.curJntPose = SmartServoRuntime
+		    imesStatemachine.curJntPose = smartServoRuntime
 			    .getAxisQMsrOnController();
 		} catch (Exception e) {
-		    ErrorMessage = "Error: Failed Update with RealtimeSystem!!";
-		    if (!ErrorMessage.equals(LastPrintedError)) {
+		    errorMsg = "Error: Failed Update with RealtimeSystem!!";
+		    if (!errorMsg.equals(lastPrintedError)) {
 			// System.out.println(ErrorMessage);
-			LastPrintedError = ErrorMessage;
+			lastPrintedError = errorMsg;
 		    }
 
 		}
@@ -499,7 +492,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		// Set the Module in Sleep mode for stability enhancement
 		// i++;
 		curTime = (long) ((System.nanoTime() - startTimeStamp));
-		curTime_millis = (long) curTime / 1000000;
+		curTimeMillis = (long) curTime / 1000000;
 		// curTime_nanos = (int) (curTime%1000000);
 		// if(i%100 ==0){
 		// System.out.println(" CurTime : " + curTime +" Nanos: "
@@ -509,7 +502,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		// (System.nanoTime()-startTimeStamp) > 10000){
 		// Thread.yield();
 		// }
-		if (curTime_millis < millisectoSleep) {
+		if (curTimeMillis < CYCLE_TIME) {
 		    // TimeUnit.MILLISECONDS.sleep((millisectoSleep -
 		    // curTime_millis));
 		    // ThreadUtil.milliSleep((long) Math.floor((millisectoSleep
@@ -524,24 +517,24 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		aStep.end();
 		if (imesStatemachine.End || imesStatemachine.Quit
 			|| imesStatemachine.Shutdown) {
-		    StatemachineRun = false;
+		    stateMachineRun = false;
 
 		}
 
 	    } // end while
 
-	    SlicerControlIf.ControlRun = false;
+	    slicerControlIf.ControlRun = false;
 	    // StateControlTimer.cancel();
-	    SlicerVisualIF.VisualRun = false;
+	    slicerVisualIf.VisualRun = false;
 	    // VisualTimer.cancel();
 	    // Print the timing statistics
 	    System.out
 		    .println("Statistic Timing of Statemachine interface thread "
-			    + SlicerControlIf.SMtiming);
-	    System.out.println("UID miss: " + SlicerControlIf.UIDmiss);
+			    + slicerControlIf.SMtiming);
+	    System.out.println("UID miss: " + slicerControlIf.UIDmiss);
 	    System.out
 		    .println("Statistic Timing of Visualisation interface thread "
-			    + SlicerVisualIF.Visualtiming);
+			    + slicerVisualIf.Visualtiming);
 	    System.out.println("Statistic Timing of Statemachine Mean:"
 		    + timing);
 	    ThreadUtil.milliSleep((long) (4000));
@@ -550,14 +543,13 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	    // Do or die: print statistics and parameters of the motion
 	    System.out.println("Displaying final states after loop "
 		    + controlMode.getClass().getName());
-	    SmartServoRuntime.setDetailedOutput(1);
+	    smartServoRuntime.setDetailedOutput(1);
 	    // Stop the motion
-	    SmartServoRuntime.stopMotion();
+	    smartServoRuntime.stopMotion();
 
-	    if (timing.getMeanTimeMillis() > millisectoSleep + 5) {
-		System.out
-			.println("Statistic Timing is unexpected slow, "
-				+ "you should try to optimize TCP/IP Transfer");
+	    if (timing.getMeanTimeMillis() > CYCLE_TIME + 5) {
+		System.out.println("Statistic Timing is unexpected slow, "
+			+ "you should try to optimize TCP/IP Transfer");
 		System.out
 			.println("Under Windows, you should play with the registry, "
 				+ "see the e.g. the RealtimePTP Class javaDoc for details");
@@ -568,9 +560,9 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	} catch (Exception e) {
 	    System.out.println(e);
 	    e.printStackTrace();
-	    SlicerControlIf.ControlRun = false;
+	    slicerControlIf.ControlRun = false;
 	    // StateControlTimer.cancel();
-	    SlicerVisualIF.VisualRun = false;
+	    slicerVisualIf.VisualRun = false;
 	    // VisualTimer.cancel();
 	}
 	// Stopping the Control Interface thread and the viusalization thread
@@ -585,7 +577,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
      * 
      * @return the cartesion impedance control mode object.
      */
-    protected CartesianImpedanceControlMode createCartImp() {
+    protected final CartesianImpedanceControlMode createCartImp() {
 	CartesianImpedanceControlMode cartImp = new CartesianImpedanceControlMode();
 	cartImp.parametrize(CartDOF.TRANSL).setStiffness(5000.);
 	cartImp.parametrize(CartDOF.ROT).setStiffness(300.);
@@ -602,7 +594,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	    // Watchout: This feature is useful, only if the nullSpaceStiffness
 	    // is sufficient high, so that the joints will follow the motion
 	    // within the limits
-	    double maxJointDeltas[] = { 15, 15, 15, 15, 15, 15, 15 };
+	    double[] maxJointDeltas = { 15, 15, 15, 15, 15, 15, 15 };
 	    // cartImp.setMaxJointSpeed(maxJointDeltas);
 	    // cartImp.setm.setMaxJointDeltas(maxJointDeltas);
 	}
@@ -611,14 +603,15 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
     /**
      * Auto-generated method stub. Do not modify the contents of this method.
+     * @param args unused string array
      */
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
 	SimpleStateExample app = new SimpleStateExample();
 	app.runApplication();
     }
 
     @Override
-    public void run() {
+    public final void run() {
 
 	// Initiliaze "instanz" of the RealtimePTP
 
