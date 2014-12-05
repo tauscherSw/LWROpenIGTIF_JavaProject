@@ -1,10 +1,6 @@
 package de.uniHannover.imes.igtIf.stateMachine;
 
-import java.io.UnsupportedEncodingException;
-
 import org.medcare.igtl.messages.StatusMessage;
-import org.medcare.igtl.messages.TransformMessage;
-
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;

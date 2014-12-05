@@ -17,8 +17,6 @@ import org.medcare.igtl.messages.OpenIGTMessage;
 import org.medcare.igtl.messages.TransformMessage;
 import org.medcare.igtl.util.Header;
 
-import Jama.Matrix;
-
 import com.neuronrobotics.sdk.addons.kinematics.math.TransformNR;
 
 /**

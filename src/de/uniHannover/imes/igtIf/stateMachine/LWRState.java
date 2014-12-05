@@ -1,7 +1,5 @@
 package de.uniHannover.imes.igtIf.stateMachine;
 
-import java.io.UnsupportedEncodingException;
-
 /**
  * Interface for the LWR States defining the Functions void
  * CalcControlParam(LWRStatemachine lwrStatemachine), void

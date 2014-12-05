@@ -5,13 +5,9 @@ import java.io.UnsupportedEncodingException;
 import org.medcare.igtl.messages.OpenIGTMessage;
 import org.medcare.igtl.messages.StringMessage;
 
-import de.uniHannover.imes.igtIf.interfaces.LWRVisualizationInterface.ClientStatus;
-
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
-import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
-import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
 
 /**

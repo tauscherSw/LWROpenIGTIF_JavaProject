@@ -21,8 +21,6 @@ import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
-import Jama.Matrix;
-
 import com.neuronrobotics.sdk.addons.kinematics.math.TransformNR;
 
 /**
