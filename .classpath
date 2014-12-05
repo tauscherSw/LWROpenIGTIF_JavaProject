@@ -2,5 +2,16 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="Libs/Jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="Libs/nrsdk-3.8.8-jar-with-dependencies.jar"/>
+	<classpathentry kind="lib" path="Libs/nrsdk-3.9.1-jar-with-dependencies.jar"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI-javadoc.zip"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.directServo-javadoc.zip"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.directServo.jar"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.jar"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.realtimePtp-javadoc.zip"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.realtimePtp.jar"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.smartServo-javadoc.zip"/>
+	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.smartServo.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
