@@ -7,38 +7,40 @@ import org.medcare.igtl.messages.TransformMessage;
 import org.medcare.igtl.util.Header;
 import org.medcare.igtl.util.IGTImage;
 
-public class GenericClientResponseHandler extends ResponseHandler{
+public class GenericClientResponseHandler extends ResponseHandler {
 
-	public OpenIGTMessage openIGTMessage;
-	public IOpenIgtPacketListener client;
-	public GenericClientResponseHandler(Header header, byte[] body,OpenIGTClient client,IOpenIgtPacketListener openIGTClient) {
-		super(header, body, client);
-		getCapabilityList().add("GET_CAPABIL");
-		getCapabilityList().add("TRANSFORM");
-		getCapabilityList().add("POSITION");
-		getCapabilityList().add("IMAGE");
-		getCapabilityList().add("STATUS");
-		this.client = openIGTClient;
-	}
+    public OpenIGTMessage openIGTMessage;
+    public IOpenIgtPacketListener client;
 
-	@Override
-	public boolean perform(String messageType) throws Exception {
+    public GenericClientResponseHandler(Header header, byte[] body,
+	    OpenIGTClient client, IOpenIgtPacketListener openIGTClient) {
+	super(header, body, client);
+	getCapabilityList().add("GET_CAPABIL");
+	getCapabilityList().add("TRANSFORM");
+	getCapabilityList().add("POSITION");
+	getCapabilityList().add("IMAGE");
+	getCapabilityList().add("STATUS");
+	this.client = openIGTClient;
+    }
 
-		//Log.info("Recived IGTLink packet, header="+ getHeader() +" body="+new ByteList(getBody()));
+    @Override
+    public boolean perform(String messageType) throws Exception {
 
-		//http://wiki.ncigt.org/index.php/P41:Prostate:BRP:MRI_New_BRP_OpenIGTLink_Protocol_2012_Mar
-		//Should support both TRANSFORM and QTRANSFORM packets
+	// Log.info("Recived IGTLink packet, header="+ getHeader() +" body="+new
+	// ByteList(getBody()));
 
-		openIGTMessage = new GenericMessageNodeHandler().perform(messageType, getHeader(),getBody(), client);
-		return openIGTMessage != null;
-	}
+	// http://wiki.ncigt.org/index.php/P41:Prostate:BRP:MRI_New_BRP_OpenIGTLink_Protocol_2012_Mar
+	// Should support both TRANSFORM and QTRANSFORM packets
 
+	openIGTMessage = new GenericMessageNodeHandler().perform(messageType,
+		getHeader(), getBody(), client);
+	return openIGTMessage != null;
+    }
 
+    @Override
+    public void manageError(String message, Exception exception, int errorCode) {
+	// TODO Auto-generated method stub
 
-	@Override
-	public void manageError(String message, Exception exception, int errorCode) {
-		// TODO Auto-generated method stub
-
-	}
+    }
 
 }

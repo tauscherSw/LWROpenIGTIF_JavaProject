@@ -19,70 +19,67 @@ package org.medcare.igtl.messages;
 import org.medcare.igtl.util.Header;
 
 /**
- *** This class create a GetCapability object from bytes received or help to generate
- * bytes to send from it
+ *** This class create a GetCapability object from bytes received or help to
+ * generate bytes to send from it
  * 
  * @author Andre Charles Legendre
  * 
  */
 public class GetCapabilityMessage extends OpenIGTMessage {
 
-	
-        /**
-         *** Constructor to be used to create message to send them with this
-         * constructor you must use method CreateBody and then
-         * getBytes to send them
-         *** 
-         * @param deviceName
-         *            Device Name
-         **/
-        public GetCapabilityMessage(String deviceName) {
-                super(deviceName);
-        }
+    /**
+     *** Constructor to be used to create message to send them with this
+     * constructor you must use method CreateBody and then getBytes to send them
+     *** 
+     * @param deviceName
+     *            Device Name
+     **/
+    public GetCapabilityMessage(String deviceName) {
+	super(deviceName);
+    }
 
-        /**
-         *** Constructor to be used to create message from received data
-         * 
-         * @param header
-         * @param body
-         * @throws Exception 
-         */
-        public GetCapabilityMessage(Header header, byte body[]) throws Exception {
-                super(header, body);
-        }
+    /**
+     *** Constructor to be used to create message from received data
+     * 
+     * @param header
+     * @param body
+     * @throws Exception
+     */
+    public GetCapabilityMessage(Header header, byte body[]) throws Exception {
+	super(header, body);
+    }
 
-        /**
-         *** To create body to get bytes to send
-         * 
-         *** 
-         * @return the bytes array containing the body
-         **/
-        @Override
-        public byte[] PackBody() {
-                setBody(new byte[0]);
-                setHeader(new Header(VERSION, "GET_CAPABIL", deviceName, getBody()));
-                return getBody();
-        }
+    /**
+     *** To create body to get bytes to send
+     * 
+     *** 
+     * @return the bytes array containing the body
+     **/
+    @Override
+    public byte[] PackBody() {
+	setBody(new byte[0]);
+	setHeader(new Header(VERSION, "GET_CAPABIL", deviceName, getBody()));
+	return getBody();
+    }
 
-        /**
-         *** To create body from body array
-         * 
-         *** 
-         * @return true if unpacking is ok
-         */
-        @Override
-        public boolean UnpackBody() {
-                return true;
-        }
+    /**
+     *** To create body from body array
+     * 
+     *** 
+     * @return true if unpacking is ok
+     */
+    @Override
+    public boolean UnpackBody() {
+	return true;
+    }
 
-        /**
-         *** To get capability String
-         *** 
-         * @return the capability String
-         */
-        @Override
-        public String toString() {
-                return "GET_CAPABILITY Device Name           : " + getDeviceName();
-        }
+    /**
+     *** To get capability String
+     *** 
+     * @return the capability String
+     */
+    @Override
+    public String toString() {
+	return "GET_CAPABILITY Device Name           : " + getDeviceName();
+    }
 }
-

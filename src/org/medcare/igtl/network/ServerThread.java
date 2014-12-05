@@ -37,145 +37,165 @@ import com.neuronrobotics.sdk.common.Log;
  * @author Andre Charles Legendre
  */
 public class ServerThread extends Thread {
-        private java.net.Socket socket = null;
-        private OpenIGTServer openIGTServer;
-        private OutputStream outstr;
-        private InputStream instr;
-        private MessageQueueManager messageQueue = null;
-        private boolean alive;
-        public ErrorManager errorManager;
-        public static enum ClientStatus {CONNECTED, DISCONNECTED }; //possible client states
-        private ClientStatus currentStatus = ClientStatus.DISCONNECTED; //start as stopped status
-        /***************************************************************************
-         * Default ServerThread constructor.
-         * 
-         * @param socket
-         *            to listen to
-         * @throws IOException 
-         * 
-         **************************************************************************/
-        public ServerThread(java.net.Socket socket, OpenIGTServer openIGTServer) throws Exception {
-                super("ServerThread");
-                this.socket = socket;
-                this.openIGTServer = openIGTServer;
-                this.errorManager = openIGTServer.errorManager;
-                this.messageQueue = new MessageQueueManager(this);
-                this.messageQueue.start();
-                this.outstr = socket.getOutputStream();
-                this.instr = socket.getInputStream();
-                
-                this.currentStatus = ClientStatus.CONNECTED;
-        }
+    private java.net.Socket socket = null;
+    private OpenIGTServer openIGTServer;
+    private OutputStream outstr;
+    private InputStream instr;
+    private MessageQueueManager messageQueue = null;
+    private boolean alive;
+    public ErrorManager errorManager;
 
-        /***************************************************************************
-         * Reader thread. Reads messages from the socket and add them to the
-         * MessageQueueManager
-         * 
-         **************************************************************************/
-        public void run() {
-                this.alive = true;
+    public static enum ClientStatus {
+	CONNECTED, DISCONNECTED
+    }; // possible client states
 
-                try {
-                        int ret_read = 0;
-                        byte[] headerBuff = new byte[Header.LENGTH];
-                        do {
-                                ret_read = instr.read(headerBuff);
-                                if (ret_read > 0) {
-                                        Header header = new Header(headerBuff);
-                                        byte[] bodyBuf = new byte[(int) header.getBody_size()];
-                                        //System.out.print("ServerThread Header deviceName : " + header.getDeviceName() + " Type : " + header.getDataType() + " bodySize " + header.getBody_size() + "\n");
-                                        if ((int) header.getBody_size() > 0) {
-                                                ret_read = instr.read(bodyBuf);
-                                                if (ret_read !=header.getBody_size()) {
-                                                        errorManager.error("ServerThread bodyBuf in ServerThread ret_read = " + ret_read, new Exception("Abnormal return from reading"), ErrorManager.SERVERTHREAD_ABNORMAL_ANSWER);
-                                                }
-                                        }
-//                                        Log.debug("New Header: "+header);
-//                                        BytesArray b = new BytesArray(); 
-//                                        b.putBytes(bodyBuf);
-//                                        Log.debug("New Body: "+b);
-                                        messageQueue.addMessage(openIGTServer.getMessageHandler(header, bodyBuf, this));
-                                }
-                        } while (alive && ret_read >= 0);
-                        outstr.close();
-                        instr.close();
-                        socket.close();
-                        Log.debug("IGTLink client got disconnected, will set alive=false to inform SocketServer");
-                } catch (IOException e) {
-                		e.printStackTrace();
-                        errorManager.error("ServerThread IOException", e, ErrorManager.SERVERTHREAD_IO_EXCEPTION);
-                }
-                this.interrupt();
-        }
-		public void sendMessage(OpenIGTMessage message) throws Exception {
-			// TODO Auto-generated method stub
-			sendMessage(message.getHeader(), message.getBody());
-			//System.out.println("Message: Header=" + message.getHeader().toString() + " Body=" + message.getBody().toString());
+    private ClientStatus currentStatus = ClientStatus.DISCONNECTED; // start as
+								    // stopped
+								    // status
+
+    /***************************************************************************
+     * Default ServerThread constructor.
+     * 
+     * @param socket
+     *            to listen to
+     * @throws IOException
+     * 
+     **************************************************************************/
+    public ServerThread(java.net.Socket socket, OpenIGTServer openIGTServer)
+	    throws Exception {
+	super("ServerThread");
+	this.socket = socket;
+	this.openIGTServer = openIGTServer;
+	this.errorManager = openIGTServer.errorManager;
+	this.messageQueue = new MessageQueueManager(this);
+	this.messageQueue.start();
+	this.outstr = socket.getOutputStream();
+	this.instr = socket.getInputStream();
+
+	this.currentStatus = ClientStatus.CONNECTED;
+    }
+
+    /***************************************************************************
+     * Reader thread. Reads messages from the socket and add them to the
+     * MessageQueueManager
+     * 
+     **************************************************************************/
+    public void run() {
+	this.alive = true;
+
+	try {
+	    int ret_read = 0;
+	    byte[] headerBuff = new byte[Header.LENGTH];
+	    do {
+		ret_read = instr.read(headerBuff);
+		if (ret_read > 0) {
+		    Header header = new Header(headerBuff);
+		    byte[] bodyBuf = new byte[(int) header.getBody_size()];
+		    // System.out.print("ServerThread Header deviceName : " +
+		    // header.getDeviceName() + " Type : " +
+		    // header.getDataType() + " bodySize " +
+		    // header.getBody_size() + "\n");
+		    if ((int) header.getBody_size() > 0) {
+			ret_read = instr.read(bodyBuf);
+			if (ret_read != header.getBody_size()) {
+			    errorManager.error(
+				    "ServerThread bodyBuf in ServerThread ret_read = "
+					    + ret_read, new Exception(
+					    "Abnormal return from reading"),
+				    ErrorManager.SERVERTHREAD_ABNORMAL_ANSWER);
+			}
+		    }
+		    // Log.debug("New Header: "+header);
+		    // BytesArray b = new BytesArray();
+		    // b.putBytes(bodyBuf);
+		    // Log.debug("New Body: "+b);
+		    messageQueue.addMessage(openIGTServer.getMessageHandler(
+			    header, bodyBuf, this));
 		}
-		public void sendMessage(Header header, byte[] body) throws Exception {
-			sendBytes(header.getBytes());
-			sendBytes(body);
-			System.out.println("Sending Message: Header=" + header.toString() + " Body=" + body.toString());
-		}
+	    } while (alive && ret_read >= 0);
+	    outstr.close();
+	    instr.close();
+	    socket.close();
+	    Log.debug("IGTLink client got disconnected, will set alive=false to inform SocketServer");
+	} catch (IOException e) {
+	    e.printStackTrace();
+	    errorManager.error("ServerThread IOException", e,
+		    ErrorManager.SERVERTHREAD_IO_EXCEPTION);
+	}
+	this.interrupt();
+    }
 
-        /***************************************************************************
-         * Sends bytes
-         * <p>
-         * 
-         * @throws IOException
-         *             - Exception in I/O.
-         *             <p>
-         * @param bytes
-         *            - byte[] array.
-         **************************************************************************/
-        final public synchronized void sendBytes(byte[] bytes) throws IOException {
-                outstr.write(bytes);
-                outstr.flush();
-        }
+    public void sendMessage(OpenIGTMessage message) throws Exception {
+	// TODO Auto-generated method stub
+	sendMessage(message.getHeader(), message.getBody());
+	// System.out.println("Message: Header=" +
+	// message.getHeader().toString() + " Body=" +
+	// message.getBody().toString());
+    }
 
-        /***************************************************************************
-         * Interrupt this thread
-         **************************************************************************/
-        public void interrupt() {
-        		this.currentStatus  = ClientStatus.DISCONNECTED;
-                alive = false;
-                try {
-					outstr.close();
-					instr.close();
-	                socket.close();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-        }
+    public void sendMessage(Header header, byte[] body) throws Exception {
+	sendBytes(header.getBytes());
+	sendBytes(body);
+	System.out.println("Sending Message: Header=" + header.toString()
+		+ " Body=" + body.toString());
+    }
 
-        /**
-         *** To set server status
-         * @param status
-         *** 
-         */
-        public void setStatus(ServerStatus status) {
-                this.openIGTServer.setCurrentStatus(status);
-        }
+    /***************************************************************************
+     * Sends bytes
+     * <p>
+     * 
+     * @throws IOException
+     *             - Exception in I/O.
+     *             <p>
+     * @param bytes
+     *            - byte[] array.
+     **************************************************************************/
+    final public synchronized void sendBytes(byte[] bytes) throws IOException {
+	outstr.write(bytes);
+	outstr.flush();
+    }
 
-        /**
-         *** To set server status
-         *** 
-         * @return the status status
-         */
-        public ServerStatus getStatus() {
-                return this.openIGTServer.getCurrentStatus();
-        }
+    /***************************************************************************
+     * Interrupt this thread
+     **************************************************************************/
+    public void interrupt() {
+	this.currentStatus = ClientStatus.DISCONNECTED;
+	alive = false;
+	try {
+	    outstr.close();
+	    instr.close();
+	    socket.close();
+	} catch (IOException e) {
+	    // TODO Auto-generated catch block
+	    e.printStackTrace();
+	}
+    }
 
-		public boolean getAlive() {
-			return alive;
-		}
+    /**
+     *** To set server status
+     * 
+     * @param status
+     *** 
+     */
+    public void setStatus(ServerStatus status) {
+	this.openIGTServer.setCurrentStatus(status);
+    }
 
-		public void setAlive(boolean alive) {
-			this.alive = alive;
-		}
+    /**
+     *** To set server status
+     *** 
+     * @return the status status
+     */
+    public ServerStatus getStatus() {
+	return this.openIGTServer.getCurrentStatus();
+    }
 
+    public boolean getAlive() {
+	return alive;
+    }
 
-
+    public void setAlive(boolean alive) {
+	this.alive = alive;
+    }
 
 }
