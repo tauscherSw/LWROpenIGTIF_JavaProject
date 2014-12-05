@@ -1,11 +1,6 @@
 package de.uniHannover.imes.igtIf.application;
 
-import java.util.Timer;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-
 import de.uniHannover.imes.igtIf.interfaces.LWRStateMachineInterface;
 import de.uniHannover.imes.igtIf.interfaces.LWRVisualizationInterface;
 import de.uniHannover.imes.igtIf.stateMachine.LWRStatemachine;
@@ -14,7 +9,7 @@ import com.kuka.common.StatisticTimer;
 import com.kuka.common.ThreadUtil;
 import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
-import static com.kuka.roboticsAPI.motionModel.BasicMotions.*;
+import static com.kuka.roboticsAPI.motionModel.BasicMotions.ptp;
 
 import com.kuka.roboticsAPI.controllerModel.Controller;
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
