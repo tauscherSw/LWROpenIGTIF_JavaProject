@@ -6,8 +6,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
-import openIGTInterface.LWRStateMachineInterface;
-import openIGTInterface.LWRVisualizationInterface;
+import de.uniHannover.imes.igtIf.interfaces.LWRStateMachineInterface;
+import de.uniHannover.imes.igtIf.interfaces.LWRVisualizationInterface;
 import de.uniHannover.imes.igtIf.stateMachine.LWRStatemachine;
 
 import com.kuka.common.StatisticTimer;

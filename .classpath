@@ -13,5 +13,7 @@
 	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.realtimePtp.jar"/>
 	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.smartServo-javadoc.zip"/>
 	<classpathentry kind="lib" path="Libs/KUKA/roboticsAPI.smartServo.jar"/>
+	<classpathentry kind="lib" path="Libs/KUKA/common.utilities-javadoc.zip"/>
+	<classpathentry kind="lib" path="Libs/KUKA/common.utilities.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
