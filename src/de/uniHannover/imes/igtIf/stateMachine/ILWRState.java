@@ -25,7 +25,7 @@ package de.uniHannover.imes.igtIf.stateMachine;
  * @see LWRMovetoPos
  *
  */
-interface LWRState {
+interface ILWRState {
     /**
      * In this Function control Mode Parameters are set and the commanded pose
      * are calculated due the current LWR State. For Further information see the

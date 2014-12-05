@@ -16,7 +16,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-public class LWRError implements LWRState {
+public class LWRError implements ILWRState {
     private Vector safetyplane_ap;
     private Vector safetyplane_n;
     private double safetydist = 30.0;
@@ -138,7 +138,7 @@ public class LWRError implements LWRState {
 			curPosition.subtract(normvec.multiply(distance)),
 			lwrStatemachine.curPose.getRotation());
 	    }
-	} else { // au�erhalb des Gefahrenbereichs
+	} else { // ausserhalb des Gefahrenbereichs
 	    StiffVal = 100.0;
 	    aDampVal = 0.7;
 	    lwrStatemachine.cmdPose = MatrixTransformation.of(curPosition,
@@ -181,7 +181,7 @@ public class LWRError implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
     @Override
     public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {

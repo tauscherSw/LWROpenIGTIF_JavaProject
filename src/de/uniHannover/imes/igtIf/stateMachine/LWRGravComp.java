@@ -12,7 +12,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-public class LWRGravComp implements LWRState {
+public class LWRGravComp implements ILWRState {
 
     /**
      * In this Function control Mode Parameters are set and the commanded pose
@@ -24,7 +24,7 @@ public class LWRGravComp implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
     @Override
     public void CalcControlParam(LWRStatemachine lwrStatemachine) {
@@ -81,7 +81,7 @@ public class LWRGravComp implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
 
     @Override

@@ -17,7 +17,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-public class LWRMoveToPose implements LWRState {
+public class LWRMoveToPose implements ILWRState {
     private boolean EndofPath = false;
     public boolean ImageSpace = false;
     public Vector TargetPosition = null;
@@ -101,7 +101,7 @@ public class LWRMoveToPose implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
     @Override
     public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {

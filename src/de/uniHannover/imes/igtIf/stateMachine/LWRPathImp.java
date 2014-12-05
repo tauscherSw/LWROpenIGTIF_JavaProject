@@ -19,7 +19,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-public class LWRPathImp implements LWRState {
+public class LWRPathImp implements ILWRState {
 
     /**
      * Flag indicates if the Position is send in Image or robot base coordinate
@@ -220,7 +220,7 @@ public class LWRPathImp implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
     @Override
     public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {

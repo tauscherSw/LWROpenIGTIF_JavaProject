@@ -27,7 +27,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @version 0.1
  */
 
-public class LWRVirtualFixtures implements LWRState {
+public class LWRVirtualFixtures implements ILWRState {
 
     public Vector VirtualFixture_ap;
     public Vector VirtualFixture_n;
@@ -132,7 +132,7 @@ public class LWRVirtualFixtures implements LWRState {
      * 
      * @param lwrStatemachine
      *            The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
     @Override
     public void CalcControlParam(LWRStatemachine lwrStatemachine) {
@@ -385,7 +385,7 @@ public class LWRVirtualFixtures implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
     @Override
     public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {

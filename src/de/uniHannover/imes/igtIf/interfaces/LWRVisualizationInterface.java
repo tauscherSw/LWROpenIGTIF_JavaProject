@@ -25,14 +25,16 @@ import com.neuronrobotics.sdk.addons.kinematics.math.TransformNR;
  * opnIGTLink protocol is based on the igtlink4j class developed at the WPI.
  * 
  * @author Sebastian Tauscher
- * @see
  */
 public class LWRVisualizationInterface extends Thread {
-    OneTimeStep aStep;
+    /**
+     * One cycle in the threads cycle.
+     */
+    private OneTimeStep aStep;
     /**
      * Statistic Timer for the Visualization Interface Thread.
      */
-    public StatisticTimer Visualtiming = new StatisticTimer();
+    public StatisticTimer visualIfTimer = new StatisticTimer();
     /**
      * OpenIGTLink Client socket - socket of the connected Client.
      */
@@ -49,47 +51,52 @@ public class LWRVisualizationInterface extends Thread {
     /**
      * Flag to indicate if an Error accured during the last cycle.
      */
-    private boolean ErrorFlag = false;
+    private boolean errFlag = false;
 
     /**
-     * Enum for the client status. Possible states are connected and
-     * disconnected.
+     * Enum for the client's connection state.
      */
     public static enum ClientStatus {
-	CONNECTED, DISCONNECTED
-    }; // possible client states
+	/** The client is connected. */
+	CONNECTED,
+	/** The client is disconnected. */
+	DISCONNECTED
+    };
 
     /**
      * current client status. Possible states are connected and disconnected.
      */
-    public ClientStatus currentStatus = ClientStatus.DISCONNECTED; // start as
-								   // stopped
-								   // status
+    private ClientStatus currentStatus = ClientStatus.DISCONNECTED; // start as
+								    // stopped
+								    // status
 
     /**
      * Enum for the type of date requested from the visualization Software
      * (Image space, roboter base COF, joint space).
      */
     public static enum VisualIFDatatypes {
-	IMAGESPACE, ROBOTBASE, JOINTSPACE
-    }; // possible client states
+	/** Image data. */
+	IMAGESPACE,
+	/** Cartesian data of the robot. */
+	ROBOTBASE,
+	/** Joint data of the robot. */
+	JOINTSPACE
+    };
 
     /**
      * Current selected data type to be send to the robot.
      */
-    public VisualIFDatatypes datatype = VisualIFDatatypes.ROBOTBASE; // start as
-								     // stopped
-								     // status
+    public VisualIFDatatypes datatype = VisualIFDatatypes.ROBOTBASE;
 
     /**
      * Flag to indicate if the Visualization interface is set active or not.
      */
-    public boolean VisualActive = false;
+    public boolean visualIfActivated = false;
     /**
      * Flag to indicate if the Visualization interface is running or if the
      * thread is stopped.
      */
-    public boolean VisualRun = false;
+    public boolean visualIfRunning = false;
     /**
      * Current Cartesian position in robot base coordinate system of the robot.
      */
@@ -98,7 +105,7 @@ public class LWRVisualizationInterface extends Thread {
      * Transformation from robot base coordinate system to image space
      * coordinate system.
      */
-    public MatrixTransformation T_IMGBASE_StateM = null;
+    public MatrixTransformation trafo_Imagespace_StateM = null;
     /**
      * Current Joint positions.
      */
@@ -124,12 +131,12 @@ public class LWRVisualizationInterface extends Thread {
     /**
      * Error message string.
      */
-    public String ErrorMessage = "";
+    public String errMsg = "";
 
     /**
-     * Semaphore for secure acces to the shared variables.
+     * Semaphore for secure access to the shared variables.
      */
-    public Semaphore VisualSemaphore = new Semaphore(1, true);
+    public Semaphore visualSema = new Semaphore(1, true);
 
     /**
      * portnumber for the communication with visualization software e.g. 3D
@@ -140,12 +147,12 @@ public class LWRVisualizationInterface extends Thread {
     /**
      * cycle time of the visualization interface thread. Default value is 25 ms.
      */
-    public int millisectoSleep = 25;
+    private static final int CYCLE_TIME_VISUAL_IF = 25;
     /**
      * in this String the last printed error message is saved to check if it is
      * error message has already been printed.
      */
-    private String LastPrintedError = "";
+    private String lastPrintedError = "";
 
     private int njoint = 0;
 
@@ -157,8 +164,10 @@ public class LWRVisualizationInterface extends Thread {
      * @param port
      *            the port for the communication with state control
      * @throws IOException
+     *             when connection to the visualization interface server is not
+     *             possible.
      */
-    public void ConnectServer(int port) throws IOException {
+    public final void connectServer(final int port) throws IOException {
 	stopServer();
 	try {
 	    ServerSocketFactory serverSocketFactory = ServerSocketFactory
@@ -278,9 +287,9 @@ public class LWRVisualizationInterface extends Thread {
 	// Initializing the Communication with the Visualization Software
 	try {
 	    // Set up server
-	    ConnectServer(port);
-	    VisualRun = true;
-	    VisualActive = true;
+	    connectServer(port);
+	    visualIfRunning = true;
+	    visualIfActivated = true;
 	    openIGTClient = openIGTServer.accept();
 	    openIGTClient.setTcpNoDelay(true);
 	    // openIGTClient.setSoTimeout(20);
@@ -292,53 +301,53 @@ public class LWRVisualizationInterface extends Thread {
 
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
-	    ErrorFlag = true;
-	    ErrorMessage = "Couldn't connect to Visualization interface server!";
+	    errFlag = true;
+	    errMsg = "Couldn't connect to Visualization interface server!";
 	}
-	while (VisualRun) {
+	while (visualIfRunning) {
 	    long startTimeStamp = (long) (System.nanoTime());
 	    int startTimeStampNanos = (int) (System.nanoTime() - startTimeStamp * 1000000);
-	    aStep = Visualtiming.newTimeStep();
-	    if (VisualActive) {
+	    aStep = visualIfTimer.newTimeStep();
+	    if (visualIfActivated) {
 		// Get new data from State machine
 		try {
-		    VisualSemaphore.acquire();
+		    visualSema.acquire();
 		    jntPose = jntPose_StateM;
 		    cartPose = cartPose_StateM;
 		    if (datatype.equals(VisualIFDatatypes.IMAGESPACE)) {
-			T_IMGBASE = T_IMGBASE_StateM;
+			T_IMGBASE = trafo_Imagespace_StateM;
 			cartPose = T_IMGBASE.compose(cartPose);
 		    }
-		    VisualSemaphore.release();
+		    visualSema.release();
 		    // Send the transform to Visualization
 
 		} catch (InterruptedException e) {
-		    ErrorFlag = true;
-		    ErrorMessage = "Unable to Acquire Visual Semaphore";
+		    errFlag = true;
+		    errMsg = "Unable to Acquire Visual Semaphore";
 		}
 
 		if (!openIGTClient.isClosed()) {
 		    sendTransform(cartPose, jntPose);
 		}
 
-		if (ErrorFlag) {
-		    if (!ErrorMessage.equals(LastPrintedError)) {
-			System.out.println(ErrorMessage);
-			LastPrintedError = ErrorMessage;
+		if (errFlag) {
+		    if (!errMsg.equals(lastPrintedError)) {
+			System.out.println(errMsg);
+			lastPrintedError = errMsg;
 		    }
 		} else {
-		    LastPrintedError = "";
+		    lastPrintedError = "";
 		}
 
 	    }
 	    // Set the Module in Sleep mode for stability enhancement
 	    long curTime = (long) ((System.nanoTime() - startTimeStamp) / 1000000.0);
 	    int curTimeNanos = (int) ((System.nanoTime() - startTimeStampNanos) - curTime * 1000000.0);
-	    if (curTime < millisectoSleep) {
+	    if (curTime < CYCLE_TIME_VISUAL_IF) {
 		// ThreadUtil.milliSleep((long) Math.floor((millisectoSleep-1 -
 		// curTime)));
 		try {
-		    Thread.sleep(millisectoSleep - curTime, curTimeNanos);
+		    Thread.sleep(CYCLE_TIME_VISUAL_IF - curTime, curTimeNanos);
 		} catch (InterruptedException e) {
 		    // TODO Automatisch generierter Erfassungsblock
 		    e.printStackTrace();
@@ -422,7 +431,8 @@ public class LWRVisualizationInterface extends Thread {
      *            the current joint position of the robot axes.
      */
 
-    public final void sendTransform(MatrixTransformation trafoCurrentPose,
+    public final void sendTransform(
+	    MatrixTransformation trafoCurrentPose,
 	    final JointPosition curJntPose) {
 	double[] translationTmp = new double[3];
 	translationTmp[0] = trafoCurrentPose.getTranslation().getX();

@@ -75,12 +75,12 @@ public class LWRStatemachine {
     /**
      * The current State of the LWR state machine
      */
-    public LWRState m_CurrentState;
+    public ILWRState m_CurrentState;
 
     /**
      * The new State of the LWR state machine
      */
-    public LWRState m_newState;
+    public ILWRState m_newState;
 
     /**
      * The current pose in Cartesian space of the LWR in robot coordinates.
@@ -202,14 +202,14 @@ public class LWRStatemachine {
      * @param the
      *            new LWRState
      */
-    public void ChangeLWRState(LWRState newState) {
+    public void ChangeLWRState(ILWRState newState) {
 	m_CurrentState = newState;
     }
 
     /**
      * calls the CalcControlParam of the current LWR state.
      * 
-     * @see LWRState
+     * @see ILWRState
      * @see LWRIdle
      * @see LWRGravComp
      * @see LWRRegistration
@@ -226,7 +226,7 @@ public class LWRStatemachine {
     /**
      * calls the SetACKPacket of the current LWR state.
      * 
-     * @see LWRState
+     * @see ILWRState
      * @see LWRIdle
      * @see LWRGravComp
      * @see LWRRegistration
@@ -243,7 +243,7 @@ public class LWRStatemachine {
     /**
      * Calls the InterpretCMDPacket of the current LWR state.
      * 
-     * @see LWRState
+     * @see ILWRState
      * @see LWRIdle
      * @see LWRGravComp
      * @see LWRRegistration

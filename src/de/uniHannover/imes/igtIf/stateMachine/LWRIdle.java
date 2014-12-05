@@ -11,7 +11,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-class LWRIdle implements LWRState {
+class LWRIdle implements ILWRState {
     /**
      * In this Function control Mode Parameters are set and the commanded pose
      * are calculated due the current LWR State. During the Idle State the
@@ -22,7 +22,7 @@ class LWRIdle implements LWRState {
      * 
      * @param lwrStatemachine
      *            The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
     @Override
     public void CalcControlParam(LWRStatemachine lwrStatemachine) {
@@ -69,7 +69,7 @@ class LWRIdle implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILWRState
      */
 
     @Override

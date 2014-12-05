@@ -310,27 +310,27 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
 		    }
 		    if (imesStatemachine.TransformRecieved) {
-			slicerVisualIf.T_IMGBASE_StateM = imesStatemachine.TransformRobotImage;
+			slicerVisualIf.trafo_Imagespace_StateM = imesStatemachine.TransformRobotImage;
 		    }
-		    slicerVisualIf.VisualActive = true;
+		    slicerVisualIf.visualIfActivated = true;
 		    slicerVisualIf.start();
 		    // Start the Visualization thread
 		    // SlicerVisualIF.start();
 		    visualOnFlag = true;
 		} else if (imesStatemachine.StartVisual && visualOnFlag
-			&& !slicerVisualIf.VisualActive) {// if Viuslaization
+			&& !slicerVisualIf.visualIfActivated) {// if Viuslaization
 							  // interface is
 							  // started, not active
 							  // but is set active
 		    // Change VisualActive to true. Thereby, the pose is send to
 		    // the visualization
-		    slicerVisualIf.VisualActive = true;
+		    slicerVisualIf.visualIfActivated = true;
 
 		} else if (!imesStatemachine.StartVisual && /*
 							     * SlicerVisualIF.
 							     * isAlive() &&
 							     */
-		slicerVisualIf.VisualActive) {
+		slicerVisualIf.visualIfActivated) {
 		    /*
 		     * if the visualization is running and the the Start Visual
 		     * flag is false and the interface is still active Set the
@@ -338,7 +338,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		     * send to the visualization
 		     */
 
-		    slicerVisualIf.VisualActive = false;
+		    slicerVisualIf.visualIfActivated = false;
 
 		}
 
@@ -426,15 +426,15 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		}
 		// if the Visualization Interface is active sending the Current
 		// Position to the Visualization
-		if (/* SlicerVisualIF.isAlive()&& */slicerVisualIf.VisualRun) {
+		if (/* SlicerVisualIF.isAlive()&& */slicerVisualIf.visualIfRunning) {
 		    try {
-			slicerVisualIf.VisualSemaphore.tryAcquire(1,
+			slicerVisualIf.visualSema.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
 			if (imesStatemachine.currentVisualIFDatatype == 1) {
 			    slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.IMAGESPACE;
 			    slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
 			    if (imesStatemachine.TransformRecieved) {
-				slicerVisualIf.T_IMGBASE_StateM = imesStatemachine.TransformRobotImage;
+				slicerVisualIf.trafo_Imagespace_StateM = imesStatemachine.TransformRobotImage;
 			    }
 			} else if (imesStatemachine.currentVisualIFDatatype == 2) {
 			    slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.ROBOTBASE;
@@ -443,7 +443,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 			    slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.JOINTSPACE;
 			    slicerVisualIf.jntPose_StateM = imesStatemachine.curJntPose;
 			}
-			slicerVisualIf.VisualSemaphore.release();
+			slicerVisualIf.visualSema.release();
 		    } catch (InterruptedException e) {
 			errorMsg = "Error: Couldn't acquire VisualIF Semaphore!!";
 			if (!errorMsg.equals(lastPrintedError)) {
@@ -510,7 +510,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
 	    slicerControlIf.comIfActive = false;
 	    // StateControlTimer.cancel();
-	    slicerVisualIf.VisualRun = false;
+	    slicerVisualIf.visualIfRunning = false;
 	    // VisualTimer.cancel();
 	    // Print the timing statistics
 	    System.out
@@ -519,7 +519,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	    System.out.println("UID miss: " + slicerControlIf.uIdMissed);
 	    System.out
 		    .println("Statistic Timing of Visualisation interface thread "
-			    + slicerVisualIf.Visualtiming);
+			    + slicerVisualIf.visualIfTimer);
 	    System.out.println("Statistic Timing of Statemachine Mean:"
 		    + timing);
 	    ThreadUtil.milliSleep((long) (4000));
@@ -547,7 +547,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	    e.printStackTrace();
 	    slicerControlIf.comIfActive = false;
 	    // StateControlTimer.cancel();
-	    slicerVisualIf.VisualRun = false;
+	    slicerVisualIf.visualIfRunning = false;
 	    // VisualTimer.cancel();
 	}
 	// Stopping the Control Interface thread and the viusalization thread
