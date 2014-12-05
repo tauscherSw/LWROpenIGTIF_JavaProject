@@ -37,7 +37,7 @@ import com.neuronrobotics.sdk.addons.kinematics.math.TransformNR;
  * @see imesStateApplication
  */
 public class LWRStateMachineInterface extends Thread {
-    OneTimeStep aStep;
+    private OneTimeStep aStep;
 
     /**
      * Statistic Timer for the Visualization Interface Thread.
@@ -45,122 +45,122 @@ public class LWRStateMachineInterface extends Thread {
     public StatisticTimer SMtiming = new StatisticTimer();
 
     /**
-     * OpenIGTLink Client socket - socket of the connected Client
+     * OpenIGTLink Client socket - socket of the connected Client.
      */
     private java.net.Socket openIGTClient = null;
 
     /**
-     * Server socket for the communication with state control interface
+     * Server socket for the communication with state control interface.
      */
     private ServerSocket openIGTServer;
 
     /**
-     * output stream of the socket communication
+     * output stream of the socket communication.
      */
     private OutputStream outstr;
     /**
-     * input stream of the socket communication
+     * input stream of the socket communication.
      */
     private InputStream instr;
 
     /**
-     * error flag to indicate if an error occured
+     * error flag to indicate if an error occured.
      */
     private boolean ErrorFlag = false;
 
     /**
      * Current enum for the client status {CONNECTED, DISCONNECTED }possible
-     * client states
+     * client states.
      */
     public static enum ClientStatus {
 	CONNECTED, DISCONNECTED
     }; // possible client states
 
     /**
-     * current status of the client status
+     * current status of the client status.
      */
     private ClientStatus currentStatus = ClientStatus.DISCONNECTED; // start as
 								    // stopped
 								    // status
 
     /**
-     * Current unified Identification number
+     * Current unified Identification number.
      */
     public int UID = 0;
     /**
-     * Current unified Identification number (working copy)
+     * Current unified Identification number (working copy).
      */
     private int UID_local = 0;
 
     /**
-     * Old current unified identification number
+     * Old current unified identification number.
      */
     public int UID_old = 0;
 
     /**
-     * Command OpenIGTLink Message default message is "IDLE;"
+     * Command OpenIGTLink Message default message is "IDLE;".
      */
     public OpenIGTMessage CMD_StateM = new StringMessage("CMD_0000", "IDLE;");
 
     /**
-     * Acknowledgement OpenIGTLink Message default message is "IDLE;"
+     * Acknowledgement OpenIGTLink Message default message is "IDLE;".
      */
     public OpenIGTMessage ACK_StateM = new StringMessage("ACK_0000", "IDLE;");
 
     /**
-     * Acknowledgement OpenIGTLink Message working copy
+     * Acknowledgement OpenIGTLink Message working copy.
      */
     private OpenIGTMessage ACKmessage;
 
     /**
-     * Command OpenIGTLink Message working copy
+     * Command OpenIGTLink Message working copy.
      */
     private OpenIGTMessage CMDmessage = null;
 
     /**
-     * Error Message String for error in the State machine interface
+     * Error Message String for error in the State machine interface.
      */
     public String ErrorMessage;
 
     /**
      * in this String the last printed error message is saved to check if it is
-     * error message has already been printed
+     * error message has already been printed.
      */
     private String LastPrintedError = "";
 
     /**
-     * Semaphore for save reading and writing the variables
+     * Semaphore for save reading and writing the variables.
      */
     public Semaphore ControlSemaphore = new Semaphore(1, true);
     /**
-     * cycle time of the state control interface thread. Default value is 20 ms
+     * cycle time of the state control interface thread. Default value is 20 ms.
      */
     public int millisectoSleep = 20;
 
     /**
      * port number for the communication with state control. Possible ports
-     * 49001 - 49005
+     * 49001 - 49005.
      */
     public int port = 49001;
 
     /**
-     * Flag to indicate if the communication interface is running or not
+     * Flag to indicate if the communication interface is running or not.
      */
     public boolean ControlRun = false;
 
     /**
-     * Number of missed UID numbers in total
+     * Number of missed UID numbers in total.
      */
     public int UIDmiss = 0;
 
     /**
-     * Number loops getting the same UID number (in a row)
+     * Number loops getting the same UID number (in a row).
      */
     public int UIDrepeat = 0;
 
     /**
      * delay loops between receiving and sending a packet with the same UID
-     * (should be 0)
+     * (should be 0).
      */
     public int UIDdelay = 0;
 
@@ -168,7 +168,7 @@ public class LWRStateMachineInterface extends Thread {
      * Starts the listening server on the defined port.
      * 
      * @param port
-     *            the port for the communication with state control
+     *            the port for the communication with state control.
      * @throws IOException
      */
     public void ConnectServer(int port) throws IOException {
@@ -188,7 +188,7 @@ public class LWRStateMachineInterface extends Thread {
     }
 
     /**
-     * Stops the listening OpenIGTLink server
+     * Stops the listening OpenIGTLink server.
      * 
      */
     public void stopServer() {
