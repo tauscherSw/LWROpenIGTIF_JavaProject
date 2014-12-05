@@ -515,7 +515,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	    // Print the timing statistics
 	    System.out
 		    .println("Statistic Timing of Statemachine interface thread "
-			    + slicerControlIf.SMtiming);
+			    + slicerControlIf.timerVisualIf);
 	    System.out.println("UID miss: " + slicerControlIf.uIdMissed);
 	    System.out
 		    .println("Statistic Timing of Visualisation interface thread "

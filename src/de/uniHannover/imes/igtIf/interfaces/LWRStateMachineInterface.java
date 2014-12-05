@@ -42,7 +42,7 @@ public class LWRStateMachineInterface extends Thread {
     /**
      * Statistic Timer for the Visualization Interface Thread.
      */
-    public StatisticTimer SMtiming = new StatisticTimer();
+    public StatisticTimer timerVisualIf = new StatisticTimer();
 
     /**
      * OpenIGTLink Client socket - socket of the connected Client.
@@ -255,7 +255,7 @@ public class LWRStateMachineInterface extends Thread {
 	    long startTimeStamp = (long) (System.nanoTime());
 	    int startTimeStampNanos = (int) (System.nanoTime() 
 		    - startTimeStamp * 1000000);
-	    aStep = SMtiming.newTimeStep();
+	    aStep = timerVisualIf.newTimeStep();
 	    // Get new data from State machine
 	    errorFlag = false;
 	    try {

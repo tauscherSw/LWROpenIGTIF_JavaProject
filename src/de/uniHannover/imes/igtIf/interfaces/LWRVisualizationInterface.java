@@ -10,6 +10,7 @@ import javax.net.ServerSocketFactory;
 import com.kuka.common.StatisticTimer;
 import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
+import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
@@ -20,7 +21,7 @@ import org.medcare.igtl.util.Header;
 import com.neuronrobotics.sdk.addons.kinematics.math.TransformNR;
 
 /**
- * This Class for the Communication with a Visualization system using the
+ * This Class for the communication with a visualization system using the
  * opnIGTLink protocol is based on the igtlink4j class developed at the WPI.
  * 
  * @author Sebastian Tauscher
@@ -33,35 +34,33 @@ public class LWRVisualizationInterface extends Thread {
      */
     public StatisticTimer Visualtiming = new StatisticTimer();
     /**
-     * OpenIGTLink Client socket - socket of the connected Client
+     * OpenIGTLink Client socket - socket of the connected Client.
      */
     private java.net.Socket openIGTClient = null;
     /**
-     * openIGTLink visualization server socket
+     * openIGTLink visualization server socket.
      */
     private ServerSocket openIGTServer;
     /**
      * Outpu stream for sending the currant transformation or joint angles to
-     * visualzation software
+     * visualzation software.
      */
     private OutputStream outstr;
     /**
-     * Flag to indicate if an Error accured during the last cycle
+     * Flag to indicate if an Error accured during the last cycle.
      */
     private boolean ErrorFlag = false;
 
     /**
      * Enum for the client status. Possible states are connected and
-     * disconnected
-     *
+     * disconnected.
      */
     public static enum ClientStatus {
 	CONNECTED, DISCONNECTED
     }; // possible client states
 
     /**
-     * current client status. Possible states are connected and disconnected
-     *
+     * current client status. Possible states are connected and disconnected.
      */
     public ClientStatus currentStatus = ClientStatus.DISCONNECTED; // start as
 								   // stopped
@@ -69,8 +68,7 @@ public class LWRVisualizationInterface extends Thread {
 
     /**
      * Enum for the type of date requested from the visualization Software
-     * (Image space, roboter base COF, joint space)
-     * 
+     * (Image space, roboter base COF, joint space).
      */
     public static enum VisualIFDatatypes {
 	IMAGESPACE, ROBOTBASE, JOINTSPACE
@@ -93,16 +91,16 @@ public class LWRVisualizationInterface extends Thread {
      */
     public boolean VisualRun = false;
     /**
-     * Current Cartesian position in robot base coordinate system of the robot
+     * Current Cartesian position in robot base coordinate system of the robot.
      */
     public MatrixTransformation cartPose_StateM = null;
     /**
      * Transformation from robot base coordinate system to image space
-     * coordinate system
+     * coordinate system.
      */
     public MatrixTransformation T_IMGBASE_StateM = null;
     /**
-     * Current Joint positions
+     * Current Joint positions.
      */
     public JointPosition jntPose_StateM = null;
 
@@ -119,33 +117,33 @@ public class LWRVisualizationInterface extends Thread {
     private MatrixTransformation cartPose = null;
 
     /**
-     * Working copy of the Current Joint6 positionof the robot
+     * Working copy of the Current Joint6 positionof the robot.
      */
     private JointPosition jntPose = null;
 
     /**
-     * Error message string
+     * Error message string.
      */
     public String ErrorMessage = "";
 
     /**
-     * Semaphore for secure acces to the shared variables
+     * Semaphore for secure acces to the shared variables.
      */
     public Semaphore VisualSemaphore = new Semaphore(1, true);
 
     /**
      * portnumber for the communication with visualization software e.g. 3D
-     * Sliacer. Possible ports 49001 - 49005
+     * Slicer. Possible ports 49001 - 49005.
      */
     public int port = 49002;
 
     /**
-     * cycle time of the visualization interface thread. Default value is 25 ms
+     * cycle time of the visualization interface thread. Default value is 25 ms.
      */
     public int millisectoSleep = 25;
     /**
      * in this String the last printed error message is saved to check if it is
-     * error message has already been printed
+     * error message has already been printed.
      */
     private String LastPrintedError = "";
 
@@ -168,8 +166,8 @@ public class LWRVisualizationInterface extends Thread {
 	    openIGTServer = serverSocketFactory.createServerSocket(this.port);
 	    openIGTServer.setReuseAddress(true);
 	    System.out
-		    .println("Visualization interface server socket succesfully created (port "
-			    + this.port + ")");
+		    .println("Visualization interface server socket succesfully "
+			    + "created (port " + this.port + ")");
 
 	} catch (IOException e) {
 	    System.out
@@ -179,10 +177,9 @@ public class LWRVisualizationInterface extends Thread {
     }
 
     /**
-     * Stops the listening OpenIGTLink server
-     * 
+     * Stops the listening OpenIGTLink server.
      */
-    public void stopServer() {
+    public final void stopServer() {
 	if (openIGTServer != null) {
 	    try {
 		openIGTServer.close();
@@ -196,60 +193,68 @@ public class LWRVisualizationInterface extends Thread {
 	// currentStatus = ServerStatus.STOPPED;
     }
 
+    /**
+     * Constructor, which initializes this interface as daemon thread.
+     */
     public LWRVisualizationInterface() {
 	setDaemon(true);
     }
 
     /**
      * In this function the Matrixtransformation for each Joint is calculated
-     * from the set of denavit hardenberg parameter
+     * from the set of denavit hartenberg parameter.
+     * 
+     * @param q
+     *            the joint position for direct kinematics.
      */
-    public void SetDHTransformation(JointPosition q) {
+    public final void setDhTransformation(final JointPosition q) {
 	// double [] d = {0.31 0.4 0.39 0.078};
 
-	MatrixTransformation T_1 = MatrixTransformation.of(
-		Vector.of(0, 0, 0),
-		com.kuka.roboticsAPI.geometricModel.math.Matrix.ofRowFirst(
-			Math.cos(q.get(0)), -Math.sin(q.get(0)), 0,
-			Math.sin(q.get(0)), Math.cos(q.get(0)), 0, 0, 0, 1));
-	MatrixTransformation T_2 = MatrixTransformation.of(
-		Vector.of(0, 0, 310),
-		com.kuka.roboticsAPI.geometricModel.math.Matrix.ofRowFirst(
-			Math.cos(q.get(1)), -Math.sin(q.get(1)), 0, 0, 0, -1,
-			Math.sin(q.get(1)), Math.cos(q.get(1)), 0));
-	MatrixTransformation T_3 = MatrixTransformation.of(
-		Vector.of(0, 200, 0),
-		com.kuka.roboticsAPI.geometricModel.math.Matrix.ofRowFirst(
-			Math.cos(q.get(2)), -Math.sin(q.get(2)), 0, 0, 0, 1,
-			-Math.sin(q.get(2)), -Math.cos(q.get(2)), 0));
-	MatrixTransformation T_4 = MatrixTransformation.of(
-		Vector.of(0, 0, 200),
-		com.kuka.roboticsAPI.geometricModel.math.Matrix.ofRowFirst(
-			Math.cos(q.get(3)), -Math.sin(q.get(3)), 0, 0, 0, 1,
-			-Math.sin(q.get(3)), -Math.cos(q.get(3)), 0));
-	MatrixTransformation T_5 = MatrixTransformation.of(Vector.of(0,
-		-390 / 2, 0), com.kuka.roboticsAPI.geometricModel.math.Matrix
-		.ofRowFirst(Math.cos(q.get(4)), -Math.sin(q.get(4)), 0, 0, 0,
-			-1, Math.sin(q.get(4)), Math.cos(q.get(4)), 0));
-	MatrixTransformation T_6 = MatrixTransformation.of(Vector.of(0, 0,
-		390 / 2), com.kuka.roboticsAPI.geometricModel.math.Matrix
-		.ofRowFirst(Math.cos(q.get(5)), -Math.sin(q.get(5)), 0, 0, 0,
-			-1, Math.sin(q.get(5)), Math.cos(q.get(5)), 0));
-	MatrixTransformation T_7 = MatrixTransformation.of(Vector.of(0, 78, 0),
-		com.kuka.roboticsAPI.geometricModel.math.Matrix.ofRowFirst(
-			Math.cos(q.get(6)), -Math.sin(q.get(6)), 0, 0, 0, 1,
-			-Math.sin(q.get(6)), -Math.cos(q.get(6)), 0));
-	MatrixTransformation T_8 = MatrixTransformation.of(Vector.of(-5, 30.7,
-		216), com.kuka.roboticsAPI.geometricModel.math.Matrix
-		.ofRowFirst(1, 0, 0, 0, 1, 0, 0, 0, 1));
-	T_DH[0] = T_1;
-	T_DH[1] = T_DH[0].compose(T_2);
-	T_DH[2] = T_DH[1].compose(T_3);
-	T_DH[3] = T_DH[2].compose(T_4);
-	T_DH[4] = T_DH[3].compose(T_5);
-	T_DH[5] = T_DH[4].compose(T_6);
-	T_DH[6] = T_DH[5].compose(T_7);
-	T_DH[7] = T_DH[6].compose(T_8);
+	MatrixTransformation trafo1 = MatrixTransformation.of(Vector
+		.of(0, 0, 0), Matrix.ofRowFirst(Math.cos(q.get(0)),
+		-Math.sin(q.get(0)), 0, Math.sin(q.get(0)), Math.cos(q.get(0)),
+		0, 0, 0, 1));
+
+	MatrixTransformation trafo2 = MatrixTransformation.of(Vector.of(0, 0,
+		310), Matrix.ofRowFirst(Math.cos(q.get(1)),
+		-Math.sin(q.get(1)), 0, 0, 0, -1, Math.sin(q.get(1)),
+		Math.cos(q.get(1)), 0));
+
+	MatrixTransformation trafo3 = MatrixTransformation.of(Vector.of(0, 200,
+		0), Matrix.ofRowFirst(Math.cos(q.get(2)), -Math.sin(q.get(2)),
+		0, 0, 0, 1, -Math.sin(q.get(2)), -Math.cos(q.get(2)), 0));
+
+	MatrixTransformation trafo4 = MatrixTransformation.of(Vector.of(0, 0,
+		200), Matrix.ofRowFirst(Math.cos(q.get(3)),
+		-Math.sin(q.get(3)), 0, 0, 0, 1, -Math.sin(q.get(3)),
+		-Math.cos(q.get(3)), 0));
+
+	MatrixTransformation trafo5 = MatrixTransformation.of(Vector.of(0,
+		-390 / 2, 0), Matrix.ofRowFirst(Math.cos(q.get(4)),
+		-Math.sin(q.get(4)), 0, 0, 0, -1, Math.sin(q.get(4)),
+		Math.cos(q.get(4)), 0));
+
+	MatrixTransformation trafo6 = MatrixTransformation.of(Vector.of(0, 0,
+		390 / 2), Matrix.ofRowFirst(Math.cos(q.get(5)),
+		-Math.sin(q.get(5)), 0, 0, 0, -1, Math.sin(q.get(5)),
+		Math.cos(q.get(5)), 0));
+
+	MatrixTransformation trafo7 = MatrixTransformation.of(Vector.of(0, 78,
+		0), Matrix.ofRowFirst(Math.cos(q.get(6)), -Math.sin(q.get(6)),
+		0, 0, 0, 1, -Math.sin(q.get(6)), -Math.cos(q.get(6)), 0));
+
+	MatrixTransformation trafo8 = MatrixTransformation.of(
+		Vector.of(-5, 30.7, 216),
+		Matrix.ofRowFirst(1, 0, 0, 0, 1, 0, 0, 0, 1));
+
+	T_DH[0] = trafo1;
+	T_DH[1] = T_DH[0].compose(trafo2);
+	T_DH[2] = T_DH[1].compose(trafo3);
+	T_DH[3] = T_DH[2].compose(trafo4);
+	T_DH[4] = T_DH[3].compose(trafo5);
+	T_DH[5] = T_DH[4].compose(trafo6);
+	T_DH[6] = T_DH[5].compose(trafo7);
+	T_DH[7] = T_DH[6].compose(trafo8);
 
     }
 
@@ -269,7 +274,6 @@ public class LWRVisualizationInterface extends Thread {
      * @see
      **/
     public void run() {
-	// TODO Automatisch generierter Methodenstub
 
 	// Initializing the Communication with the Visualization Software
 	try {
@@ -293,7 +297,7 @@ public class LWRVisualizationInterface extends Thread {
 	}
 	while (VisualRun) {
 	    long startTimeStamp = (long) (System.nanoTime());
-	    int startTimeStamp_nanos = (int) (System.nanoTime() - startTimeStamp * 1000000);
+	    int startTimeStampNanos = (int) (System.nanoTime() - startTimeStamp * 1000000);
 	    aStep = Visualtiming.newTimeStep();
 	    if (VisualActive) {
 		// Get new data from State machine
@@ -314,7 +318,7 @@ public class LWRVisualizationInterface extends Thread {
 		}
 
 		if (!openIGTClient.isClosed()) {
-		    SendTransform(cartPose, jntPose);
+		    sendTransform(cartPose, jntPose);
 		}
 
 		if (ErrorFlag) {
@@ -329,12 +333,12 @@ public class LWRVisualizationInterface extends Thread {
 	    }
 	    // Set the Module in Sleep mode for stability enhancement
 	    long curTime = (long) ((System.nanoTime() - startTimeStamp) / 1000000.0);
-	    int curTime_nanos = (int) ((System.nanoTime() - startTimeStamp_nanos) - curTime * 1000000.0);
+	    int curTimeNanos = (int) ((System.nanoTime() - startTimeStampNanos) - curTime * 1000000.0);
 	    if (curTime < millisectoSleep) {
 		// ThreadUtil.milliSleep((long) Math.floor((millisectoSleep-1 -
 		// curTime)));
 		try {
-		    Thread.sleep(millisectoSleep - curTime, curTime_nanos);
+		    Thread.sleep(millisectoSleep - curTime, curTimeNanos);
 		} catch (InterruptedException e) {
 		    // TODO Automatisch generierter Erfassungsblock
 		    e.printStackTrace();
@@ -363,7 +367,7 @@ public class LWRVisualizationInterface extends Thread {
      *            - the transformation to be send
      */
 
-    public void pushTransformMessage(String deviceName, TransformNR t) {
+    public final void pushTransformMessage(String deviceName, TransformNR t) {
 	TransformMessage transMsg = new TransformMessage(deviceName,
 		t.getPositionArray(), t.getRotationMatrixArray());
 	transMsg.PackBody();
@@ -376,7 +380,6 @@ public class LWRVisualizationInterface extends Thread {
     }
 
     public void sendMessage(OpenIGTMessage message) throws Exception {
-	// TODO Auto-generated method stub
 	sendMessage(message.getHeader(), message.getBody());
 	// System.out.println("Message: Header=" +
 	// message.getHeader().toString() + " Body=" +
@@ -391,7 +394,7 @@ public class LWRVisualizationInterface extends Thread {
     }
 
     /***************************************************************************
-     * Sends bytes
+     * Sends bytes.
      * <p>
      * 
      * @throws IOException
@@ -400,7 +403,8 @@ public class LWRVisualizationInterface extends Thread {
      * @param bytes
      *            - byte[] array.
      **************************************************************************/
-    final public synchronized void sendBytes(byte[] bytes) throws IOException {
+    public final synchronized void sendBytes(final byte[] bytes)
+	    throws IOException {
 	outstr.write(bytes);
 	outstr.flush();
     }
@@ -412,18 +416,20 @@ public class LWRVisualizationInterface extends Thread {
     /**
      * Sending the Cartesian or Joint position of the robot.
      * 
-     * @param T_curPose
+     * @param trafoCurrentPose
      *            the current position of the robot
+     * @param curJntPose
+     *            the current joint position of the robot axes.
      */
 
-    public void SendTransform(MatrixTransformation T_curPose,
-	    JointPosition curJntPose) {
-	double[] t_tmp = new double[3];
-	t_tmp[0] = T_curPose.getTranslation().getX();
-	t_tmp[1] = T_curPose.getTranslation().getY();
-	t_tmp[2] = T_curPose.getTranslation().getZ();
-	double[][] R_tmp = null;
-	R_tmp = new double[3][3];
+    public final void sendTransform(MatrixTransformation trafoCurrentPose,
+	    final JointPosition curJntPose) {
+	double[] translationTmp = new double[3];
+	translationTmp[0] = trafoCurrentPose.getTranslation().getX();
+	translationTmp[1] = trafoCurrentPose.getTranslation().getY();
+	translationTmp[2] = trafoCurrentPose.getTranslation().getZ();
+	double[][] rotationTmp = null;
+	rotationTmp = new double[3][3];
 	// Checking what data type was requested
 	if (datatype.name()
 		.contentEquals((VisualIFDatatypes.JOINTSPACE.name()))) { // if
@@ -442,47 +448,52 @@ public class LWRVisualizationInterface extends Thread {
 									 // joint
 									 // angles
 
-	    SetDHTransformation(jntPose);
+	    setDhTransformation(jntPose);
 	    if (njoint >= 8) {
 		njoint = 0;
 	    }
-	    t_tmp[0] = T_DH[njoint].getTranslation().getX();
-	    t_tmp[1] = T_DH[njoint].getTranslation().getY();
-	    t_tmp[2] = T_DH[njoint].getTranslation().getZ();
+	    translationTmp[0] = T_DH[njoint].getTranslation().getX();
+	    translationTmp[1] = T_DH[njoint].getTranslation().getY();
+	    translationTmp[2] = T_DH[njoint].getTranslation().getZ();
 	    for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-		    R_tmp[i][j] = T_DH[njoint].getRotationMatrix().get(i, j);
+		    rotationTmp[i][j] = T_DH[njoint].getRotationMatrix().get(i,
+			    j);
 		}
 	    }
 	    njoint++;
-	    TransformNR T_tmp = new TransformNR(t_tmp, R_tmp);
-	    pushTransformMessage("T_" + njoint, T_tmp);
+	    TransformNR trafoTmp = new TransformNR(translationTmp, rotationTmp);
+	    pushTransformMessage("T_" + njoint, trafoTmp);
 
 	} else if (datatype.name().contentEquals(
-		(VisualIFDatatypes.IMAGESPACE.name()))) {// if imagespace data
-							 // was requested the
-							 // current robot
-							 // position in image
-							 // space is calculated
-							 // and send
-	    T_curPose = T_IMGBASE.compose(T_curPose);
+		(VisualIFDatatypes.IMAGESPACE.name()))) {
+	    /*
+	     * if imagespace data was requested the current robot position in
+	     * image space is calculated and send
+	     */
+	    trafoCurrentPose = T_IMGBASE.compose(trafoCurrentPose);
 	    for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-		    R_tmp[i][j] = T_curPose.getRotationMatrix().get(i, j);
+		    rotationTmp[i][j] = trafoCurrentPose.getRotationMatrix()
+			    .get(i, j);
 		}
 	    }
-	    TransformNR T_tmp = new TransformNR(t_tmp, R_tmp);
+	    TransformNR T_tmp = new TransformNR(translationTmp, rotationTmp);
 	    pushTransformMessage("CurCartPose_ROB", T_tmp);
 
-	} else {// if the robot base pose was requested the current position in
-		// robot space is send
+	} else {
+	    /*
+	     * if the robot base pose was requested the current position in
+	     * robot space is send.
+	     */
 	    for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-		    R_tmp[i][j] = T_curPose.getRotationMatrix().get(i, j);
+		    rotationTmp[i][j] = trafoCurrentPose.getRotationMatrix()
+			    .get(i, j);
 		}
 	    }
-	    TransformNR T_tmp = new TransformNR(t_tmp, R_tmp);
-	    pushTransformMessage("CurCartPose_ROB", T_tmp);
+	    TransformNR trafoTmp = new TransformNR(translationTmp, rotationTmp);
+	    pushTransformMessage("CurCartPose_ROB", trafoTmp);
 	}
     }
 
