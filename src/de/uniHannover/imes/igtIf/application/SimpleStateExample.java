@@ -101,7 +101,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
     /** Tool mounted on the robots flange. */
     private PhysicalObject imesTool;
 
-    // TODO javadoc smart servo
+    /** Runtime for controlling servo motion.*/
     private ISmartServoRuntime smartServoRuntime;
     /**
      * Object of the State machine class.
