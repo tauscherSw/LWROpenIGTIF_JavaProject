@@ -286,7 +286,7 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 	// communication with a State Control using OpenIGTLink
 	SlicerControlIf = new LWRStateMachineInterface();
 	SlicerControlIf.setPriority(6);
-	SlicerControlIf.DebugInfos = true;
+	SlicerControlIf.debugInfos = true;
 	// Setting the port for the Control Interface supported ports are 49001
 	// to 49005. Default Value is 49001
 	SlicerControlIf.port = 49001;
@@ -495,17 +495,17 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 		    // Try to read new command String from SlicerControl (Alive)
 		    // Thread
 		    try {
-			SlicerControlIf.ControlSemaphore.tryAcquire(1,
+			SlicerControlIf.controlSemaphore.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
 			imesStatemachine.CmdIGTmessage = SlicerControlIf.CMD_StateM;
 			imesStatemachine.IGTLdatatype = SlicerControlIf.IGTLdatatype;
 			imesStatemachine.UID = SlicerControlIf.UID;
-			if (SlicerControlIf.TransformRecieved
+			if (SlicerControlIf.transformReceived
 				&& !imesStatemachine.TransformRecieved) {
 			    imesStatemachine.TransformRobotImage = SlicerControlIf.TransformImageRobot;
 			    imesStatemachine.TransformRecieved = true;
 			}
-			SlicerControlIf.ControlSemaphore.release();
+			SlicerControlIf.controlSemaphore.release();
 
 		    } catch (InterruptedException e) {
 			ErrorMessage = "Couldn't acquire Semaphore!!";
@@ -559,11 +559,11 @@ public class SimpleStateExample extends RoboticsAPIApplication {
 
 		if (SlicerControlIf.ControlRun) {
 		    try {
-			SlicerControlIf.ControlSemaphore.tryAcquire(1,
+			SlicerControlIf.controlSemaphore.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
 			// try to update the ACK String for the ControlIF Thread
 			SlicerControlIf.ACK_StateM = imesStatemachine.AckIGTmessage;
-			SlicerControlIf.ControlSemaphore.release();
+			SlicerControlIf.controlSemaphore.release();
 		    } catch (InterruptedException e) {
 			ErrorMessage = "Error: Couldn't Acquire ControlIF Semaphore!!";
 		    }

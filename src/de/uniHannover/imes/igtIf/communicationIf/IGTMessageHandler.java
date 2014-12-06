@@ -24,6 +24,13 @@ package de.uniHannover.imes.igtIf.communicationIf;
 
 import java.util.concurrent.Semaphore;
 
+/*
+ * TODO warum hier kein Beobachter pattern (Observer/Observable)? Wenn Nachricht
+ * ankommt dann schreibe es aufs SmartPad, ansonsten schlafe. Dazu braucht man
+ * keinen pollenden thread. Siehe http://openbook.galileodesign.de/javainsel/javainsel_10_002.html#dodtpa1401ab7-6470-4217-bc05-d2973590bbe8
+ * 
+ */
+
 /**
  * This Class is handling the display output on the KUKA SmartPad.
  * 
@@ -62,7 +69,7 @@ public class IGTMessageHandler extends Thread {
      * Flag indicating if the message handler thread is active.
      */
     private boolean threadAlive = true;
-    //TODO geht mit this.isInterrupted() einfacher.
+    // TODO geht mit this.isInterrupted() einfacher.
 
     /**
      * Flag to indicate if this message handler is displaying the errors at the
@@ -106,12 +113,15 @@ public class IGTMessageHandler extends Thread {
 		    this.lastPrintedError = this.errorMessage;
 		}
 	    } catch (InterruptedException e) {
-		//TODO was muss getan werden wenn hier interrupted wird (Semaphore releasen, aufräumen)
+		// TODO was muss getan werden wenn hier interrupted wird
+		// (Semaphore releasen, aufräumen)
 	    }
 	    messageSemaphore.release();
 	    // Set the Module in Sleep mode for stability enhancement
-	  //TODO nutz hier TimeUnit.MILLISECONDS.convert(...,TimeUnit.NANOSECONDS)
-	    long curTime = (long) ((System.nanoTime() - startTimeStamp)); 
+	    // TODO nutz hier
+	    // TimeUnit.MILLISECONDS.convert(...,TimeUnit.NANOSECONDS)
+	    // TODO wozu nano sekunden Genauigkeit
+	    long curTime = (long) ((System.nanoTime() - startTimeStamp));
 	    long curTime_millis = (long) curTime / 1000000;
 	    int curTime_nanos = (int) (curTime % 1000000);
 	    if (curTime_millis < MS_TO_SLEEP) {
@@ -119,13 +129,14 @@ public class IGTMessageHandler extends Thread {
 		// curTime)));
 		try {
 
-		    //TODO Wozu thread schlafen legen, man könnte auch nen TimerTask / 
-		    //Timer nehmen, wenn Zykluszeit konstant wäre
+		    // TODO Wozu thread schlafen legen, man könnte auch nen
+		    // TimerTask /
+		    // Timer nehmen, wenn Zykluszeit konstant wäre
 		    Thread.sleep(MS_TO_SLEEP - 1 - curTime_millis,
 			    999999 - curTime_nanos);
 		} catch (InterruptedException e) {
-		    // TODO Was muss getan werden wenn hier interrupted wird 
-		    //(melde an SmartPadLogger, Melde an andere Teilnehmer)
+		    // TODO Was muss getan werden wenn hier interrupted wird
+		    // (melde an SmartPadLogger, Melde an andere Teilnehmer)
 		}
 	    }
 	}

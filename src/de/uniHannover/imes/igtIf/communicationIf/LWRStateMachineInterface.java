@@ -59,23 +59,38 @@ import openIGTLink.swig.igtl_header;
  * @see SimpleStateExample
  */
 public class LWRStateMachineInterface extends Thread {
-
+    // TODO auch diesen thread könnte man als TimerTask ausführen
+    // TODO schreiben von Daten in run() über synchronized setter getter.
+    // TODO Die daten die hier ausgetauscht werden könnten in einem Object
+    // gekapselt werden.
+    // TODO Die Kommunikation mit SimpleStateExample sollte über ein interface
+    // laufen.
+    // TODO Abfolge Definition private and public members!
     /**
      * Load SWIG igtlutil library (Default Library folder is
      * "..\OpenIGTLinkLib\swig\"
      */
     static {
-	System.load("C:/KRC/ApplicationServer/Git/IGTBasicStateMachine/OpenIGTLinkLib/SWIGigtlutil.dll");
+	System.load("C:/KRC/ApplicationServer/Git/IGTBasicStateMachine"
+		+ "/OpenIGTLinkLib/SWIGigtlutil.dll"); // TODO Pfad sollte nicht
+						       // hardcodiert sein. Wird
+						       // auf die Library noch
+						       // von woaders
+						       // zugegriffen? Falls sie
+						       // geshared ist sollte
+						       // man das an anderer
+						       // Stelle laden.
     }
-    /**
-     * String containing the data type of the received OpenIGTLink message
-     */
-    public String IGTLdatatype = "STRING";
 
     /**
-     * Time step for statistic timing of the State Machine Interface thread
+     * String containing the data type of the received OpenIGTLink message.
      */
-    private OneTimeStep aStep;
+    public String IGTLdatatype = "STRING"; // TODO warum ist das initial so?
+
+    /**
+     * Time step for statistic timing of the State Machine Interface thread.
+     */
+    private OneTimeStep aStep; // TODO welcher Hintergrund?
 
     /**
      * Statistic Timer for the State Machine Interface Thread.
@@ -83,131 +98,138 @@ public class LWRStateMachineInterface extends Thread {
     public StatisticTimer SMtiming = new StatisticTimer();
 
     /**
-     * OpenIGTLink Client socket - socket of the connected Client
+     * OpenIGTLink Client socket - socket of the connected Client.
      */
     private java.net.Socket openIGTClient = null;
 
     /**
-     * Server socket for the communication with state control interface
+     * Server socket for the communication with state control interface.
      */
     private ServerSocket openIGTServer;
 
     /**
-     * output stream of the socket communication
+     * output stream of the socket communication.
      */
     private OutputStream outstr;
     /**
-     * input stream of the socket communication
+     * input stream of the socket communication.
      */
     private InputStream instr;
 
-    /**
-     * error flag to indicate if an error occurred
-     */
     @SuppressWarnings("unused")
+    // TODO wozu?
+    /**
+     * error flag to indicate if an error occurred.
+     */
     private boolean ErrorFlag = false;
 
     /**
      * Enum for the current client status {CONNECTED, DISCONNECTED }possible
-     * client states
+     * client states.
      */
     private static enum ClientStatus {
+
 	CONNECTED, DISCONNECTED
     }; // possible client states
 
-    /**
-     * current status of the client status
-     */
     @SuppressWarnings("unused")
+    // TODO wozu?
+    /**
+     * current status of the client status.
+     */
     private ClientStatus currentStatus = ClientStatus.DISCONNECTED; // start as
 								    // stopped
 								    // status
+    // TODO sollte man in initialize verschieben oder parametrize
+    // TODO currentStatus dann über getStatus teilen
 
     /**
-     * Current unified Identification number
+     * Current unified Identification number.
      */
     public long UID = 0;
     /**
-     * Current unified Identification number (working copy)
+     * Current unified Identification number (working copy).
      */
     private long UID_local = 0;
 
     /**
-     * Old current unified identification number
+     * Old current unified identification number.
      */
     private long UID_old = 0;
     /**
-     * Number of detected repetitions of the unified identification number
+     * Number of detected repetitions of the unified identification number.
      */
     public int UIDrepeatNum = 0;
 
     /**
-     * Number of maximun repetitions in a row
+     * Number of maximun repetitions in a row.
      */
     public int UIDrepeat_max = 0;
 
     /**
      * Command OpenIGTLink Message used for data transfer to the state machine
-     * default message is "IDLE;"
+     * default message is "IDLE;".
      */
     public String CMD_StateM = "IDLE;";
 
     /**
      * Acknowledgement OpenIGTLink Message used for data transfer to the state
-     * machine default message is "IDLE;"
+     * machine default message is "IDLE;".
      */
     public String ACK_StateM = "IDLE;";
 
     /**
-     * Acknowledgement OpenIGTLink Message working copy
+     * Acknowledgement OpenIGTLink Message working copy.
      */
     private String ACKmessage;
 
     /**
-     * Command OpenIGTLink Message working copy
+     * Command OpenIGTLink Message working copy.
      */
     private String CMDmessage = "IDLE;";
 
     /**
      * Error Message Handler which takes care of the time consuming Error output
-     * in a separate thread
+     * in a separate thread.
      */
-    private IGTMessageHandler ErrorHandler;
+    private IGTMessageHandler errorHandler;
 
     /**
      * Semaphore for save reading and writing of the the variables e.g.
      * CMD_StateM.
      */
-    public Semaphore ControlSemaphore = new Semaphore(1, true);
+    public Semaphore controlSemaphore = new Semaphore(1, true);
 
     /**
-     * cycle time of the state control interface thread. Default value is 20 ms
+     * cycle time of the state control interface thread. Default value is 20 ms.
      */
     public int millisectoSleep = 50;
 
     /**
      * port number for the communication with state control. Supported ports:
-     * 49001 - 49005
+     * 49001 - 49005.
      */
     public int port = 49001;
+    // Sollte von außen parametrierbar sein und sich dann erst connecten, oder
+    // mit default params connecten.
 
     /**
      * Flag to indicate if the Debug Information should be printed or not.
      */
-    public boolean DebugInfos = false;
+    public boolean debugInfos = false;
     /**
      * Flag to indicate if the transform from image space to robot base
-     * coordinate is received or not
+     * coordinate is received or not.
      */
-    public boolean TransformRecieved = false;
+    public boolean transformReceived = false;
 
     /**
-     * Flag to indicate if the communication interface is running or not
+     * Flag to indicate if the communication interface is running or not.
      */
     public boolean ControlRun = false;
 
     /**
-     * Number of missed UID numbers in total
+     * Number of missed UID numbers in total.
      */
     public long UIDmiss = 0;
 
@@ -216,26 +238,27 @@ public class LWRStateMachineInterface extends Thread {
      */
     private int ConnectionError = 0;
     /**
-     * Number loops getting the same UID number (in a row)
+     * Number loops getting the same UID number (in a row).
      */
     private int UIDrepeat = 0;
 
     /**
      * delay loops between receiving and sending a packet with the same UID
-     * (should be 0)
+     * (should be 0).
      */
     private long UIDdelay = 0;
 
     /**
-     * Transformation matrix from image space to robot base coordinate system.
+     * Transformation matrix from image space to robot base coordinate system..
      */
     public MatrixTransformation TransformImageRobot;
 
     /**
-     * Error code
+     * Error code.
      */
     public int ErrorCode = 0;
 
+    //TODO sollte nicht in run() aufgerufen werden, da es eine vorbereitende Maßnahme ist!
     /**
      * Starts the listening server on the defined port.
      * 
@@ -244,7 +267,7 @@ public class LWRStateMachineInterface extends Thread {
      * @throws IOException
      */
     private void ConnectServer(int port) throws IOException {
-	stopServer();
+	stopServer(); //TODO einbauen anstatt einfach zu stoppen (z.B. is port open())
 	try {
 	    ServerSocketFactory serverSocketFactory = ServerSocketFactory
 		    .getDefault();
@@ -260,7 +283,7 @@ public class LWRStateMachineInterface extends Thread {
     }
 
     /**
-     * Stops the listening OpenIGTLink server
+     * Closes the IGT server and client connection.
      * 
      */
     private void stopServer() {
@@ -268,27 +291,30 @@ public class LWRStateMachineInterface extends Thread {
 	if (openIGTServer != null) {
 	    try {
 		openIGTServer.close();
-		openIGTServer = null;
+		openIGTServer = null; //TODO besser reset function
 		openIGTClient.close();
-		openIGTClient = null;
-		System.out.println("State machine interface server stopped");
+		openIGTClient = null; //TODO besser reset function
+		System.out.println("State machine interface server stopped"); 
 	    } catch (IOException e) {
+		//TODO was soll mit der exception gemacht werden?
 		e.printStackTrace();
 	    }
 	}
     }
 
     /**
-     * Constructor
+     * Constructor, which initializes this thread as a daemon.
      */
     public LWRStateMachineInterface() {
 	setDaemon(true);
     };
 
     /**
-     * Finalize method of this class
+     * Closes the connection to the server and the client
      */
     public void finalize() {
+	//TODO doppelter code. Wenn so belassen rufe stop server auf!.
+	//TODO Achtung kann hier nicht openIGTClient schon null sein?
 	if (openIGTServer != null) {
 	    try {
 		openIGTServer.close();
@@ -310,12 +336,13 @@ public class LWRStateMachineInterface extends Thread {
      * Acknowledgment String send to the state control (e.g. 3d Slicer).
      **/
     public void run() {
+	//TODO viel zu umfangreich. Splitte in mehrere funktionen sonst unübersichtlich
 	// Init the ErrorHandler
-	ErrorHandler = new IGTMessageHandler();
-	ErrorHandler.setPriority(2);
-	ErrorHandler.sendername = "State Control Interface:";
-	ErrorHandler.debugInfos = DebugInfos;
-	ErrorHandler.start();
+	errorHandler = new IGTMessageHandler();
+	errorHandler.setPriority(2);
+	errorHandler.sendername = "State Control Interface:";
+	errorHandler.debugInfos = debugInfos;
+	errorHandler.start();
 
 	// Initializing the Communication with the Visualization Software
 	try {
@@ -336,12 +363,12 @@ public class LWRStateMachineInterface extends Thread {
 	    // communication
 	    try {
 
-		ControlSemaphore.acquire();
+		controlSemaphore.acquire();
 		ACKmessage = ACK_StateM;
-		ControlSemaphore.release();
+		controlSemaphore.release();
 	    } catch (InterruptedException e) {
 		ErrorFlag = true;
-		ErrorHandler.errorMessage = "StateMachineIF: Unable to Acquire Control Semaphore";
+		errorHandler.errorMessage = "StateMachineIF: Unable to Acquire Control Semaphore";
 	    }
 	    try {
 		if (!openIGTClient.isClosed()) {
@@ -349,10 +376,10 @@ public class LWRStateMachineInterface extends Thread {
 		}
 	    } catch (Exception e1) {
 		ErrorFlag = true;
-		ErrorHandler.errorMessage = "StateMachineIF: Couldn't Send ACk data";
+		errorHandler.errorMessage = "StateMachineIF: Couldn't Send ACk data";
 	    }
 	} catch (Exception e) {
-	    ErrorHandler.errorMessage = "Couldn't connect to state machine interface server!";
+	    errorHandler.errorMessage = "Couldn't connect to state machine interface server!";
 	}
 
 	// Entering Loop for Communication - the loop is stopped if ControlRun
@@ -363,25 +390,30 @@ public class LWRStateMachineInterface extends Thread {
 
 	    aStep = SMtiming.newTimeStep();
 
+	    // TODO check auslagern in methode da mehrfach benutzt!
 	    if (!openIGTClient.isClosed() && ConnectionError < 100) {
 		ErrorFlag = false;
 		try {
+		    // TODO multi catch verwenden dann Struktur besser
+		    // TODO Exception Handling auf höherer Ebene, beeinflusst
+		    // ein Absturz hier auch noch die anderen threads?
+
 		    // Receive Message from State Control
 		    receiveMessage();
 
 		    // Write data into the public String CMD_StateM
 		    try {
-			ControlSemaphore.acquire();
+			controlSemaphore.acquire();
 			CMD_StateM = CMDmessage;
 			UID = UID_local;
-			ControlSemaphore.release();
+			controlSemaphore.release();
 		    } catch (InterruptedException e) {
 			ErrorFlag = true;
 			try {
-			    ErrorHandler.messageSemaphore.tryAcquire(2,
+			    errorHandler.messageSemaphore.tryAcquire(2,
 				    TimeUnit.MILLISECONDS);
-			    ErrorHandler.errorMessage = "StateMachineIF:Unable to Acquire Control Semaphore";
-			    ErrorHandler.messageSemaphore.release();
+			    errorHandler.errorMessage = "StateMachineIF:Unable to Acquire Control Semaphore";
+			    errorHandler.messageSemaphore.release();
 			} catch (InterruptedException e1) {
 			    // TODO Automatisch generierter Erfassungsblock
 			    e1.printStackTrace();
@@ -390,13 +422,12 @@ public class LWRStateMachineInterface extends Thread {
 		    }
 		    ConnectionError = 0;
 		} catch (IOException e1) {
-		    // TODO Automatisch generierter Erfassungsblock
 		    ErrorFlag = true;
 		    try {
-			ErrorHandler.messageSemaphore.tryAcquire(2,
+			errorHandler.messageSemaphore.tryAcquire(2,
 				TimeUnit.MILLISECONDS);
-			ErrorHandler.errorMessage = "StateMachineIF: Receive data timeout!!";
-			ErrorHandler.messageSemaphore.release();
+			errorHandler.errorMessage = "StateMachineIF: Receive data timeout!!";
+			errorHandler.messageSemaphore.release();
 		    } catch (InterruptedException e) {
 
 		    }
@@ -413,17 +444,17 @@ public class LWRStateMachineInterface extends Thread {
 	    } catch (InterruptedException e) {
 		// TODO
 		ErrorFlag = true;
-		ErrorHandler.errorMessage = "StateMachineIF: Failed thread sleep!";
+		errorHandler.errorMessage = "StateMachineIF: Failed thread sleep!";
 	    }
 
 	    try {
-		ControlSemaphore.acquire();
+		controlSemaphore.acquire();
 		ACKmessage = ACK_StateM;
-		ControlSemaphore.release();
+		controlSemaphore.release();
 	    } catch (InterruptedException e) {
 		// TODO
 		ErrorFlag = true;
-		ErrorHandler.errorMessage = "StateMachineIF: Unable to Acquire Control Semaphore";
+		errorHandler.errorMessage = "StateMachineIF: Unable to Acquire Control Semaphore";
 	    }
 	    if (!openIGTClient.isClosed() && ConnectionError < 100) {
 		try {
@@ -432,7 +463,7 @@ public class LWRStateMachineInterface extends Thread {
 		} catch (Exception e1) {
 		    ConnectionError++;
 		    ErrorFlag = true;
-		    ErrorHandler.errorMessage = "StateMachineIF: Couldn't Send ACk data";
+		    errorHandler.errorMessage = "StateMachineIF: Couldn't Send ACk data";
 		}
 	    } else {
 		RestartIGTServer();
@@ -450,7 +481,7 @@ public class LWRStateMachineInterface extends Thread {
 			    999999 - curTime_nanos);
 		} catch (InterruptedException e) {
 
-		    ErrorHandler.errorMessage = "Thread Sleep failed!";
+		    errorHandler.errorMessage = "Thread Sleep failed!";
 		}
 	    }
 
@@ -458,14 +489,14 @@ public class LWRStateMachineInterface extends Thread {
 
 	    if (SMtiming.getMaxTimeMillis() >= 10 * millisectoSleep
 		    || SMtiming.getMeanTimeMillis() >= 2 * millisectoSleep) {
-		ErrorHandler.errorMessage = "StateMachineIF: Attention! Bad communication quality robot changes state to Error!";
+		errorHandler.errorMessage = "StateMachineIF: Attention! Bad communication quality robot changes state to Error!";
 		ErrorCode = 18;
 	    } else if ((SMtiming.getMaxTimeMillis() > 3.0 * millisectoSleep && SMtiming
 		    .getMaxTimeMillis() < 10.0 * millisectoSleep)
 		    || (SMtiming.getMeanTimeMillis() > millisectoSleep + 5 && SMtiming
 			    .getMeanTimeMillis() < 2 * millisectoSleep)) {
 		ErrorFlag = true;
-		ErrorHandler.errorMessage = "StateMachineIF: Warning bad communication quality!";
+		errorHandler.errorMessage = "StateMachineIF: Warning bad communication quality!";
 	    }
 	}// end while
     }
@@ -480,9 +511,9 @@ public class LWRStateMachineInterface extends Thread {
 
 	ErrorFlag = true;
 	try {
-	    ErrorHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
-	    ErrorHandler.errorMessage = "StateMachineIF: Lost Connection to Client. Try to reconnect...";
-	    ErrorHandler.messageSemaphore.release();
+	    errorHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
+	    errorHandler.errorMessage = "StateMachineIF: Lost Connection to Client. Try to reconnect...";
+	    errorHandler.messageSemaphore.release();
 	} catch (InterruptedException e) {
 
 	}
@@ -497,14 +528,14 @@ public class LWRStateMachineInterface extends Thread {
 	    this.outstr = openIGTClient.getOutputStream();
 	    this.instr = openIGTClient.getInputStream();
 	    this.currentStatus = ClientStatus.CONNECTED;
-	    ErrorHandler.errorMessage = "State machine interface client connected ( "
+	    errorHandler.errorMessage = "State machine interface client connected ( "
 		    + openIGTClient.getInetAddress()
 		    + ", "
 		    + openIGTClient.getPort() + ")";
 	    ConnectionError = 0;
 	    ErrorCode = 0;
 	} catch (Exception e) {
-	    ErrorHandler.errorMessage = "Couldn't connect to state machine interface server!";
+	    errorHandler.errorMessage = "Couldn't connect to state machine interface server!";
 	    ErrorCode = 18;
 	}
 
@@ -592,7 +623,7 @@ public class LWRStateMachineInterface extends Thread {
 		} else if (messageType.equals("TRANSFORM")) {
 		    ReceivedNewData = true;
 		} else {
-		    ErrorHandler.errorMessage = "State machine interface: Unexpected command name structure - expected is CMD_UID!!";
+		    errorHandler.errorMessage = "State machine interface: Unexpected command name structure - expected is CMD_UID!!";
 		    ErrorFlag = true;
 
 		}
@@ -613,14 +644,14 @@ public class LWRStateMachineInterface extends Thread {
 		    UIDrepeat_max = UIDrepeat;
 		}
 		if (UIDrepeat >= 4) {
-		    ErrorHandler.errorMessage = "State machine interface: UID has not changed for the "
+		    errorHandler.errorMessage = "State machine interface: UID has not changed for the "
 			    + UIDrepeat + ". time!! Check state control!";
 		    ErrorCode = 18;
 		    ErrorFlag = true;
 		}
 	    } else if (UIDdelay > 1) {
 		UIDmiss = UIDmiss + UIDdelay - 1;
-		ErrorHandler.errorMessage = "State machine interface: missed UID!!(miss count: "
+		errorHandler.errorMessage = "State machine interface: missed UID!!(miss count: "
 			+ UIDmiss + ")";
 		ErrorFlag = true;
 
@@ -639,7 +670,7 @@ public class LWRStateMachineInterface extends Thread {
 		CMDmessage = CMDString;
 	    } catch (Exception e) {
 		// TODO Automatisch generierter Erfassungsblock
-		ErrorHandler.errorMessage = " Couldn't generate new OpenIGTLink String Message!!";
+		errorHandler.errorMessage = " Couldn't generate new OpenIGTLink String Message!!";
 		ErrorFlag = true;
 	    }
 
@@ -660,17 +691,17 @@ public class LWRStateMachineInterface extends Thread {
 			R_tmp[0], R_tmp[1], R_tmp[2], R_tmp[3], R_tmp[4],
 			R_tmp[5], R_tmp[6], R_tmp[7], R_tmp[8]));
 		IGTLdatatype = "TRANSFORM";
-		ErrorHandler.errorMessage = "Transform to Image space succesfully received:"
+		errorHandler.errorMessage = "Transform to Image space succesfully received:"
 			+ TransformImageRobot;
-		TransformRecieved = true;
+		transformReceived = true;
 
 	    } catch (Exception e) {
-		ErrorHandler.errorMessage = " Couldn't generate new OpenIGTLink Transform Message!!";
+		errorHandler.errorMessage = " Couldn't generate new OpenIGTLink Transform Message!!";
 		ErrorFlag = true;
 	    }
 
 	} else {
-	    ErrorHandler.errorMessage = "State machine interface: Unexpected Data type received!!";
+	    errorHandler.errorMessage = "State machine interface: Unexpected Data type received!!";
 	    ErrorFlag = true;
 	}
 
