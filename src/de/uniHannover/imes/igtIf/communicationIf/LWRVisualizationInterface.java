@@ -371,8 +371,8 @@ public class LWRVisualizationInterface extends Thread {
 
 	ErrorHandler = new IGTMessageHandler();
 	ErrorHandler.setPriority(2);
-	ErrorHandler.Sendername = "Visualization Interface:";
-	ErrorHandler.DebugInfos = DebugInfos;
+	ErrorHandler.sendername = "Visualization Interface:";
+	ErrorHandler.debugInfos = DebugInfos;
 	ErrorHandler.start();
 
 	// Initializing the Communication with the Visualization Software
@@ -393,7 +393,7 @@ public class LWRVisualizationInterface extends Thread {
 	} catch (Exception e) {
 	    // TODO Auto-generated catch block
 	    ErrorFlag = true;
-	    ErrorHandler.ErrorMessage = "Couldn't connect to Visualization interface server!";
+	    ErrorHandler.errorMessage = "Couldn't connect to Visualization interface server!";
 	}
 
 	while (VisualRun) {
@@ -414,7 +414,7 @@ public class LWRVisualizationInterface extends Thread {
 
 		} catch (InterruptedException e) {
 		    ErrorFlag = true;
-		    ErrorHandler.ErrorMessage = "Unable to Acquire Visual Semaphore";
+		    ErrorHandler.errorMessage = "Unable to Acquire Visual Semaphore";
 		}
 
 		if (!openIGTClient.isClosed() && ConnectionError < 100) {
@@ -426,7 +426,7 @@ public class LWRVisualizationInterface extends Thread {
 	    }
 	    if (PoseUIDLocal == PoseUIDOldLocal) {
 		ErrorFlag = true;
-		ErrorHandler.ErrorMessage = "Visual IF: Getting Old Data from State Machine Thread";
+		ErrorHandler.errorMessage = "Visual IF: Getting Old Data from State Machine Thread";
 		PoseUIDOldCount++;
 	    }
 	    PoseUIDOldLocal = PoseUIDLocal;
@@ -441,7 +441,7 @@ public class LWRVisualizationInterface extends Thread {
 			    999999 - curTime_nanos);
 		} catch (InterruptedException e) {
 		    ErrorFlag = true;
-		    ErrorHandler.ErrorMessage = "Visual Thread Sleep failed!!";
+		    ErrorHandler.errorMessage = "Visual Thread Sleep failed!!";
 		}
 	    }
 	    aStep.end();
@@ -449,7 +449,7 @@ public class LWRVisualizationInterface extends Thread {
 		    || Visualtiming.getMeanTimeMillis() > (double) 2
 			    * millisectoSleep) {
 		ErrorFlag = true;
-		ErrorHandler.ErrorMessage = "VisualIF: Warning bad communication quality!";
+		ErrorHandler.errorMessage = "VisualIF: Warning bad communication quality!";
 
 	    }
 	}
@@ -542,9 +542,9 @@ public class LWRVisualizationInterface extends Thread {
 
 	ErrorFlag = true;
 	try {
-	    ErrorHandler.MessageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
-	    ErrorHandler.ErrorMessage = "StateMachineIF: Lost Connection to Client. Try to reconnect...";
-	    ErrorHandler.MessageSemaphore.release();
+	    ErrorHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
+	    ErrorHandler.errorMessage = "StateMachineIF: Lost Connection to Client. Try to reconnect...";
+	    ErrorHandler.messageSemaphore.release();
 	} catch (InterruptedException e) {
 
 	}
@@ -558,13 +558,13 @@ public class LWRVisualizationInterface extends Thread {
 	    openIGTClient.setSoTimeout(1 * millisectoSleep);
 	    this.outstr = openIGTClient.getOutputStream();
 	    this.currentStatus = ClientStatus.CONNECTED;
-	    ErrorHandler.ErrorMessage = "Visual interface client connected ( "
+	    ErrorHandler.errorMessage = "Visual interface client connected ( "
 		    + openIGTClient.getInetAddress() + ", "
 		    + openIGTClient.getPort() + ")";
 	    ConnectionError = 0;
 	    ErrorCode = 0;
 	} catch (Exception e) {
-	    ErrorHandler.ErrorMessage = "Couldn't connect to visualisation interface server!";
+	    ErrorHandler.errorMessage = "Couldn't connect to visualisation interface server!";
 	    ErrorCode = 18;
 	}
 

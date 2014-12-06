@@ -35,42 +35,51 @@ import java.util.concurrent.Semaphore;
 public class IGTMessageHandler extends Thread {
 
     /**
-     * Error Message String for error in the State machine interface
+     * Error Message String for error in the State machine interface.
      */
-    public String ErrorMessage = "";
+    public String errorMessage = "";
     /**
-     * Name of the thread using this Message handler
+     * Name of the thread using this Message handler.
      */
-    public String Sendername = "";
+    public String sendername = "";
     /**
      * in this String the last printed error message is saved to check if it is
-     * error message has already been printed
+     * error message has already been printed.
      */
-    private String LastPrintedError = "";
+    private String lastPrintedError = "";
 
     /**
-     * Semaphore for save reading and writing the variables
+     * Semaphore for save reading and writing the variables.
      */
-    public Semaphore MessageSemaphore = new Semaphore(1, true);
+    public Semaphore messageSemaphore = new Semaphore(1, true);
     /**
-     * cycle time of the state control interface thread. Default value is 20 ms
+     * cycle time of the state control interface thread in milliseconds. Default
+     * value is 20 ms.
      */
-    public int millisectoSleep = 1000;
+    private static final int MS_TO_SLEEP = 1000; // TODO Warum hier nicht
+						 // default?
     /**
-     * Flag indicating if the message handler is active
+     * Flag indicating if the message handler thread is active.
      */
-    public boolean MessageHandlerRun = true;
+    private boolean threadAlive = true;
+    //TODO geht mit this.isInterrupted() einfacher.
 
     /**
      * Flag to indicate if this message handler is displaying the errors at the
-     * smartPad or not
+     * smartPad or not.
      */
-    public boolean DebugInfos = false;
+    public boolean debugInfos = false;
 
+    /**
+     * Constructor, which initializes this thread as a daemon.
+     */
     public IGTMessageHandler() {
 	setDaemon(true);
     };
 
+    /**
+     * Finalizes this thread.
+     */
     public void finalize() {
 
     }
@@ -81,38 +90,42 @@ public class IGTMessageHandler extends Thread {
      * cycle time of 20 ms the new Command String is received and the
      * Acknowledgment String send.
      **/
-    public void run() {
+    public final void run() {
 	// TODO Automatisch generierter Methodenstub
 
-	while (MessageHandlerRun) {
+	while (threadAlive) {
 
 	    long startTimeStamp = (long) (System.nanoTime());
 	    try {
-		MessageSemaphore.acquire();
-		if (!this.ErrorMessage.equals(this.LastPrintedError)) {
-		    if (DebugInfos) {
-			System.out.println("From: " + Sendername + ": "
-				+ this.ErrorMessage);
+		messageSemaphore.acquire();
+		if (!this.errorMessage.equals(this.lastPrintedError)) {
+		    if (debugInfos) {
+			System.out.println("From: " + sendername + ": "
+				+ this.errorMessage);
 		    }
-		    this.LastPrintedError = this.ErrorMessage;
+		    this.lastPrintedError = this.errorMessage;
 		}
 	    } catch (InterruptedException e) {
-
+		//TODO was muss getan werden wenn hier interrupted wird (Semaphore releasen, aufräumen)
 	    }
-	    MessageSemaphore.release();
+	    messageSemaphore.release();
 	    // Set the Module in Sleep mode for stability enhancement
-	    long curTime = (long) ((System.nanoTime() - startTimeStamp));
+	  //TODO nutz hier TimeUnit.MILLISECONDS.convert(...,TimeUnit.NANOSECONDS)
+	    long curTime = (long) ((System.nanoTime() - startTimeStamp)); 
 	    long curTime_millis = (long) curTime / 1000000;
 	    int curTime_nanos = (int) (curTime % 1000000);
-	    if (curTime_millis < millisectoSleep) {
+	    if (curTime_millis < MS_TO_SLEEP) {
 		// ThreadUtil.milliSleep((long) Math.floor((millisectoSleep-1 -
 		// curTime)));
 		try {
-		    Thread.sleep(millisectoSleep - 1 - curTime_millis,
+
+		    //TODO Wozu thread schlafen legen, man könnte auch nen TimerTask / 
+		    //Timer nehmen, wenn Zykluszeit konstant wäre
+		    Thread.sleep(MS_TO_SLEEP - 1 - curTime_millis,
 			    999999 - curTime_nanos);
 		} catch (InterruptedException e) {
-		    // TODO Automatisch generierter Erfassungsblock
-		    // e.printStackTrace();
+		    // TODO Was muss getan werden wenn hier interrupted wird 
+		    //(melde an SmartPadLogger, Melde an andere Teilnehmer)
 		}
 	    }
 	}

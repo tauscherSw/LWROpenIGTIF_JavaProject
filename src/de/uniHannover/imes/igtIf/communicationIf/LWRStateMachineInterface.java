@@ -313,8 +313,8 @@ public class LWRStateMachineInterface extends Thread {
 	// Init the ErrorHandler
 	ErrorHandler = new IGTMessageHandler();
 	ErrorHandler.setPriority(2);
-	ErrorHandler.Sendername = "State Control Interface:";
-	ErrorHandler.DebugInfos = DebugInfos;
+	ErrorHandler.sendername = "State Control Interface:";
+	ErrorHandler.debugInfos = DebugInfos;
 	ErrorHandler.start();
 
 	// Initializing the Communication with the Visualization Software
@@ -341,7 +341,7 @@ public class LWRStateMachineInterface extends Thread {
 		ControlSemaphore.release();
 	    } catch (InterruptedException e) {
 		ErrorFlag = true;
-		ErrorHandler.ErrorMessage = "StateMachineIF: Unable to Acquire Control Semaphore";
+		ErrorHandler.errorMessage = "StateMachineIF: Unable to Acquire Control Semaphore";
 	    }
 	    try {
 		if (!openIGTClient.isClosed()) {
@@ -349,10 +349,10 @@ public class LWRStateMachineInterface extends Thread {
 		}
 	    } catch (Exception e1) {
 		ErrorFlag = true;
-		ErrorHandler.ErrorMessage = "StateMachineIF: Couldn't Send ACk data";
+		ErrorHandler.errorMessage = "StateMachineIF: Couldn't Send ACk data";
 	    }
 	} catch (Exception e) {
-	    ErrorHandler.ErrorMessage = "Couldn't connect to state machine interface server!";
+	    ErrorHandler.errorMessage = "Couldn't connect to state machine interface server!";
 	}
 
 	// Entering Loop for Communication - the loop is stopped if ControlRun
@@ -378,10 +378,10 @@ public class LWRStateMachineInterface extends Thread {
 		    } catch (InterruptedException e) {
 			ErrorFlag = true;
 			try {
-			    ErrorHandler.MessageSemaphore.tryAcquire(2,
+			    ErrorHandler.messageSemaphore.tryAcquire(2,
 				    TimeUnit.MILLISECONDS);
-			    ErrorHandler.ErrorMessage = "StateMachineIF:Unable to Acquire Control Semaphore";
-			    ErrorHandler.MessageSemaphore.release();
+			    ErrorHandler.errorMessage = "StateMachineIF:Unable to Acquire Control Semaphore";
+			    ErrorHandler.messageSemaphore.release();
 			} catch (InterruptedException e1) {
 			    // TODO Automatisch generierter Erfassungsblock
 			    e1.printStackTrace();
@@ -393,10 +393,10 @@ public class LWRStateMachineInterface extends Thread {
 		    // TODO Automatisch generierter Erfassungsblock
 		    ErrorFlag = true;
 		    try {
-			ErrorHandler.MessageSemaphore.tryAcquire(2,
+			ErrorHandler.messageSemaphore.tryAcquire(2,
 				TimeUnit.MILLISECONDS);
-			ErrorHandler.ErrorMessage = "StateMachineIF: Receive data timeout!!";
-			ErrorHandler.MessageSemaphore.release();
+			ErrorHandler.errorMessage = "StateMachineIF: Receive data timeout!!";
+			ErrorHandler.messageSemaphore.release();
 		    } catch (InterruptedException e) {
 
 		    }
@@ -413,7 +413,7 @@ public class LWRStateMachineInterface extends Thread {
 	    } catch (InterruptedException e) {
 		// TODO
 		ErrorFlag = true;
-		ErrorHandler.ErrorMessage = "StateMachineIF: Failed thread sleep!";
+		ErrorHandler.errorMessage = "StateMachineIF: Failed thread sleep!";
 	    }
 
 	    try {
@@ -423,7 +423,7 @@ public class LWRStateMachineInterface extends Thread {
 	    } catch (InterruptedException e) {
 		// TODO
 		ErrorFlag = true;
-		ErrorHandler.ErrorMessage = "StateMachineIF: Unable to Acquire Control Semaphore";
+		ErrorHandler.errorMessage = "StateMachineIF: Unable to Acquire Control Semaphore";
 	    }
 	    if (!openIGTClient.isClosed() && ConnectionError < 100) {
 		try {
@@ -432,7 +432,7 @@ public class LWRStateMachineInterface extends Thread {
 		} catch (Exception e1) {
 		    ConnectionError++;
 		    ErrorFlag = true;
-		    ErrorHandler.ErrorMessage = "StateMachineIF: Couldn't Send ACk data";
+		    ErrorHandler.errorMessage = "StateMachineIF: Couldn't Send ACk data";
 		}
 	    } else {
 		RestartIGTServer();
@@ -450,7 +450,7 @@ public class LWRStateMachineInterface extends Thread {
 			    999999 - curTime_nanos);
 		} catch (InterruptedException e) {
 
-		    ErrorHandler.ErrorMessage = "Thread Sleep failed!";
+		    ErrorHandler.errorMessage = "Thread Sleep failed!";
 		}
 	    }
 
@@ -458,14 +458,14 @@ public class LWRStateMachineInterface extends Thread {
 
 	    if (SMtiming.getMaxTimeMillis() >= 10 * millisectoSleep
 		    || SMtiming.getMeanTimeMillis() >= 2 * millisectoSleep) {
-		ErrorHandler.ErrorMessage = "StateMachineIF: Attention! Bad communication quality robot changes state to Error!";
+		ErrorHandler.errorMessage = "StateMachineIF: Attention! Bad communication quality robot changes state to Error!";
 		ErrorCode = 18;
 	    } else if ((SMtiming.getMaxTimeMillis() > 3.0 * millisectoSleep && SMtiming
 		    .getMaxTimeMillis() < 10.0 * millisectoSleep)
 		    || (SMtiming.getMeanTimeMillis() > millisectoSleep + 5 && SMtiming
 			    .getMeanTimeMillis() < 2 * millisectoSleep)) {
 		ErrorFlag = true;
-		ErrorHandler.ErrorMessage = "StateMachineIF: Warning bad communication quality!";
+		ErrorHandler.errorMessage = "StateMachineIF: Warning bad communication quality!";
 	    }
 	}// end while
     }
@@ -480,9 +480,9 @@ public class LWRStateMachineInterface extends Thread {
 
 	ErrorFlag = true;
 	try {
-	    ErrorHandler.MessageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
-	    ErrorHandler.ErrorMessage = "StateMachineIF: Lost Connection to Client. Try to reconnect...";
-	    ErrorHandler.MessageSemaphore.release();
+	    ErrorHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
+	    ErrorHandler.errorMessage = "StateMachineIF: Lost Connection to Client. Try to reconnect...";
+	    ErrorHandler.messageSemaphore.release();
 	} catch (InterruptedException e) {
 
 	}
@@ -497,14 +497,14 @@ public class LWRStateMachineInterface extends Thread {
 	    this.outstr = openIGTClient.getOutputStream();
 	    this.instr = openIGTClient.getInputStream();
 	    this.currentStatus = ClientStatus.CONNECTED;
-	    ErrorHandler.ErrorMessage = "State machine interface client connected ( "
+	    ErrorHandler.errorMessage = "State machine interface client connected ( "
 		    + openIGTClient.getInetAddress()
 		    + ", "
 		    + openIGTClient.getPort() + ")";
 	    ConnectionError = 0;
 	    ErrorCode = 0;
 	} catch (Exception e) {
-	    ErrorHandler.ErrorMessage = "Couldn't connect to state machine interface server!";
+	    ErrorHandler.errorMessage = "Couldn't connect to state machine interface server!";
 	    ErrorCode = 18;
 	}
 
@@ -592,7 +592,7 @@ public class LWRStateMachineInterface extends Thread {
 		} else if (messageType.equals("TRANSFORM")) {
 		    ReceivedNewData = true;
 		} else {
-		    ErrorHandler.ErrorMessage = "State machine interface: Unexpected command name structure - expected is CMD_UID!!";
+		    ErrorHandler.errorMessage = "State machine interface: Unexpected command name structure - expected is CMD_UID!!";
 		    ErrorFlag = true;
 
 		}
@@ -613,14 +613,14 @@ public class LWRStateMachineInterface extends Thread {
 		    UIDrepeat_max = UIDrepeat;
 		}
 		if (UIDrepeat >= 4) {
-		    ErrorHandler.ErrorMessage = "State machine interface: UID has not changed for the "
+		    ErrorHandler.errorMessage = "State machine interface: UID has not changed for the "
 			    + UIDrepeat + ". time!! Check state control!";
 		    ErrorCode = 18;
 		    ErrorFlag = true;
 		}
 	    } else if (UIDdelay > 1) {
 		UIDmiss = UIDmiss + UIDdelay - 1;
-		ErrorHandler.ErrorMessage = "State machine interface: missed UID!!(miss count: "
+		ErrorHandler.errorMessage = "State machine interface: missed UID!!(miss count: "
 			+ UIDmiss + ")";
 		ErrorFlag = true;
 
@@ -639,7 +639,7 @@ public class LWRStateMachineInterface extends Thread {
 		CMDmessage = CMDString;
 	    } catch (Exception e) {
 		// TODO Automatisch generierter Erfassungsblock
-		ErrorHandler.ErrorMessage = " Couldn't generate new OpenIGTLink String Message!!";
+		ErrorHandler.errorMessage = " Couldn't generate new OpenIGTLink String Message!!";
 		ErrorFlag = true;
 	    }
 
@@ -660,17 +660,17 @@ public class LWRStateMachineInterface extends Thread {
 			R_tmp[0], R_tmp[1], R_tmp[2], R_tmp[3], R_tmp[4],
 			R_tmp[5], R_tmp[6], R_tmp[7], R_tmp[8]));
 		IGTLdatatype = "TRANSFORM";
-		ErrorHandler.ErrorMessage = "Transform to Image space succesfully received:"
+		ErrorHandler.errorMessage = "Transform to Image space succesfully received:"
 			+ TransformImageRobot;
 		TransformRecieved = true;
 
 	    } catch (Exception e) {
-		ErrorHandler.ErrorMessage = " Couldn't generate new OpenIGTLink Transform Message!!";
+		ErrorHandler.errorMessage = " Couldn't generate new OpenIGTLink Transform Message!!";
 		ErrorFlag = true;
 	    }
 
 	} else {
-	    ErrorHandler.ErrorMessage = "State machine interface: Unexpected Data type received!!";
+	    ErrorHandler.errorMessage = "State machine interface: Unexpected Data type received!!";
 	    ErrorFlag = true;
 	}
 
