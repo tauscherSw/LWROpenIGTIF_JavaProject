@@ -41,6 +41,8 @@ import de.uniHannover.imes.igtIf.communicationIf.LWRStateMachineInterface;
 import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface;
 import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface.VisualIFDatatypes;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+
 import com.kuka.common.StatisticTimer;
 import com.kuka.common.ThreadUtil;
 import com.kuka.common.StatisticTimer.OneTimeStep;
@@ -507,7 +509,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		else { // if it is not to Error handling
-		    imesStatemachine.ErrorCode = 2;
+		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
 		    ErrorMessage = "Slicer Control Interface not Alive...";
 		    getLogger().error("Slicer control interface isn't running");
 		    i++;
@@ -534,7 +536,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    // Quality!!
 		    // TODO was ist nun die Reaktion auf den Fehler? Wird
 		    // Programm geschlossen?
-		    imesStatemachine.ErrorCode = 18;
+		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.HarwareFailure;
 		    imesStatemachine.ErrorMessage = "ERROR: State Control Interface Bad Communication quality setting robot State to IDLE";
 		    imesStatemachine.ErrorFlag = true;
 		    slicerControlIf.ErrorCode = 0;

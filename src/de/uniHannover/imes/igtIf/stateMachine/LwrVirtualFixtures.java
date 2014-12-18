@@ -29,6 +29,8 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+
 /**
  * In this State two different kinds of Virtuall Fixtures, a plane and a cone
  * are definied and the Stiffness and Damping values are calculated due to there
@@ -445,7 +447,7 @@ public class LwrVirtualFixtures implements ILwrState {
 		    + ", type " + CMD_Array[2] + ") is now active!");
 
 	} else {
-	    lwrStatemachine.ErrorCode = 12; // Illegal/unknown instruction
+	    lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown instruction
 	    lwrStatemachine.ErrorMessage = "Unexpected Messagetype recieved! Expected STRING";
 	}
     }

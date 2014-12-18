@@ -88,9 +88,7 @@ public class LwrStatemachine {
 	AccessDenied(5),
 	/** Time out / Connection lost. */
 	TimeOut(7),
-	/**
-	 * Overflow / Can't be reached.
-	 */
+	/** Overflow / Can't be reached.*/
 	Overflow(8),
 	/** Checksum error. */
 	ChecksumError(9),
@@ -247,32 +245,7 @@ public class LwrStatemachine {
      */
     public boolean End = false;
 
-    /**
-     * The Error code for the Error handling. There for the Status code of the
-     * OpneIGTLink Protocol are used:<br>
-     * 00 - Invalid packet<br>
-     * 01 - OK (Default status)<br>
-     * 02 - Unknown error <br>
-     * 03 - Panic mode<br>
-     * 04 - Not found<br>
-     * 05 - Acces denied 06 - Busy<br>
-     * 07 - Time out / Connection lost <br>
-     * 08 - Overflow / Can't be reached<br>
-     * 09 - Checksum error <br>
-     * 10 - Configuration error <br>
-     * 11 - Not enough resource (memory, storage etc)<br>
-     * 12 - Illegal/Unknown instruction (or feature not implemented / Unknown
-     * command received)<br>
-     * 13 - Device not ready (starting up)<br>
-     * 14 - Manual mode (device does not accept commands)<br>
-     * 15 - Device disabled<br>
-     * 16 - Device not present<br>
-     * 17 - Device version not known<br>
-     * 18 - Hardware failure<br>
-     * 19 -Exiting / shut down in progress<br>
-     * see http://openigtlink.org/protocols/v2_status.html
-     * 
-     */
+    /** the current ErrorCode. */
     public OpenIGTLinkErrorCode ErrorCode = OpenIGTLinkErrorCode.Ok;
 
     /**

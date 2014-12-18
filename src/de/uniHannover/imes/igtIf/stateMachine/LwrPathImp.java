@@ -27,6 +27,8 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+
 /**
  * In This State the LWR can be moved along a linear Path in one direction to a
  * specified position in Cartesian space. Therefore, the stiffness is set
@@ -314,12 +316,12 @@ public class LwrPathImp implements ILwrState {
 
 	    }
 	    if (Error) {
-		lwrStatemachine.ErrorCode = 10;// Configuration error
+		lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;// Configuration error
 		lwrStatemachine.ChangeLWRState(new LwrIdle());
 	    }
 
 	} else {
-	    lwrStatemachine.ErrorCode = 12; // Illegal/unknown instruction
+	    lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown instruction
 	    lwrStatemachine.ErrorMessage = "Unexpected Messagetype recieved! Expected STRING";
 	}
     }
