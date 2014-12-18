@@ -33,7 +33,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-class LWRIdle implements LWRState {
+class LwrIdle implements ILwrState {
     boolean IncreaseStiffness = false;
 
     /**
@@ -48,10 +48,10 @@ class LWRIdle implements LWRState {
      * 
      * @param lwrStatemachine
      *            The operated state machine
-     * @see LWRState
+     * @see ILwrState
      */
     @Override
-    public void CalcControlParam(LWRStatemachine lwrStatemachine) {
+    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
 	double aTransStiffVal = 5000;
 	double aRotStiffVal = 300;
 	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
@@ -143,7 +143,7 @@ class LWRIdle implements LWRState {
      *            The operated Statemachine
      */
     @Override
-    public void SetACKPacket(LWRStatemachine lwrStatemachine) {
+    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	String ACK;
 	ACK = "IDLE;";
@@ -164,11 +164,11 @@ class LWRIdle implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILwrState
      */
 
     @Override
-    public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {
+    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String CMD_String;

@@ -44,7 +44,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @version 0.1
  */
 
-public class LWRVirtualFixtures implements LWRState {
+public class LwrVirtualFixtures implements ILwrState {
 
     public Vector VirtualFixture_ap;
     public Vector VirtualFixture_n;
@@ -153,10 +153,10 @@ public class LWRVirtualFixtures implements LWRState {
      * 
      * @param lwrStatemachine
      *            The operated state machine
-     * @see LWRState
+     * @see ILwrState
      */
     @Override
-    public void CalcControlParam(LWRStatemachine lwrStatemachine) {
+    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
 	int[] NewStiffness = { 0, 0, 0, 0, 0, 0 };
 	double aDampVal = 0.0, StiffVal = 0.0;
 	if (lwrStatemachine.InitFlag) {
@@ -345,7 +345,7 @@ public class LWRVirtualFixtures implements LWRState {
      *            The operated Statemachine
      */
     @Override
-    public void SetACKPacket(LWRStatemachine lwrStatemachine) {
+    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
 	String ACK;
 	if (VFtype == 1) {
 	    if (distance >= awaredist) {
@@ -389,10 +389,10 @@ public class LWRVirtualFixtures implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILwrState
      */
     @Override
-    public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {
+    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String CMD_String;

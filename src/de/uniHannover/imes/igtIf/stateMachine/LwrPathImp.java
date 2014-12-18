@@ -37,7 +37,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-public class LWRPathImp implements LWRState {
+public class LwrPathImp implements ILwrState {
 
     /**
      * Flag indicates if the Position is send in Image or robot base coordinate
@@ -122,7 +122,7 @@ public class LWRPathImp implements LWRState {
      * @param lwrStatemachine The operated state machine
      * @see LWRState
      */
-    public void CalcControlParam(LWRStatemachine lwrStatemachine) {
+    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
 
 	double d = 0.0;
 	distance = 0.0;
@@ -235,7 +235,7 @@ public class LWRPathImp implements LWRState {
      *            The operated Statemachine
      */
     @Override
-    public void SetACKPacket(LWRStatemachine lwrStatemachine) {
+    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	String ACK;
 	if (EndofPath) {
@@ -271,10 +271,10 @@ public class LWRPathImp implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILwrState
      */
     @Override
-    public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {
+    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	boolean Error = false;
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
@@ -315,7 +315,7 @@ public class LWRPathImp implements LWRState {
 	    }
 	    if (Error) {
 		lwrStatemachine.ErrorCode = 10;// Configuration error
-		lwrStatemachine.ChangeLWRState(new LWRIdle());
+		lwrStatemachine.ChangeLWRState(new LwrIdle());
 	    }
 
 	} else {

@@ -42,14 +42,14 @@ import java.io.UnsupportedEncodingException;
  * </pre>
  * 
  * @author Sebastian Tauscher
- * @see LWRIdle
- * @see LWRGravComp
- * @see LWRVirtualFixtures
- * @see LWRPathImp
- * @see LWRMoveToPose
+ * @see LwrIdle
+ * @see LwrGravComp
+ * @see LwrVirtualFixtures
+ * @see LwrPathImp
+ * @see LwrMoveToPose
  *
  */
-interface LWRState {
+interface ILwrState {
     /**
      * In this Function control Mode Parameters are set and the commanded pose
      * are calculated due the current LWR State. For Further information see the
@@ -57,14 +57,14 @@ interface LWRState {
      * 
      * @param lwrStatemachine
      *            The operated state machine
-     * @see LWRIdle
-     * @see LWRGravComp
-     * @see LWRVirtualFixtures
-     * @see LWRPathImp
-     * @see LWRMoveToPose
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
      */
 
-    void CalcControlParam(LWRStatemachine lwrStatemachine);
+    void CalcControlParam(LwrStatemachine lwrStatemachine);
 
     /**
      * In this Function the Acknowledge String which is send to the State
@@ -73,13 +73,13 @@ interface LWRState {
      * 
      * @param lwrStatemachine
      *            The operated state machine
-     * @see LWRIdle
-     * @see LWRGravComp
-     * @see LWRVirtualFixtures
-     * @see LWRPathImp
-     * @see LWRMoveToPose
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
      */
-    void SetACKPacket(LWRStatemachine lwrStatemachine);
+    void SetACKPacket(LwrStatemachine lwrStatemachine);
 
     /**
      * In this Function the Command String which is received from the State
@@ -90,11 +90,11 @@ interface LWRState {
      * @param lwrStatemachine
      *            - The operated state machine
      * @throws UnsupportedEncodingException
-     * @see LWRIdle
-     * @see LWRGravComp
-     * @see LWRVirtualFixtures
-     * @see LWRPathImp
-     * @see LWRMoveToPose
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
      */
-    void InterpretCMDPacket(LWRStatemachine lwrStatemachine);
+    void InterpretCMDPacket(LwrStatemachine lwrStatemachine);
 }

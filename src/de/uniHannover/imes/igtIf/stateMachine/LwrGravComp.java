@@ -34,7 +34,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-public class LWRGravComp implements LWRState {
+public class LwrGravComp implements ILwrState {
 
     /**
      * In this Function control mode parameters are set and the command pose is
@@ -46,10 +46,10 @@ public class LWRGravComp implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILwrState
      */
     @Override
-    public void CalcControlParam(LWRStatemachine lwrStatemachine) {
+    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
 
 	if (lwrStatemachine.InitFlag == true) {
 	    // We are in CartImp Mode,
@@ -84,7 +84,7 @@ public class LWRGravComp implements LWRState {
      *            The operated state machine
      */
     @Override
-    public void SetACKPacket(LWRStatemachine lwrStatemachine) {
+    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
 
 	String ACK;
 	ACK = "GravComp;";
@@ -101,11 +101,11 @@ public class LWRGravComp implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILwrState
      */
 
     @Override
-    public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {
+    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String CMD_String;
 	    CMD_String = lwrStatemachine.CmdIGTmessage;

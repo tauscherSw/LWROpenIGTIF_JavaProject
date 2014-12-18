@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import de.uniHannover.imes.igtIf.communicationIf.LWRStateMachineInterface;
 import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface;
 import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface.VisualIFDatatypes;
-import de.uniHannover.imes.igtIf.stateMachine.LWRStatemachine;
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import com.kuka.common.StatisticTimer;
 import com.kuka.common.ThreadUtil;
 import com.kuka.common.StatisticTimer.OneTimeStep;
@@ -88,9 +88,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     /**
      * Object of the State machine class.
      * 
-     * @see LWRStatemachine
+     * @see LwrStatemachine
      */
-    private LWRStatemachine imesStatemachine;
+    private LwrStatemachine imesStatemachine;
 
     /**
      * Control mode for movements during state control.
@@ -317,7 +317,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * Initializes the state machine.
      */
     private void initStateMachine() {
-	imesStatemachine = new LWRStatemachine();
+	imesStatemachine = new LwrStatemachine();
 	imesStatemachine.StartVisual = true;
 
 	MatrixTransformation currentPose = MatrixTransformation

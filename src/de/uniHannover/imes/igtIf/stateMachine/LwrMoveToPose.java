@@ -36,7 +36,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
  * @author Sebastian Tauscher
  * @version 0.1
  */
-public class LWRMoveToPose implements LWRState {
+public class LwrMoveToPose implements ILwrState {
     private boolean EndofPath = false;
     public boolean ImageSpace = false;
     public Vector TargetPosition = null;
@@ -56,7 +56,7 @@ public class LWRMoveToPose implements LWRState {
      * @param lwrStatemachine The operated state machine
      * @see LWRState
      */
-    public void CalcControlParam(LWRStatemachine lwrStatemachine) {
+    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 
 	Vector curPosition = null;
@@ -122,7 +122,7 @@ public class LWRMoveToPose implements LWRState {
      *            The operated Statemachine
      */
     @Override
-    public void SetACKPacket(LWRStatemachine lwrStatemachine) {
+    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	String ACK;
 	if (EndofPath) {
@@ -151,10 +151,10 @@ public class LWRMoveToPose implements LWRState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @see LWRState
+     * @see ILwrState
      */
     @Override
-    public void InterpretCMDPacket(LWRStatemachine lwrStatemachine) {
+    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String CMD_String;
 	    CMD_String = lwrStatemachine.CmdIGTmessage;

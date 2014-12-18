@@ -49,15 +49,15 @@ import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface.Visua
  * LWRIdle - LWRGravComp - LWRVirtualFixtures - LWRMoveToPose - LWRPathImp An
  * example use of a state machine application see the imesStateApplication.
  * 
- * @see LWRState
- * @see LWRIdle
- * @see LWRGravComp
- * @see LWRVirtualFixtures
- * @see LWRMoveToPose
- * @see LWRPathImp
+ * @see ILwrState
+ * @see LwrIdle
+ * @see LwrGravComp
+ * @see LwrVirtualFixtures
+ * @see LwrMoveToPose
+ * @see LwrPathImp
  * @author Sebastian Tauscher
  */
-public class LWRStatemachine {
+public class LwrStatemachine {
 
     /**
      * Current enum for the State Machine status {IDLE, GravComp,
@@ -97,12 +97,12 @@ public class LWRStatemachine {
     /**
      * The current State of the LWR state machine
      */
-    public LWRState m_CurrentState;
+    public ILwrState m_CurrentState;
 
     /**
      * The new State of the LWR state machine
      */
-    public LWRState m_newState;
+    public ILwrState m_newState;
 
     /**
      * The current pose in Cartesian space of the LWR in robot coordinates.
@@ -222,8 +222,8 @@ public class LWRStatemachine {
      * Constructor of LWRStatemachine. The Current state is set to the save
      * state Idle
      */
-    public LWRStatemachine() {
-	m_CurrentState = new LWRIdle();
+    public LwrStatemachine() {
+	m_CurrentState = new LwrIdle();
 	AckIGTmessage = "IDLE;";
 	CmdIGTmessage = "IDLE;";
 	InitFlag = true;
@@ -238,19 +238,19 @@ public class LWRStatemachine {
      * @param newState
      *            the new LWRState
      */
-    public void ChangeLWRState(LWRState newState) {
+    public void ChangeLWRState(ILwrState newState) {
 	m_CurrentState = newState;
     }
 
     /**
      * calls the CalcControlParam of the current LWR state.
      * 
-     * @see LWRState
-     * @see LWRIdle
-     * @see LWRGravComp
-     * @see LWRVirtualFixtures
-     * @see LWRPathImp
-     * @see LWRMoveToPose
+     * @see ILwrState
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
      */
     public void CalcControlParam() {
 	m_CurrentState.CalcControlParam(this);
@@ -259,12 +259,12 @@ public class LWRStatemachine {
     /**
      * calls the SetACKPacket of the current LWR state.
      * 
-     * @see LWRState
-     * @see LWRIdle
-     * @see LWRGravComp
-     * @see LWRVirtualFixtures
-     * @see LWRPathImp
-     * @see LWRMoveToPose
+     * @see ILwrState
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
      */
     public void SetACKPacket() {
 	m_CurrentState.SetACKPacket(this);
@@ -273,12 +273,12 @@ public class LWRStatemachine {
     /**
      * Calls the InterpretCMDPacket of the current LWR state.
      * 
-     * @see LWRState
-     * @see LWRIdle
-     * @see LWRGravComp
-     * @see LWRVirtualFixtures
-     * @see LWRPathImp
-     * @see LWRMoveToPose
+     * @see ILwrState
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
      */
     public void InterpretCMDPacket() {
 	m_CurrentState.InterpretCMDPacket(this);
@@ -350,7 +350,7 @@ public class LWRStatemachine {
 							  // equal "IDLE"
 		    // ToDO: Add check if it is allowed e.g. if(flagX && flagY
 		    // &&flagZ || ...) what ever you want
-		    LWRIdle newState = new LWRIdle();
+		    LwrIdle newState = new LwrIdle();
 		    this.InitFlag = true;
 		    this.ChangeLWRState(newState);
 		    this.ErrorFlag = false;
@@ -366,7 +366,7 @@ public class LWRStatemachine {
 			    || RobotState == LWRStatus.PathImp) {
 			// ToDO: Add check if it is allowed e.g. if(flagX &&
 			// flagY &&flagZ || ...) what ever you want
-			LWRGravComp newState = new LWRGravComp();
+			LwrGravComp newState = new LwrGravComp();
 			this.ChangeLWRState(newState);
 			this.ErrorFlag = false;
 			// Set the init flag true
@@ -388,7 +388,7 @@ public class LWRStatemachine {
 			    || RobotState == LWRStatus.GravComp
 			    || RobotState == LWRStatus.PathImp) {
 			if (CMD_Array.length >= 9) {
-			    LWRVirtualFixtures newState = new LWRVirtualFixtures();
+			    LwrVirtualFixtures newState = new LwrVirtualFixtures();
 
 			    this.ChangeLWRState(newState);
 			    // Set the init flag true
@@ -416,7 +416,7 @@ public class LWRStatemachine {
 			    || RobotState == LWRStatus.GravComp
 			    || RobotState == LWRStatus.VirtualFixtures) {
 			if (CMD_Array.length == 5) {
-			    LWRPathImp newState = new LWRPathImp();
+			    LwrPathImp newState = new LwrPathImp();
 			    this.ChangeLWRState(newState);
 			    // Set the init flag true
 			    this.InitFlag = true;
@@ -442,7 +442,7 @@ public class LWRStatemachine {
 		    // ToDO: Add check if it is allowed e.g. if(flagX && flagY
 		    // &&flagZ || ...) what ever you want
 		    if (RobotState == LWRStatus.IDLE && this.TransformRecieved) {
-			LWRMoveToPose newState = new LWRMoveToPose();
+			LwrMoveToPose newState = new LwrMoveToPose();
 			if (CMD_Array.length != 8) {
 			    this.ErrorMessage = ("Unexpected number of parameters recieved for the MovetoPose State (recieved : "
 				    + CMD_Array.length + ", expected : 8)");
@@ -533,7 +533,7 @@ public class LWRStatemachine {
 		    this.End = true;
 		    this.InitFlag = true;
 		    this.ErrorCode = 1;
-		    LWRIdle newState = new LWRIdle();
+		    LwrIdle newState = new LwrIdle();
 		    this.ChangeLWRState(newState);
 		    RobotState = LWRStatus.IDLE;
 
@@ -571,14 +571,14 @@ public class LWRStatemachine {
 		if (ErrorCode == 18) {
 		    if (RobotState == LWRStatus.IDLE
 			    || RobotState == LWRStatus.GravComp) {
-			LWRIdle newState = new LWRIdle();
+			LwrIdle newState = new LwrIdle();
 			ChangeLWRState(newState);
 			this.InitFlag = true;
 			RobotState = LWRStatus.IDLE;
 		    } else if (RobotState == LWRStatus.VirtualFixtures
 			    || RobotState == LWRStatus.PathImp
 			    || RobotState == LWRStatus.MovetoPose) {
-			LWRIdle newState = new LWRIdle();
+			LwrIdle newState = new LwrIdle();
 			ChangeLWRState(newState);
 			this.InitFlag = true;
 			RobotState = LWRStatus.IDLE;
