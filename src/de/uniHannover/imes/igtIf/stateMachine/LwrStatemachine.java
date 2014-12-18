@@ -61,17 +61,108 @@ public class LwrStatemachine {
 
     /**
      * Current enum for the State Machine status {IDLE, GravComp,
-     * VirtualFixtures, PathImp, MovetoPose, Error}possible client states
+     * VirtualFixtures, PathImp, MovetoPose, Error}possible client states.
      */
     public static enum LWRStatus {
 	IDLE, GravComp, VirtualFixtures, PathImp, MovetoPose
     }
-    
- 
+
+    /**
+     * The Error code for the Error handling. There for the Status code of the
+     * OpneIGTLink Protocol are used:<br>
+     * {@linkplain} http://openigtlink.org/protocols/v2_status.html}
+     * 
+     */
+    public static enum OpenIGTLinkErrorCode {
+	/** Invalid packet. */
+	InvalidPacket(0),
+	/** Ok (Default status. */
+	Ok(1),
+	/** Unknown error. */
+	UnknownError(2),
+	/** Panic mode. */
+	PanicMode(3),
+	/** Not found. */
+	NotFound(4),
+	/** Acces denied 06 - Busy. */
+	AccessDenied(5),
+	/** Time out / Connection lost. */
+	TimeOut(7),
+	/**
+	 * Overflow / Can't be reached.
+	 */
+	Overflow(8),
+	/** Checksum error. */
+	ChecksumError(9),
+	/** Configuration error. */
+	ConfigurationError(10),
+	/** Not enough resource (memory, storage etc). */
+	NotEnoughResource(11),
+	/**
+	 * Illegal/Unknown instruction (or feature not implemented / Unknown
+	 * command received).
+	 */
+	IllegalInstruction(12),
+	/**
+	 * Illegal/Unknown instruction (or feature not implemented / Unknown
+	 * command received).
+	 */
+	UnknownInstruction(12),
+	/** Device not ready (starting up). */
+	DeviceNotReady(13),
+	/** Manual mode (device does not accept commands). */
+	ManualMode(14),
+	/** Device disabled. */
+	DeviceDisabled(15),
+	/** Device not present. */
+	DeviceNotPresent(16),
+	/** Device version not known. */
+	DeviceVersionNotFound(17),
+	/** Hardware failure. */
+	HarwareFailure(18),
+	/** Exiting / shut down in progress. */
+	Exiting(19);
+
+	/** error number corresponding to the openIGTLink defined error numbers. */
+	private final int errorNumber;
+
+	/** maximum error number. */
+	private static final int MAX_ERROR_NUM = 20;
+
+	/** minimum error number. */
+	private static final int MIN_ERROR_NUM = 0;
+
+	/**
+	 * Constructs the different error-code-objects and validates the number.
+	 * 
+	 * @param errorNum
+	 *            the number of the error according to the openIGTLink
+	 *            protocol.
+	 */
+	private OpenIGTLinkErrorCode(final int errorNum) {
+	    if (errorNum >= MIN_ERROR_NUM && errorNum <= MAX_ERROR_NUM) {
+		this.errorNumber = errorNum;
+	    } else {
+		throw new IllegalArgumentException("only error codes between "
+			+ MIN_ERROR_NUM + " and " + MAX_ERROR_NUM
+			+ " are supported.");
+	    }
+	}
+	
+	/** Method to access the error numbers.
+	 * 
+	 * @return the error number of the current error code.
+	 */
+	public int getErrorNumber() {
+	
+	    return (new Integer(errorNumber));
+	}
+    }
+
     public VisualIFDatatypes currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
 
-    /**visualInterfaceDatatype.Robotbase
-     * current status of the client status
+    /**
+     * visualInterfaceDatatype.Robotbase current status of the client status
      */
     public LWRStatus RobotState = LWRStatus.IDLE; // start as stopped status
 
@@ -141,7 +232,6 @@ public class LwrStatemachine {
      */
     public IMotionControlMode controlMode;
 
-
     /**
      * Flag to identify if the Visualization should be started or not.
      */
@@ -183,7 +273,7 @@ public class LwrStatemachine {
      * see http://openigtlink.org/protocols/v2_status.html
      * 
      */
-    public int ErrorCode = 1;
+    public OpenIGTLinkErrorCode ErrorCode = OpenIGTLinkErrorCode.Ok;
 
     /**
      * String containing the last printed Error Message. This String is used to
@@ -228,7 +318,7 @@ public class LwrStatemachine {
 	CmdIGTmessage = "IDLE;";
 	InitFlag = true;
 	TransformRecieved = false;
-	ErrorCode = 1;
+	ErrorCode = OpenIGTLinkErrorCode.Ok;
 
     }
 
@@ -355,7 +445,7 @@ public class LwrStatemachine {
 		    this.ChangeLWRState(newState);
 		    this.ErrorFlag = false;
 		    RobotState = LWRStatus.IDLE;
-		    this.ErrorCode = 1;
+		    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 
 		} else if (CMD_Array[0].contentEquals("GravComp")) { // Transistion
 								     // Request
@@ -372,11 +462,11 @@ public class LwrStatemachine {
 			// Set the init flag true
 			this.InitFlag = true;
 			RobotState = LWRStatus.GravComp;
-			this.ErrorCode = 1;
+			this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 		    } else {
 			this.ErrorMessage = ("Transition to GravComp is not allowed!");
 			ErrorFlag = true;
-			this.ErrorCode = 10;
+			this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 		    }
 		} else if (CMD_Array[0].contentEquals("VirtualFixtures")) {// Transistion
 									   // Request
@@ -393,7 +483,7 @@ public class LwrStatemachine {
 			    this.ChangeLWRState(newState);
 			    // Set the init flag true
 			    this.InitFlag = true;
-			    this.ErrorCode = 1;
+			    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			    RobotState = LWRStatus.VirtualFixtures;
 
 			    // Check if the correct numbers of parameters was
@@ -402,12 +492,12 @@ public class LwrStatemachine {
 			    this.ErrorMessage = ("Not enough Parameters recieved for the VirtualFixture State (recieved : "
 				    + CMD_Array.length + ", expected : 9)");
 			    ErrorFlag = true;
-			    this.ErrorCode = 10;
+			    this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 			}
 		    } else {
 			this.ErrorMessage = ("Transition to State VirtualFixtures is not allowed!");
 			ErrorFlag = true;
-			this.ErrorCode = 10;
+			this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 		    }
 		} else if (CMD_Array[0].contentEquals("PathImp")) {
 		    // ToDO: Add check if it is allowed e.g. if(flagX && flagY
@@ -421,7 +511,7 @@ public class LwrStatemachine {
 			    // Set the init flag true
 			    this.InitFlag = true;
 			    this.ErrorFlag = false;
-			    this.ErrorCode = 1;
+			    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			    RobotState = LWRStatus.PathImp;
 
 			    // Check if the correct numbers of parameters was
@@ -430,13 +520,13 @@ public class LwrStatemachine {
 			    this.ErrorMessage = ("Unexpected number of parameters recieved for the PathImp State (recieved : "
 				    + CMD_Array.length + ", expected : 5)");
 			    this.ErrorFlag = true;
-			    this.ErrorCode = 10;
+			    this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 			}
 
 		    } else {
 			this.ErrorMessage = ("Transition to State PathImp is not allowed!");
 			ErrorFlag = true;
-			this.ErrorCode = 10;
+			this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 		    }
 		} else if (CMD_Array[0].contentEquals("MoveToPose")) {
 		    // ToDO: Add check if it is allowed e.g. if(flagX && flagY
@@ -447,20 +537,20 @@ public class LwrStatemachine {
 			    this.ErrorMessage = ("Unexpected number of parameters recieved for the MovetoPose State (recieved : "
 				    + CMD_Array.length + ", expected : 8)");
 			    this.ErrorFlag = true;
-			    this.ErrorCode = 10;
+			    this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 
 			} else {
 			    this.ChangeLWRState(newState);
 			    // Set the init flag true
 			    this.InitFlag = true;
 			    this.ErrorFlag = false;
-			    this.ErrorCode = 1;
+			    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			    RobotState = LWRStatus.MovetoPose;
 			}
 		    } else {
 			this.ErrorMessage = ("Transition to State MoveToPose is not allowed!");
 			ErrorFlag = true;
-			this.ErrorCode = 12;
+			this.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction;
 		    }
 		    // To ADD a state use the template below:
 		    // else if (CMD_Array[0].contentEquals("NameofState")){
@@ -498,7 +588,7 @@ public class LwrStatemachine {
 			this.ErrorMessage = ("Unexpected number of parameters recieved to Start the Visual interface (recieved : "
 				+ CMD_Array.length + ", expected : 5)");
 			this.ErrorFlag = true;
-			this.ErrorCode = 10;
+			this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 			this.InitFlag = false;
 		    } else {
 			if (CMD_Array[1].contentEquals("true")
@@ -521,7 +611,7 @@ public class LwrStatemachine {
 			    System.out
 				    .println("StateMachine: Visual IF stopped!");
 			}
-			this.ErrorCode = 1;
+			this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			this.InitFlag = false;
 
 		    }
@@ -532,13 +622,13 @@ public class LwrStatemachine {
 			|| CMD_Array[0].contentEquals("Quit")) {
 		    this.End = true;
 		    this.InitFlag = true;
-		    this.ErrorCode = 1;
+		    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 		    LwrIdle newState = new LwrIdle();
 		    this.ChangeLWRState(newState);
 		    RobotState = LWRStatus.IDLE;
 
 		} else {
-		    this.ErrorCode = 12; // Illegal/Unknown instruction
+		    this.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction; 
 		    this.ErrorMessage = "Unexpected COMMAND recieved! See the list of supported Commands (received: "
 			    + CMD_Array[0] + ")";
 		    this.ErrorFlag = true;
@@ -568,7 +658,7 @@ public class LwrStatemachine {
 		    System.out.println(this.ErrorMessage);
 		}
 		// If necessary change robot state to LWRError
-		if (ErrorCode == 18) {
+		if (ErrorCode == OpenIGTLinkErrorCode.HarwareFailure) {
 		    if (RobotState == LWRStatus.IDLE
 			    || RobotState == LWRStatus.GravComp) {
 			LwrIdle newState = new LwrIdle();
