@@ -64,10 +64,6 @@ interface LWRState {
      * @see LWRMoveToPose
      */
 
-    public static enum VisualIFDatatype {
-	IMAGESPACE, ROBOTERBASE, JOINTSPACE
-    }; // possible Visual interface datatypes
-
     void CalcControlParam(LWRStatemachine lwrStatemachine);
 
     /**

@@ -40,6 +40,8 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
 
+import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface.VisualIFDatatypes;
+
 /**
  * State machine class using the LWRState interface and its sub class/states.
  * This class owns a object of this LWRState interface class which changed its
@@ -64,8 +66,11 @@ public class LWRStatemachine {
     public static enum LWRStatus {
 	IDLE, GravComp, VirtualFixtures, PathImp, MovetoPose
     }
+    
+ 
+    public VisualIFDatatypes currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
 
-    /**
+    /**visualInterfaceDatatype.Robotbase
      * current status of the client status
      */
     public LWRStatus RobotState = LWRStatus.IDLE; // start as stopped status
@@ -136,12 +141,7 @@ public class LWRStatemachine {
      */
     public IMotionControlMode controlMode;
 
-    /**
-     * 1 =IMAGESPACE, 2= ROBOTERBASE,3= JOINTSPACE }; //possible Visual
-     * interface datatypes
-     * 
-     */
-    public int currentVisualIFDatatype = 2; // start with Robotbase
+
     /**
      * Flag to identify if the Visualization should be started or not.
      */
@@ -505,11 +505,11 @@ public class LWRStatemachine {
 				&& this.StartVisual == false) {
 			    this.StartVisual = true;
 			    if (CMD_Array[2].contentEquals("jnt")) {
-				this.currentVisualIFDatatype = 3;
+				this.currentVisualIFDatatype = VisualIFDatatypes.JOINTSPACE;
 			    } else if (CMD_Array[1].contentEquals("rob")) {
-				this.currentVisualIFDatatype = 2;
+				this.currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
 			    } else if (CMD_Array[2].contentEquals("img")) {
-				this.currentVisualIFDatatype = 1;
+				this.currentVisualIFDatatype = VisualIFDatatypes.IMAGESPACE;
 			    }
 			    System.out
 				    .println("StateMachine: Visual IF started with  datatype "
