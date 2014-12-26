@@ -24,7 +24,8 @@
 package de.uniHannover.imes.igtIf.stateMachine;
 
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
-import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
+import com.kuka.roboticsAPI.motionModel.controlModeModel
+.CartesianImpedanceControlMode;
 
 /**
  * In this state the LWR is set to gravitation Compensation mode so that robot
