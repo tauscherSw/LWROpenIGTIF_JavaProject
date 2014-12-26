@@ -124,7 +124,7 @@ public class LwrPathImp implements ILwrState {
      * @param lwrStatemachine The operated state machine
      * @see LWRState
      */
-    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
+    public void calcControlParam(LwrStatemachine lwrStatemachine) {
 
 	double d = 0.0;
 	distance = 0.0;
@@ -237,7 +237,7 @@ public class LwrPathImp implements ILwrState {
      *            The operated Statemachine
      */
     @Override
-    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
+    public void setAckPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	String ACK;
 	if (EndofPath) {
@@ -276,7 +276,7 @@ public class LwrPathImp implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
+    public void interpretCmdPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	boolean Error = false;
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {

@@ -316,7 +316,7 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public void CalcControlParam() {
-	m_CurrentState.CalcControlParam(this);
+	m_CurrentState.calcControlParam(this);
     }
 
     /**
@@ -330,7 +330,7 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public void SetACKPacket() {
-	m_CurrentState.SetACKPacket(this);
+	m_CurrentState.setAckPacket(this);
     }
 
     /**
@@ -344,7 +344,7 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public void InterpretCMDPacket() {
-	m_CurrentState.InterpretCMDPacket(this);
+	m_CurrentState.interpretCmdPacket(this);
     }
 
     /**
@@ -615,7 +615,7 @@ public class LwrStatemachine {
 	    // If the State was Changed then interpret the CMD Packet according
 	    // to the Current stat
 	    if (this.InitFlag && !this.ErrorFlag) {
-		this.m_CurrentState.InterpretCMDPacket(this);
+		this.m_CurrentState.interpretCmdPacket(this);
 	    }
 	} else {
 	    this.InitFlag = false;

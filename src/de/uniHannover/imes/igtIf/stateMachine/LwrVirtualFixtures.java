@@ -158,7 +158,7 @@ public class LwrVirtualFixtures implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
+    public void calcControlParam(LwrStatemachine lwrStatemachine) {
 	int[] NewStiffness = { 0, 0, 0, 0, 0, 0 };
 	double aDampVal = 0.0, StiffVal = 0.0;
 	if (lwrStatemachine.InitFlag) {
@@ -347,7 +347,7 @@ public class LwrVirtualFixtures implements ILwrState {
      *            The operated Statemachine
      */
     @Override
-    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
+    public void setAckPacket(LwrStatemachine lwrStatemachine) {
 	String ACK;
 	if (VFtype == 1) {
 	    if (distance >= awaredist) {
@@ -394,7 +394,7 @@ public class LwrVirtualFixtures implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
+    public void interpretCmdPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String CMD_String;

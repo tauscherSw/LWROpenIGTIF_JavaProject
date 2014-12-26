@@ -58,7 +58,7 @@ public class LwrMoveToPose implements ILwrState {
      * @param lwrStatemachine The operated state machine
      * @see LWRState
      */
-    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
+    public void calcControlParam(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 
 	Vector curPosition = null;
@@ -124,7 +124,7 @@ public class LwrMoveToPose implements ILwrState {
      *            The operated Statemachine
      */
     @Override
-    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
+    public void setAckPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	String ACK;
 	if (EndofPath) {
@@ -156,7 +156,7 @@ public class LwrMoveToPose implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
+    public void interpretCmdPacket(LwrStatemachine lwrStatemachine) {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String CMD_String;
 	    CMD_String = lwrStatemachine.CmdIGTmessage;

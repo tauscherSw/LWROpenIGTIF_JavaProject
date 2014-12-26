@@ -22,7 +22,6 @@
 
 package de.uniHannover.imes.igtIf.stateMachine;
 
-import java.io.UnsupportedEncodingException;
 
 /**
  * Interface for the LWR States defining the Functions void
@@ -63,8 +62,7 @@ interface ILwrState {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-
-    void CalcControlParam(LwrStatemachine lwrStatemachine);
+    void calcControlParam(LwrStatemachine lwrStatemachine);
 
     /**
      * In this Function the Acknowledge String which is send to the State
@@ -79,7 +77,7 @@ interface ILwrState {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    void SetACKPacket(LwrStatemachine lwrStatemachine);
+    void setAckPacket(LwrStatemachine lwrStatemachine);
 
     /**
      * In this Function the Command String which is received from the State
@@ -96,5 +94,5 @@ interface ILwrState {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    void InterpretCMDPacket(LwrStatemachine lwrStatemachine);
+    void interpretCmdPacket(LwrStatemachine lwrStatemachine);
 }

@@ -37,6 +37,11 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 public class LwrGravComp implements ILwrState {
 
     /**
+     * Maximum translation deviation allowed.
+     */
+    private static final int MAX_TRANSLATION = 100;
+
+    /**
      * In this Function control mode parameters are set and the command pose is
      * calculated due to the current LWR State. In the GravComp State the
      * translational and rotational Stiffness is set to zero and the command
@@ -49,26 +54,28 @@ public class LwrGravComp implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
 
-	if (lwrStatemachine.InitFlag == true) {
+	if (lwrStatemachine.InitFlag) {
 	    // We are in CartImp Mode,
 	    // Modify the settings:
 	    // NOTE: YOU HAVE TO REMAIN POSITIVE SEMI-DEFINITE !!
 	    // NOTE: DONT CHANGE TOO FAST THE SETTINGS, ELSE YOU
 	    // WILL DESTABILIZE THE CONTROLLER
-	    int[] NewStiffness = { 0, 0, 0, 0, 0, 0 };
-	    CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	    int[] newStiffnessParam = { 0, 0, 0, 0, 0, 0 };
+	    CartesianImpedanceControlMode cartImp = 
+		    (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 	    cartImp.parametrize(CartDOF.ALL).setStiffness(0.0);
 	    cartImp.setNullSpaceStiffness(0.);
-	    lwrStatemachine.curCartStiffness = NewStiffness;
+	    lwrStatemachine.curCartStiffness = newStiffnessParam;
 	    lwrStatemachine.controlMode = cartImp;
 	    lwrStatemachine.InitFlag = false;
 	}
 	if (lwrStatemachine.cmdPose.getTranslation()
-		.subtract(lwrStatemachine.curPose.getTranslation()).length() > 100) {
+		.subtract(lwrStatemachine.curPose.getTranslation()).length() 
+		> MAX_TRANSLATION) {
 
-	    System.out.println("Difference to big!!!!!!!!!!!!");
+	    System.out.println("Difference to big!");
 	}
 
 	lwrStatemachine.cmdPose = lwrStatemachine.curPose;
@@ -84,12 +91,11 @@ public class LwrGravComp implements ILwrState {
      *            The operated state machine
      */
     @Override
-    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
 
-	String ACK;
-	ACK = "GravComp;";
-	lwrStatemachine.AckIGTmessage = ACK;// TODO Automatisch generierter
-					    // Methodenstub
+	String ack;
+	ack = "GravComp;";
+	lwrStatemachine.AckIGTmessage = ack;
 
     }
 
@@ -105,11 +111,12 @@ public class LwrGravComp implements ILwrState {
      */
 
     @Override
-    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
+    public final void interpretCmdPacket(final 
+	    LwrStatemachine lwrStatemachine) {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
-	    String CMD_String;
-	    CMD_String = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = CMD_String.substring(CMD_String
+	    String cmdString;
+	    cmdString = lwrStatemachine.CmdIGTmessage;
+	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
 		    .indexOf(";"));
 	}
     }

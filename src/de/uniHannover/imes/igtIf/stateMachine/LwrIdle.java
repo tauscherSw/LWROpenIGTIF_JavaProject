@@ -51,7 +51,7 @@ class LwrIdle implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void CalcControlParam(LwrStatemachine lwrStatemachine) {
+    public void calcControlParam(LwrStatemachine lwrStatemachine) {
 	double aTransStiffVal = 5000;
 	double aRotStiffVal = 300;
 	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
@@ -143,7 +143,7 @@ class LwrIdle implements ILwrState {
      *            The operated Statemachine
      */
     @Override
-    public void SetACKPacket(LwrStatemachine lwrStatemachine) {
+    public void setAckPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	String ACK;
 	ACK = "IDLE;";
@@ -168,7 +168,7 @@ class LwrIdle implements ILwrState {
      */
 
     @Override
-    public void InterpretCMDPacket(LwrStatemachine lwrStatemachine) {
+    public void interpretCmdPacket(LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String CMD_String;
