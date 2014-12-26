@@ -25,9 +25,11 @@ package de.uniHannover.imes.igtIf.stateMachine;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
-import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
+import com.kuka.roboticsAPI.motionModel.controlModeModel
+.CartesianImpedanceControlMode;
 
-import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
+.OpenIGTLinkErrorCode;
 
 /**
  * In This State the LWR can be moved along a linear Path in one direction to a
@@ -43,88 +45,93 @@ public class LwrPathImp implements ILwrState {
 
     /**
      * Flag indicates if the Position is send in Image or robot base coordinate
-     * system
+     * system.
      */
-    public boolean ImageSpace = false;
+    private boolean imageSpace = false;
 
     /**
      * TargetPosition in Image or robot base coordinate system due to ImageSpace
-     * flagS
+     * flag.
      */
-    public Vector TargetPosition = null;
+    private Vector targetPosition = null;
 
     /**
      * Target Orientation as rotation matrix in Image or robot base coordinate
      * system due to ImageSpace flag HINT: Not used YET!!!
      */
-    public MatrixTransformation TargetOrientation = null;
+    private MatrixTransformation targetOrientation = null;
 
     /**
-     * Flag indicates if the target pose is reached
+     * Flag indicates if the target pose is reached.
      */
-    private boolean EndofPath = false;
+    private boolean endOfPath = false;
 
     /**
      * vector to define the line path from start to End point. g: x= ap +
-     * lambda*u
+     * lambda*u.
      */
     private Vector ap = null;
 
     /**
-     * directional vector of the line g: x= ap + lambda*u
+     * directional vector of the line g: x= ap + lambda*u.
      */
     private Vector u = null;
 
     /**
-     * directional vector of the line g: x= ap + lambda*u
+     * directional vector of the line g: x= ap + lambda*u.
      */
-    private double lambda_end = 0;
+    private double lambdaEnd = 0;
 
     /**
      * Allowed euclidean distance from current robot position to the path from
-     * start to end pose
+     * start to end pose.
      */
     private double tolerance = 10.0;
     private double distance = 0.0;
 
     /**
-     * In this Function the Stiffness value is calculated
+     * In this Function the Stiffness value is calculated.
      * 
      * @param dist
      *            the minimum distance to path
-     * @param tolerance
+     * @param tol
      *            the maximum allowed distance from the path
+     * @return the stiffness value.
      */
 
-    public double get_stiffness_value(double dist, double tolerance) // Berechnung
-								     // der
-								     // D�mpfung
-								     // bei
-								     // Ann�herung
-								     // an die
-								     // Grenze
-    {
-	double max_stiff = 5000;
-	if (dist >= tolerance)
-	    return max_stiff;
-	else if (dist < tolerance && dist > 0) {
+    public final double getStiffness(final double dist, final double tol) {
+	/*
+	 * Berechnung der Daempfung bei Annaeherung an die Grenze.
+	 */
+	double maxStiff = 5000;
+	if (dist >= tol) {
+	    return maxStiff;
+	} else if (dist < tol && dist > 0) {
 	    double y;
-	    double m = max_stiff / Math.pow(tolerance, 2);
+	    double m = maxStiff / Math.pow(tol, 2);
 	    y = m * Math.pow(dist, 2);
 	    return y;
-	} else
+	} else {
 	    return 0;
+	}
     }
 
-    @Override
+    
     /**
-     * In this Function control Mode Parameters are set and the commanded pose are calculated due the current LWR State.
-     * During the PathImp State the Cartesian Stiffness is set according to the distance to defined Path, the NullSpaceStiffness is set to zero and the Pose is set to the closest point at the path plus an offset in the desired direction.
-     * When the End point of the path is reached the robot holds his position and the boolean EndPath is set true.
-     * @param lwrStatemachine The operated state machine
+     * In this Function control Mode Parameters are set and the commanded pose
+     * are calculated due the current LWR State. During the PathImp State the
+     * Cartesian Stiffness is set according to the distance to defined Path, the
+     * NullSpaceStiffness is set to zero and the Pose is set to the closest
+     * point at the path plus an offset in the desired direction. When the End
+     * point of the path is reached the robot holds his position and the boolean
+     * EndPath is set true.
+     * 
+     * @param lwrStatemachine
+     *            The operated state machine
      * @see LWRState
      */
-    public void calcControlParam(LwrStatemachine lwrStatemachine) {
+    @Override
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
 
 	double d = 0.0;
 	distance = 0.0;
@@ -132,98 +139,99 @@ public class LwrPathImp implements ILwrState {
 	double lambda = 0.0;
 	Vector aim = null;
 	double aRotStiffVal = 300;
-	double StiffVal = 3000;
+	double stiffVal = 3000;
 	Vector aTransStiffVal = null;
-	int[] NewStiffness = { 0, 0, 0, 0, 0, 0 };
+	int[] newStiffness = { 0, 0, 0, 0, 0, 0 };
 
 	// TODO Automatisch generierter Methodenstub
 	if (lwrStatemachine.InitFlag) {
 	    aim = Vector.of(0, 0, 0);
-	    TargetOrientation = MatrixTransformation.of(Vector.of(0, 0, 0),
+	    targetOrientation = MatrixTransformation.of(Vector.of(0, 0, 0),
 		    lwrStatemachine.curPose.getRotation());
 	    ap = Vector.of(lwrStatemachine.curPose.getTranslation().getX(),
 		    lwrStatemachine.curPose.getTranslation().getY(),
 		    lwrStatemachine.curPose.getTranslation().getZ());
-	    lambda_end = TargetPosition.subtract(ap).length();
-	    u = TargetPosition.subtract(ap).normalize();
+	    lambdaEnd = targetPosition.subtract(ap).length();
+	    u = targetPosition.subtract(ap).normalize();
 	    lwrStatemachine.InitFlag = false;
 	}
 	curPosition = lwrStatemachine.curPose.getTranslation();
 
-	if (curPosition.subtract(TargetPosition).length() < tolerance) {
-	    StiffVal = 3000 - 1000
-		    * curPosition.subtract(TargetPosition).length() / tolerance;
-	    aTransStiffVal = Vector.of(StiffVal, StiffVal, StiffVal);
-	    lwrStatemachine.cmdPose = MatrixTransformation.of(TargetOrientation
-		    .withTranslation(TargetPosition));
-	    if (curPosition.subtract(TargetPosition).length() < 10) {
-		StiffVal = 5000;
-		aTransStiffVal = Vector.of(StiffVal, StiffVal, StiffVal);
+	if (curPosition.subtract(targetPosition).length() < tolerance) {
+	    stiffVal = 3000 - 1000
+		    * curPosition.subtract(targetPosition).length() / tolerance;
+	    aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
+	    lwrStatemachine.cmdPose = MatrixTransformation.of(targetOrientation
+		    .withTranslation(targetPosition));
+	    if (curPosition.subtract(targetPosition).length() < 10) {
+		stiffVal = 5000;
+		aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
 		lwrStatemachine.cmdPose = MatrixTransformation
-			.of(TargetOrientation.withTranslation(TargetPosition));
-		if (!EndofPath) {
+			.of(targetOrientation.withTranslation(targetPosition));
+		if (!endOfPath) {
 		    System.out.println("Path Impedance: Reached End of path ("
-			    + TargetPosition + ")");
+			    + targetPosition + ")");
 		}
-		EndofPath = true;
+		endOfPath = true;
 	    }
 	} else {
 
 	    d = curPosition.dotProduct(u);
 	    lambda = d - u.dotProduct(ap);
 
-	    if (lambda >= 0 && lambda <= lambda_end) {
+	    if (lambda >= 0 && lambda <= lambdaEnd) {
 		ap = ap.add(u.multiply(lambda));
 	    }
 	    distance = ap.subtract(curPosition).length();
 
-	    // Beginn der Impedanzregelung f�r Pfad
+	    // Beginn der Impedanzregelung fuer Pfad
 
-	    if (distance > tolerance) // Bahngrenze �bertreten
-	    {
+	    if (distance > tolerance) { // Bahngrenze uebertreten
+	    
 		aTransStiffVal = Vector.of(5000, 5000, 5000);
 		aim = ap.subtract(curPosition).normalize()
 			.multiply(distance - tolerance);
 		// System.out.println("Out of bounds!!!!!!! ");
 	    } else {
-		StiffVal = get_stiffness_value(distance, tolerance);
-		aTransStiffVal = Vector.of(StiffVal, StiffVal, StiffVal);
+		stiffVal = getStiffness(distance, tolerance);
+		aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
 		aim = Vector.of(0, 0, 0);
 	    }
 
 	    lwrStatemachine.cmdPose = MatrixTransformation.of(ap.add(aim),
-		    TargetOrientation.getRotation());
+		    targetOrientation.getRotation());
 	}
-	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	CartesianImpedanceControlMode cartImp = 
+		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 
-	if (EndofPath) {
-	    lwrStatemachine.cmdPose = MatrixTransformation.of(TargetPosition,
-		    TargetOrientation.getRotation());
+	if (endOfPath) {
+	    lwrStatemachine.cmdPose = MatrixTransformation.of(targetPosition,
+		    targetOrientation.getRotation());
 	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(5000);
 	    cartImp.parametrize(CartDOF.ROT).setStiffness(300);
-	    NewStiffness[0] = 5000;
-	    NewStiffness[1] = 5000;
-	    NewStiffness[2] = 5000;
-	    NewStiffness[3] = 300;
-	    NewStiffness[3] = 300;
-	    NewStiffness[3] = 300;
+	    newStiffness[0] = 5000;
+	    newStiffness[1] = 5000;
+	    newStiffness[2] = 5000;
+	    newStiffness[3] = 300;
+	    newStiffness[3] = 300;
+	    newStiffness[3] = 300;
 	} else {
 	    cartImp.parametrize(CartDOF.X).setStiffness(aTransStiffVal.getX());
 	    cartImp.parametrize(CartDOF.Y).setStiffness(aTransStiffVal.getY());
 	    cartImp.parametrize(CartDOF.Z).setStiffness(aTransStiffVal.getZ());
 	    cartImp.parametrize(CartDOF.ROT).setStiffness(aRotStiffVal);
 	    cartImp.setNullSpaceStiffness(0.0);
-	    NewStiffness[0] = (int) aTransStiffVal.getX();
-	    NewStiffness[1] = (int) aTransStiffVal.getY();
-	    NewStiffness[2] = (int) aTransStiffVal.getZ();
-	    NewStiffness[3] = (int) aRotStiffVal;
-	    NewStiffness[3] = (int) aRotStiffVal;
-	    NewStiffness[3] = (int) aRotStiffVal;
+	    newStiffness[0] = (int) aTransStiffVal.getX();
+	    newStiffness[1] = (int) aTransStiffVal.getY();
+	    newStiffness[2] = (int) aTransStiffVal.getZ();
+	    newStiffness[3] = (int) aRotStiffVal;
+	    newStiffness[3] = (int) aRotStiffVal;
+	    newStiffness[3] = (int) aRotStiffVal;
 
 	}
 	// Send the new Stiffness settings down to the
 	// controller
-	lwrStatemachine.curCartStiffness = NewStiffness;
+	lwrStatemachine.curCartStiffness = newStiffness;
 	lwrStatemachine.controlMode = cartImp;
     }
 
@@ -237,23 +245,22 @@ public class LwrPathImp implements ILwrState {
      *            The operated Statemachine
      */
     @Override
-    public void setAckPacket(LwrStatemachine lwrStatemachine) {
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
-	String ACK;
-	if (EndofPath) {
-	    ACK = "PathImp;0;true;";
+	String ack;
+	if (endOfPath) {
+	    ack = "PathImp;0;true;";
 	} else {
 	    if (distance > tolerance) {
-		ACK = "PathImp;2;false;";
+		ack = "PathImp;2;false;";
 	    } else if (distance == 0) {
-		ACK = "PathImp;0;false;";
+		ack = "PathImp;0;false;";
 	    } else {
-		ACK = "PathImp;1;false;";
+		ack = "PathImp;1;false;";
 	    }
 	}
 
-	lwrStatemachine.AckIGTmessage = ACK;// TODO Automatisch generierter
-					    // Methodenstub
+	lwrStatemachine.AckIGTmessage = ack;
     }
 
     /**
@@ -276,53 +283,57 @@ public class LwrPathImp implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void interpretCmdPacket(LwrStatemachine lwrStatemachine) {
+    public final void interpretCmdPacket(
+	    final LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
-	boolean Error = false;
+	boolean err = false;
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
-	    String CMD_String;
-	    CMD_String = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = CMD_String.substring(CMD_String
+	    String cmdString;
+	    cmdString = lwrStatemachine.CmdIGTmessage;
+	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
 		    .indexOf(";"));
-	    String[] CMD_Array = CMD_String.split(";");
-	    if (CMD_Array[1].contentEquals("img")) {
-		this.ImageSpace = true;
+	    String[] cmdArray = cmdString.split(";");
+	    if (cmdArray[1].contentEquals("img")) {
+		this.imageSpace = true;
 		System.out.println("Image space is set to true...");
-	    } else if (CMD_Array[1].contentEquals("rob")) {
-		this.ImageSpace = false;
+	    } else if (cmdArray[1].contentEquals("rob")) {
+		this.imageSpace = false;
 	    } else {
-		Error = true;
+		err = true;
 	    }
 
-	    this.TargetPosition = Vector.of(Double.parseDouble(CMD_Array[2]),
-		    Double.parseDouble(CMD_Array[3]),
-		    Double.parseDouble(CMD_Array[4]));
-	    System.out.println("Targetposition...: " + this.TargetPosition);
+	    this.targetPosition = Vector.of(Double.parseDouble(cmdArray[2]),
+		    Double.parseDouble(cmdArray[3]),
+		    Double.parseDouble(cmdArray[4]));
+	    System.out.println("Targetposition...: " + this.targetPosition);
 	    // newState.TargetOrientation = MatrixTransformation.of(Vector.of(0,
 	    // 0, 0),
 	    // Rotation.ofRad(Double.parseDouble(CMD_Array[5])*Math.PI/180,
 	    // Double.parseDouble(CMD_Array[6])*Math.PI/180,
 	    // Double.parseDouble(CMD_Array[7])*Math.PI/180));
-	    if (this.ImageSpace && lwrStatemachine.TransformRecieved) {
+	    if (this.imageSpace && lwrStatemachine.TransformRecieved) {
 		Vector Tmp;
 		Tmp = lwrStatemachine.TransformRobotImage
 			.invert()
-			.applyTo(TargetPosition)
+			.applyTo(targetPosition)
 			.add(lwrStatemachine.TransformRobotImage.invert()
 				.getTranslation());
-		this.TargetPosition = Tmp;
+		this.targetPosition = Tmp;
 		System.out.println("After Transformation...: "
-			+ this.TargetPosition);
+			+ this.targetPosition);
 
 	    }
-	    if (Error) {
-		lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;// Configuration error
-		lwrStatemachine.ChangeLWRState(new LwrIdle());
+	    if (err) {
+		lwrStatemachine.ErrorCode = 
+			OpenIGTLinkErrorCode.ConfigurationError;// Configuration error
+		lwrStatemachine.changeLWRState(new LwrIdle());
 	    }
 
 	} else {
-	    lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown instruction
-	    lwrStatemachine.ErrorMessage = "Unexpected Messagetype recieved! Expected STRING";
+	    lwrStatemachine.ErrorCode = 
+		    OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown instruction
+	    lwrStatemachine.ErrorMessage = 
+		    "Unexpected Messagetype recieved! Expected STRING";
 	}
     }
 

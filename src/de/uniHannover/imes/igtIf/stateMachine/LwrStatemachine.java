@@ -40,7 +40,8 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
 
-import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface
+.VisualIFDatatypes;
 
 /**
  * State machine class using the LWRState interface and its sub class/states.
@@ -157,10 +158,14 @@ public class LwrStatemachine {
 	}
     }
 
-    public VisualIFDatatypes currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
+    /**
+     * Represents the current datatype of the visualization interface.
+     */
+    public VisualIFDatatypes currentVisualIFDatatype = 
+	    VisualIFDatatypes.ROBOTBASE;
 
     /**
-     * visualInterfaceDatatype.Robotbase current status of the client status
+     * visualInterfaceDatatype.Robotbase current status of the client status.
      */
     public LWRStatus RobotState = LWRStatus.IDLE; // start as stopped status
 
@@ -170,7 +175,7 @@ public class LwrStatemachine {
     public String AckIGTmessage = null;
 
     /**
-     * Command OpenIGTLink Message for the state machine interface
+     * Command OpenIGTLink Message for the state machine interface.
      */
     public String CmdIGTmessage = null;
     /**
@@ -180,16 +185,16 @@ public class LwrStatemachine {
     public String ErrorMessage = "";
 
     /**
-     * Current State machine UID
+     * Current State machine UID.
      */
     public long UID = 0;
     /**
-     * The current State of the LWR state machine
+     * The current State of the LWR state machine.
      */
     public ILwrState m_CurrentState;
 
     /**
-     * The new State of the LWR state machine
+     * The new State of the LWR state machine.
      */
     public ILwrState m_newState;
 
@@ -226,7 +231,7 @@ public class LwrStatemachine {
     public boolean InitFlag = true;
 
     /**
-     * The control mode of the operated state machine
+     * The control mode of the operated state machine.
      */
     public IMotionControlMode controlMode;
 
@@ -235,13 +240,13 @@ public class LwrStatemachine {
      */
     public boolean StartVisual = false;
     /**
-     * String containing the data type of the IGTLink Message which is received
+     * String containing the data type of the IGTLink Message which is received.
      */
     public String IGTLdatatype = "STRING";
 
     /**
      * Flag to identify if the StateMachine should be Stopped.The robot state is
-     * set to IDLE and the robot is holding the current position
+     * set to IDLE and the robot is holding the current position.
      */
     public boolean End = false;
 
@@ -255,11 +260,11 @@ public class LwrStatemachine {
     private String LastPrintedError = "";
 
     /**
-     * Current Joint Position of the LWR received via SmartServo
+     * Current Joint Position of the LWR received via SmartServo.
      */
     public JointPosition curJntPose;
     /**
-     * Current Stiffness of the LWR as a 1x6 stiffness vector (x, y, z, A, B, C)
+     * Current Stiffness of the LWR as a 1x6 stiffness vector (x, y, z, A, B, C).
      */
     public int[] curCartStiffness = { 0, 0, 0, 0, 0, 0 };
     /**
@@ -277,7 +282,7 @@ public class LwrStatemachine {
 
     /**
      * Vector containing the force estimated at the tool center point by the
-     * internal torque sensors
+     * internal torque sensors.
      */
     public Vector TCPForce;
 
@@ -301,7 +306,7 @@ public class LwrStatemachine {
      * @param newState
      *            the new LWRState
      */
-    public void ChangeLWRState(ILwrState newState) {
+    public final void changeLWRState(ILwrState newState) {
 	m_CurrentState = newState;
     }
 
@@ -315,7 +320,7 @@ public class LwrStatemachine {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    public void CalcControlParam() {
+    public final void calcControlParam() {
 	m_CurrentState.calcControlParam(this);
     }
 
@@ -329,7 +334,7 @@ public class LwrStatemachine {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    public void SetACKPacket() {
+    public final void setAckPacket() {
 	m_CurrentState.setAckPacket(this);
     }
 
@@ -343,7 +348,7 @@ public class LwrStatemachine {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    public void InterpretCMDPacket() {
+    public final void interpretCmdPacket() {
 	m_CurrentState.interpretCmdPacket(this);
     }
 
@@ -415,7 +420,7 @@ public class LwrStatemachine {
 		    // &&flagZ || ...) what ever you want
 		    LwrIdle newState = new LwrIdle();
 		    this.InitFlag = true;
-		    this.ChangeLWRState(newState);
+		    this.changeLWRState(newState);
 		    this.ErrorFlag = false;
 		    RobotState = LWRStatus.IDLE;
 		    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
@@ -430,7 +435,7 @@ public class LwrStatemachine {
 			// ToDO: Add check if it is allowed e.g. if(flagX &&
 			// flagY &&flagZ || ...) what ever you want
 			LwrGravComp newState = new LwrGravComp();
-			this.ChangeLWRState(newState);
+			this.changeLWRState(newState);
 			this.ErrorFlag = false;
 			// Set the init flag true
 			this.InitFlag = true;
@@ -453,7 +458,7 @@ public class LwrStatemachine {
 			if (CMD_Array.length >= 9) {
 			    LwrVirtualFixtures newState = new LwrVirtualFixtures();
 
-			    this.ChangeLWRState(newState);
+			    this.changeLWRState(newState);
 			    // Set the init flag true
 			    this.InitFlag = true;
 			    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
@@ -480,7 +485,7 @@ public class LwrStatemachine {
 			    || RobotState == LWRStatus.VirtualFixtures) {
 			if (CMD_Array.length == 5) {
 			    LwrPathImp newState = new LwrPathImp();
-			    this.ChangeLWRState(newState);
+			    this.changeLWRState(newState);
 			    // Set the init flag true
 			    this.InitFlag = true;
 			    this.ErrorFlag = false;
@@ -513,7 +518,7 @@ public class LwrStatemachine {
 			    this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 
 			} else {
-			    this.ChangeLWRState(newState);
+			    this.changeLWRState(newState);
 			    // Set the init flag true
 			    this.InitFlag = true;
 			    this.ErrorFlag = false;
@@ -597,7 +602,7 @@ public class LwrStatemachine {
 		    this.InitFlag = true;
 		    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 		    LwrIdle newState = new LwrIdle();
-		    this.ChangeLWRState(newState);
+		    this.changeLWRState(newState);
 		    RobotState = LWRStatus.IDLE;
 
 		} else {
@@ -635,14 +640,14 @@ public class LwrStatemachine {
 		    if (RobotState == LWRStatus.IDLE
 			    || RobotState == LWRStatus.GravComp) {
 			LwrIdle newState = new LwrIdle();
-			ChangeLWRState(newState);
+			changeLWRState(newState);
 			this.InitFlag = true;
 			RobotState = LWRStatus.IDLE;
 		    } else if (RobotState == LWRStatus.VirtualFixtures
 			    || RobotState == LWRStatus.PathImp
 			    || RobotState == LWRStatus.MovetoPose) {
 			LwrIdle newState = new LwrIdle();
-			ChangeLWRState(newState);
+			changeLWRState(newState);
 			this.InitFlag = true;
 			RobotState = LWRStatus.IDLE;
 		    }

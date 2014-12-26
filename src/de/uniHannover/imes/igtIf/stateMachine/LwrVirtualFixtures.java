@@ -27,9 +27,11 @@ import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
-import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
+import com.kuka.roboticsAPI.motionModel.controlModeModel
+.CartesianImpedanceControlMode;
 
-import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
+.OpenIGTLinkErrorCode;
 
 /**
  * In this State two different kinds of Virtuall Fixtures, a plane and a cone
@@ -73,76 +75,81 @@ public class LwrVirtualFixtures implements ILwrState {
 
     /**
      * In this Function the Stiffness value for the case that the robot is
-     * getting closer to a virtual fixture is calculated
+     * getting closer to a virtual fixture is calculated.
      * 
      * @param dist
      *            the minimum distance to the Virtual Fixture
-     * @param awaredist
+     * @param awareDistance
      *            the minimum distance from where on the stiffness is changed
+     *            @return the calculated stiffness value.
      */
 
-    public double get_stiffness_value_approach(double dist, double awaredist) // Berechnung
-									      // der
-									      // D�mpfung
-									      // bei
-									      // Ann�herung
-									      // an
-									      // die
-									      // Grenze
-    {
-	if (dist >= awaredist)
+    public final double getStiffnessValueApproach(
+	    final double dist, final double awareDistance){ 
+    /*
+     * Berechnung der Daempfung bei Annaeherung an die Grenze
+     */
+    
+	if (dist >= awareDistance) {
 	    return 0.01;
-	else if (dist < awaredist && dist > 0) {
+	} else if (dist < awareDistance && dist > 0) {
 	    double y;
-	    double m = max_stiff / Math.pow(awaredist, 2);
-	    y = m * Math.pow(awaredist - dist, 2);
+	    double m = max_stiff / Math.pow(awareDistance, 2);
+	    y = m * Math.pow(awareDistance - dist, 2);
 	    return y;
-	} else
+	} else {
 	    return max_stiff;
+	}
     }
 
     /**
      * In this Function the Stiffness value for the case that the robot is
-     * getting further away from a virtual fixture is calculated
+     * getting further away from a virtual fixture is calculated.
      * 
      * @param dist
      *            the minimum distance to the Virtual Fixture
-     * @param awaredist
+     * @param awareDistance
      *            the minimum distance from where on the stiffness is changed
+     *            @return the calculated stiffness value.
      */
-    public double get_stiffness_value_remove(double dist, double awaredist) {
+    public final double getStiffnessValueRemoved(
+	    final double dist, final double awareDistance) {
 
-	double zero_point = awaredist / 2;
-	if (dist >= zero_point)
+	double zero_point = awareDistance / 2;
+	if (dist >= zero_point) {
 	    return 0.01;
-	else if (dist < zero_point && dist > 0) {
+	} else if (dist < zero_point && dist > 0) {
 	    double y;
 	    double m = max_stiff / Math.pow(zero_point, 3);
 	    y = m * Math.pow(zero_point - dist, 3);
 	    return y;
-	} else
+	} else {
 	    return max_stiff;
+	}
     }
 
     /**
      * In this Function the Stiffness value for the case that the robot is
-     * getting further away from a virtual fixture is calculated
+     * getting further away from a virtual fixture is calculated.
      * 
      * @param dist
      *            the minimum distance to the Virtual Fixture
-     * @param awaredist
+     * @param awareDistance
      *            the minimum distance from where on the stiffness is changed
+     *            @return the calculated stiffness value.
      */
-    public double get_stiffness_value_ConeTip(double dist, double awaredist) {
+    public final double getStiffnessValueConeTip(
+	    final double dist, final double awareDistance) {
 
 	double max = max_stiff / 2;
-	if (dist < awaredist && dist > 0) {
+	if (dist < awareDistance && dist > 0) {
 	    double y;
-	    double m = max / Math.pow(awaredist, 3);
-	    y = max_stiff - m * Math.pow(awaredist - dist, 3);
+	    double m = max / Math.pow(awareDistance, 3);
+	    y = max_stiff - m * Math.pow(awareDistance - dist, 3);
 	    return y;
-	} else
+	} else {
 	    return max;
+	}
     }
 
     /**
@@ -267,7 +274,7 @@ public class LwrVirtualFixtures implements ILwrState {
 		if (EndPoint) {
 		    StiffVal = max_stiff;
 		} else {
-		    StiffVal = get_stiffness_value_ConeTip(distance, awaredist);
+		    StiffVal = getStiffnessValueConeTip(distance, awaredist);
 		}
 		lwrStatemachine.cmdPose = MatrixTransformation.of(
 			VirtualFixture_ap,
@@ -276,10 +283,10 @@ public class LwrVirtualFixtures implements ILwrState {
 	    } else if (distance >= 0) {
 
 		if (distance - last_distance <= 0) {
-		    StiffVal = get_stiffness_value_approach(distance, awaredist);
+		    StiffVal = getStiffnessValueApproach(distance, awaredist);
 
 		} else {
-		    StiffVal = get_stiffness_value_approach(distance, awaredist);
+		    StiffVal = getStiffnessValueApproach(distance, awaredist);
 		}
 		lwrStatemachine.cmdPose = MatrixTransformation.of(
 			lwrStatemachine.curPose.getTranslation(),
@@ -316,7 +323,8 @@ public class LwrVirtualFixtures implements ILwrState {
 	// NOTE: YOU HAVE TO REMAIN POSITIVE SEMI-DEFINITE !!
 	// NOTE: DONT CHANGE TOO FAST THE SETTINGS, ELSE YOU
 	// WILL DESTABILIZE THE CONTROLLER
-	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	CartesianImpedanceControlMode cartImp = 
+		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 
 	cartImp.parametrize(CartDOF.X).setStiffness(aTransStiffVal.getX());
 	cartImp.parametrize(CartDOF.Y).setStiffness(aTransStiffVal.getY());
@@ -347,29 +355,28 @@ public class LwrVirtualFixtures implements ILwrState {
      *            The operated Statemachine
      */
     @Override
-    public void setAckPacket(LwrStatemachine lwrStatemachine) {
-	String ACK;
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
+	String ack;
 	if (VFtype == 1) {
 	    if (distance >= awaredist) {
-		ACK = "VirtualFixtures;plane;0;";
+		ack = "VirtualFixtures;plane;0;";
 	    } else if (distance < awaredist && distance > 0) {
-		ACK = "VirtualFixtures;plane;1;";
+		ack = "VirtualFixtures;plane;1;";
 	    } else {
-		ACK = "VirtualFixtrues;plane;2;";
+		ack = "VirtualFixtrues;plane;2;";
 	    }
 	} else if (VFtype == 2) {
 	    if (distance >= awaredist) {
-		ACK = "VirtualFixtures;cone;0;";
+		ack = "VirtualFixtures;cone;0;";
 	    } else if (distance < awaredist && distance > 0) {
-		ACK = "VirtualFixtures;cone;1;";
+		ack = "VirtualFixtures;cone;1;";
 	    } else {
-		ACK = "VirtualFixtrues;cone;2;";
+		ack = "VirtualFixtrues;cone;2;";
 	    }
 	} else {
-	    ACK = "VirtualFixtures;none;";
+	    ack = "VirtualFixtures;none;";
 	}
-	lwrStatemachine.AckIGTmessage = ACK;// TODO Automatisch generierter
-					    // Methodenstub
+	lwrStatemachine.AckIGTmessage = ack;
     }
 
     /**
@@ -394,41 +401,44 @@ public class LwrVirtualFixtures implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void interpretCmdPacket(LwrStatemachine lwrStatemachine) {
+    public final void interpretCmdPacket(
+	    final LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
-	    String CMD_String;
+	    String cmdString;
 
-	    CMD_String = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = CMD_String.substring(CMD_String
+	    cmdString = lwrStatemachine.CmdIGTmessage;
+	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
 		    .indexOf(";"));
-	    String[] CMD_Array = CMD_String.split(";");
+	    String[] cmdArray = cmdString.split(";");
 
 	    lwrStatemachine.InitFlag = true;
-	    if (CMD_Array[1].contentEquals("img")) {
+	    if (cmdArray[1].contentEquals("img")) {
 		this.ImageSpace = true;
-	    } else if (CMD_Array[1].contentEquals("rob")) {
+	    } else if (cmdArray[1].contentEquals("rob")) {
 		this.ImageSpace = false;
 	    } else {
-		lwrStatemachine.ErrorMessage = ("Unexpected coordinate system (supported are img or plane)");
+		lwrStatemachine.ErrorMessage = ("Unexpected "
+			+ "coordinate system (supported are img or plane)");
 		lwrStatemachine.ErrorFlag = true;
 	    }
-	    if (CMD_Array[2].contentEquals("plane")) {
+	    if (cmdArray[2].contentEquals("plane")) {
 		this.VFtype = 1;
-	    } else if (CMD_Array[2].contentEquals("cone")) {
+	    } else if (cmdArray[2].contentEquals("cone")) {
 		this.VFtype = 2;
 	    } else {
-		lwrStatemachine.ErrorMessage = ("Unexpected VF type (supported are plane or cone)");
+		lwrStatemachine.ErrorMessage = ("Unexpected "
+			+ "VF type (supported are plane or cone)");
 		lwrStatemachine.ErrorFlag = true;
 	    }
 
 	    this.VirtualFixture_ap = Vector.of(
-		    Double.parseDouble(CMD_Array[3]),
-		    Double.parseDouble(CMD_Array[4]),
-		    Double.parseDouble(CMD_Array[5]));
-	    this.VirtualFixture_n = Vector.of(Double.parseDouble(CMD_Array[6]),
-		    Double.parseDouble(CMD_Array[7]),
-		    Double.parseDouble(CMD_Array[8]));
+		    Double.parseDouble(cmdArray[3]),
+		    Double.parseDouble(cmdArray[4]),
+		    Double.parseDouble(cmdArray[5]));
+	    this.VirtualFixture_n = Vector.of(Double.parseDouble(cmdArray[6]),
+		    Double.parseDouble(cmdArray[7]),
+		    Double.parseDouble(cmdArray[8]));
 
 	    if (this.ImageSpace && lwrStatemachine.TransformRecieved) {
 		this.VirtualFixture_ap = lwrStatemachine.TransformRobotImage
@@ -438,17 +448,18 @@ public class LwrVirtualFixtures implements ILwrState {
 
 	    }
 	    if (this.VFtype == 2) {
-		// this.VirtualFixture_phi =
-		// Double.parseDouble(CMD_Array[9])*Math.PI/180;
-		this.VirtualFixture_phi = 135 * Math.PI / 180;
+
+		this.VirtualFixture_phi = Math.toRadians(135.0);
 	    }
 	    System.out.println("Virtaul Fixture ( ap ="
 		    + this.VirtualFixture_ap + ", n " + this.VirtualFixture_n
-		    + ", type " + CMD_Array[2] + ") is now active!");
+		    + ", type " + cmdArray[2] + ") is now active!");
 
 	} else {
-	    lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown instruction
-	    lwrStatemachine.ErrorMessage = "Unexpected Messagetype recieved! Expected STRING";
+	    lwrStatemachine.ErrorCode = 
+		    OpenIGTLinkErrorCode.IllegalInstruction; 
+	    lwrStatemachine.ErrorMessage = 
+		    "Unexpected Messagetype recieved! Expected STRING";
 	}
     }
 

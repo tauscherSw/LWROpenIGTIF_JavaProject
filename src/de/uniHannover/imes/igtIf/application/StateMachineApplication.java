@@ -618,7 +618,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		imesStatemachine.ErrorHandler(true);
 
 		// Calculating the new control Param and Change the parameters
-		imesStatemachine.CalcControlParam(); // TODO eine calc methode
+		imesStatemachine.calcControlParam(); // TODO eine calc methode
 		// sollte immer etwas
 		// zurückgeben!
 
@@ -634,7 +634,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		// Defining the Acknowledgement String for Control Interface
-		imesStatemachine.SetACKPacket();// TODO Set im Methodenname
+		imesStatemachine.setAckPacket();// TODO Set im Methodenname
 		// deutet auf Parameter hin!
 
 		if (slicerControlIf.ControlRun) {

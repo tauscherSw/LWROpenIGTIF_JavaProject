@@ -27,9 +27,11 @@ import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
-import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
+import com.kuka.roboticsAPI.motionModel.controlModeModel
+.CartesianImpedanceControlMode;
 
-import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
+.OpenIGTLinkErrorCode;
 
 /**
  * In This State the LWR is moving to a specified position in Cartesian space.
@@ -50,15 +52,20 @@ public class LwrMoveToPose implements ILwrState {
     private Vector ap = null;
     private Vector ap_null = null;
 
-    @Override
+
     /**
-     * In this function control mode parameters are set and the command pose are calculated due the current LWR State.
-     * During the MoveToPose State the Cartesian Stiffness is set to the maximum value of 5000 and the Pose is set to the closest point at the path plus an offset in the desired direction.
-     * When the End point of the path is reached the robot holds his position and the boolean EndPath is set true.
-     * @param lwrStatemachine The operated state machine
+     * In this function control mode parameters are set and the command pose are
+     * calculated due the current LWR State. During the MoveToPose State the
+     * Cartesian Stiffness is set to the maximum value of 5000 and the Pose is
+     * set to the closest point at the path plus an offset in the desired
+     * direction. When the End point of the path is reached the robot holds his
+     * position and the boolean EndPath is set true.
+     * 
+     * @param lwrStatemachine
+     *            The operated state machine
      * @see LWRState
      */
-    public void calcControlParam(LwrStatemachine lwrStatemachine) {
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
 
 	Vector curPosition = null;
@@ -66,7 +73,8 @@ public class LwrMoveToPose implements ILwrState {
 	double d = 0.0;
 	double lambda = 0.0;
 
-	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	CartesianImpedanceControlMode cartImp = 
+		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 
 	if (lwrStatemachine.InitFlag) {
 	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(5000);
@@ -124,16 +132,15 @@ public class LwrMoveToPose implements ILwrState {
      *            The operated Statemachine
      */
     @Override
-    public void setAckPacket(LwrStatemachine lwrStatemachine) {
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
 	// TODO Automatisch generierter Methodenstub
-	String ACK;
+	String ack;
 	if (EndofPath) {
-	    ACK = "MoveToPose;true;";
+	    ack = "MoveToPose;true;";
 	} else {
-	    ACK = "MoveToPose;false;";
+	    ack = "MoveToPose;false;";
 	}
-	lwrStatemachine.AckIGTmessage = ACK;// TODO Automatisch generierter
-					    // Methodenstub
+	lwrStatemachine.AckIGTmessage = ack;
     }
 
     /**
@@ -156,44 +163,48 @@ public class LwrMoveToPose implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void interpretCmdPacket(LwrStatemachine lwrStatemachine) {
+    public final void interpretCmdPacket(
+	    final LwrStatemachine lwrStatemachine) {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
-	    String CMD_String;
-	    CMD_String = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = CMD_String.substring(CMD_String
+	    String cmdString;
+	    cmdString = lwrStatemachine.CmdIGTmessage;
+	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
 		    .indexOf(";"));
-	    String[] CMD_Array = CMD_String.split(";");
-	    if (CMD_Array[1].contentEquals("img")) {
+	    String[] cmdArray = cmdString.split(";");
+	    if (cmdArray[1].contentEquals("img")) {
 		this.ImageSpace = true;
-	    } else if (CMD_Array[1].contentEquals("rob")) {
+	    } else if (cmdArray[1].contentEquals("rob")) {
 		this.ImageSpace = false;
 	    } else {
-		lwrStatemachine.ErrorMessage = ("Unexpected coordinate system (supported are img or plane)");
+		lwrStatemachine.ErrorMessage = ("Unexpected coordinate system "
+			+ "(supported are img or plane)");
 		lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 		lwrStatemachine.ErrorFlag = true;
 	    }
-	    this.TargetPosition = Vector.of(Double.parseDouble(CMD_Array[2]),
-		    Double.parseDouble(CMD_Array[3]),
-		    Double.parseDouble(CMD_Array[4]));
+	    this.TargetPosition = Vector.of(Double.parseDouble(cmdArray[2]),
+		    Double.parseDouble(cmdArray[3]),
+		    Double.parseDouble(cmdArray[4]));
 	    this.TargetOrientation = MatrixTransformation.of(
 		    Vector.of(0, 0, 0),
-		    Rotation.ofRad(Double.parseDouble(CMD_Array[5]) * Math.PI
-			    / 180, Double.parseDouble(CMD_Array[6]) * Math.PI
-			    / 180, Double.parseDouble(CMD_Array[7]) * Math.PI
-			    / 180));
+		    Rotation.ofRad(Math.toRadians(Double.parseDouble(cmdArray[5]))
+			    , Math.toRadians(Double.parseDouble(cmdArray[6]))
+			    , Math.toRadians(Double.parseDouble(cmdArray[7]))));
 	    if (this.ImageSpace && lwrStatemachine.TransformRecieved) {
-		MatrixTransformation Tmp = MatrixTransformation.of(
+		MatrixTransformation tmp = MatrixTransformation.of(
 			TargetPosition, TargetOrientation.getRotationMatrix());
-		Tmp = lwrStatemachine.TransformRobotImage.invert().compose(Tmp);
-		this.TargetPosition = Tmp.getTranslation();
-		this.TargetOrientation = Tmp
+		tmp = lwrStatemachine.TransformRobotImage.invert().compose(tmp);
+		this.TargetPosition = tmp.getTranslation();
+		this.TargetOrientation = tmp
 			.withTranslation(Vector.of(0, 0, 0));
 
 	    }
 
 	} else {
-	    lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown instruction
-	    lwrStatemachine.ErrorMessage = "Unexpected Messagetype recieved! Expected STRING";
+	    lwrStatemachine.ErrorCode = 
+		    OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown
+										 // instruction
+	    lwrStatemachine.ErrorMessage = 
+		    "Unexpected Messagetype recieved! Expected STRING";
 	}
 
     }
