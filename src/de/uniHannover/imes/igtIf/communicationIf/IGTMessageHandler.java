@@ -24,12 +24,8 @@ package de.uniHannover.imes.igtIf.communicationIf;
 
 import java.util.concurrent.Semaphore;
 
-/*
- * TODO warum hier kein Beobachter pattern (Observer/Observable)? Wenn Nachricht
- * ankommt dann schreibe es aufs SmartPad, ansonsten schlafe. Dazu braucht man
- * keinen pollenden thread. Siehe http://openbook.galileodesign.de/javainsel/javainsel_10_002.html#dodtpa1401ab7-6470-4217-bc05-d2973590bbe8
- * 
- */
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
+
 
 /**
  * This Class is handling the display output on the KUKA SmartPad.
@@ -44,11 +40,11 @@ public class IGTMessageHandler extends Thread {
     /**
      * Error Message String for error in the State machine interface.
      */
-    public String errorMessage = "";
+    public String errorMessage = ""; //TODO design failure other threads access this field.
     /**
      * Name of the thread using this Message handler.
      */
-    public String sendername = "";
+    public String sendername = ""; //TODO design failure other threads access this field.
     /**
      * in this String the last printed error message is saved to check if it is
      * error message has already been printed.
@@ -58,24 +54,22 @@ public class IGTMessageHandler extends Thread {
     /**
      * Semaphore for save reading and writing the variables.
      */
-    public Semaphore messageSemaphore = new Semaphore(1, true);
+    public Semaphore messageSemaphore = new Semaphore(1, true); //TODO design failure other threads access this field.
     /**
      * cycle time of the state control interface thread in milliseconds. Default
      * value is 20 ms.
      */
-    private static final int MS_TO_SLEEP = 1000; // TODO Warum hier nicht
-						 // default?
+    private static final int MS_TO_SLEEP = 1000; 
     /**
      * Flag indicating if the message handler thread is active.
      */
     private boolean threadAlive = true;
-    // TODO geht mit this.isInterrupted() einfacher.
 
     /**
      * Flag to indicate if this message handler is displaying the errors at the
      * smartPad or not.
      */
-    public boolean debugInfos = false;
+    public boolean debugInfos = false; //TODO design failure other threads access this field.
 
     /**
      * Constructor, which initializes this thread as a daemon.
@@ -98,7 +92,6 @@ public class IGTMessageHandler extends Thread {
      * Acknowledgment String send.
      **/
     public final void run() {
-	// TODO Automatisch generierter Methodenstub
 
 	while (threadAlive) {
 
@@ -113,33 +106,21 @@ public class IGTMessageHandler extends Thread {
 		    this.lastPrintedError = this.errorMessage;
 		}
 	    } catch (InterruptedException e) {
-		// TODO was muss getan werden wenn hier interrupted wird
-		// (Semaphore releasen, aufräumen)
+		// TODO exception concept.
 	    }
 	    messageSemaphore.release();
+	    
 	    // Set the Module in Sleep mode for stability enhancement
-	    // TODO nutz hier
-	    // TimeUnit.MILLISECONDS.convert(...,TimeUnit.NANOSECONDS)
-	    // TODO wozu nano sekunden Genauigkeit
-	    long curTime = (long) ((System.nanoTime() - startTimeStamp));
-	    long curTime_millis = (long) curTime / 1000000;
-	    int curTime_nanos = (int) (curTime % 1000000);
-	    if (curTime_millis < MS_TO_SLEEP) {
-		// ThreadUtil.milliSleep((long) Math.floor((millisectoSleep-1 -
-		// curTime)));
 		try {
 
-		    // TODO Wozu thread schlafen legen, man könnte auch nen
-		    // TimerTask /
-		    // Timer nehmen, wenn Zykluszeit konstant wäre
-		    Thread.sleep(MS_TO_SLEEP - 1 - curTime_millis,
-			    999999 - curTime_nanos);
+		    StateMachineApplication.cyclicSleep(startTimeStamp, 1, MS_TO_SLEEP);
 		} catch (InterruptedException e) {
-		    // TODO Was muss getan werden wenn hier interrupted wird
-		    // (melde an SmartPadLogger, Melde an andere Teilnehmer)
+		    // TODO exception concept.
 		}
 	    }
 	}
     }
+    
+    
 
-}
+
