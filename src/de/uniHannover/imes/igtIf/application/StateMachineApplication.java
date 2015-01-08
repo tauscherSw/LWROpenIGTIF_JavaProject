@@ -677,7 +677,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		// sleep for a specified time (according to the loops iteration
 		// time).
-		cyclicSleep(startTimeStamp, 2);
+		cyclicSleep(startTimeStamp, 2, MS_TO_SLEEP);
 
 		// Overall timing end
 		aStep.end();
@@ -748,17 +748,20 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      *            the tolerance border. If {@code MS_TO_SLEEP} -
      *            {@code cycleTimeToleranceMs} is bigger than the loop-iteration
      *            runtime, then sleeping is necessary.
+     * @param cycleTime
+     *            the desired cycle time for a loop iteration in milliseconds.
      * @throws InterruptedException
      *             when sleeping of this thread was interrupted.
      */
     public static final void cyclicSleep(final long startTimeNanos,
-	    final int cycleTimeToleranceMs) throws InterruptedException {
+	    final int cycleTimeToleranceMs, final int cycleTime)
+	    throws InterruptedException {
 	long runtime = (long) ((System.nanoTime() - startTimeNanos));
 	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
 	long runtimeNanoS = TimeUnit.NANOSECONDS.toNanos(runtime);
 	final long sleepRangeNanosMax = 999999;
-	if (runtimeMS < MS_TO_SLEEP - cycleTimeToleranceMs) {
-	    Thread.sleep(MS_TO_SLEEP - cycleTimeToleranceMs - runtimeMS,
+	if (runtimeMS < cycleTime - cycleTimeToleranceMs) {
+	    Thread.sleep(cycleTime - cycleTimeToleranceMs - runtimeMS,
 		    (int) (sleepRangeNanosMax - runtimeNanoS));
 
 	}
