@@ -588,7 +588,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			    imesStatemachine.UID = slicerControlIf.UID;
 			    if (slicerControlIf.transformReceived
 				    && !imesStatemachine.TransformRecieved) {
-				imesStatemachine.TransformRobotImage = slicerControlIf.TransformImageRobot;
+				imesStatemachine.TransformRobotImage = slicerControlIf.transformImageRobot;
 				imesStatemachine.TransformRecieved = true;
 			    }
 			    slicerControlIf.controlSemaphore.release();
