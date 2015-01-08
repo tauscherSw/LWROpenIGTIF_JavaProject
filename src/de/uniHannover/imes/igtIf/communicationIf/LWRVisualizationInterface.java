@@ -60,7 +60,8 @@ public class LWRVisualizationInterface extends Thread {
      */
     static {
 
-	System.load("C:/KRC/ApplicationServer/Git/IGTBasicStateMachine/OpenIGTLinkLib/SWIGigtlutil.dll");
+	System.load("C:/KRC/ApplicationServer/Git/"
+		+ "IGTBasicStateMachine/OpenIGTLinkLib/SWIGigtlutil.dll");
     }
 
     /**

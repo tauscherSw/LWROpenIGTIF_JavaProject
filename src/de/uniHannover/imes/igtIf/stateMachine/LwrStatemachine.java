@@ -117,8 +117,8 @@ public class LwrStatemachine {
 	DeviceNotPresent(16),
 	/** Device version not known. */
 	DeviceVersionNotFound(17),
-	/** Hardware failure. */
-	HarwareFailure(18),
+	/** Hardware failure / bad communication. */
+	HardwareOrCommunicationFailure(18),
 	/** Exiting / shut down in progress. */
 	Exiting(19);
 
@@ -636,7 +636,7 @@ public class LwrStatemachine {
 		    System.out.println(this.ErrorMessage);
 		}
 		// If necessary change robot state to LWRError
-		if (ErrorCode == OpenIGTLinkErrorCode.HarwareFailure) {
+		if (ErrorCode == OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
 		    if (RobotState == LWRStatus.IDLE
 			    || RobotState == LWRStatus.GravComp) {
 			LwrIdle newState = new LwrIdle();

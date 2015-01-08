@@ -25,7 +25,6 @@ package de.uniHannover.imes.igtIf.communicationIf;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -41,6 +40,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
 import openIGTLink.swig.igtl_header;
@@ -256,7 +256,7 @@ public class LWRStateMachineInterface extends Thread {
     /**
      * Error code.
      */
-    public int ErrorCode = 0;
+    public OpenIGTLinkErrorCode ErrorCode = OpenIGTLinkErrorCode.Ok;
 
     //TODO sollte nicht in run() aufgerufen werden, da es eine vorbereitende Maßnahme ist!
     /**
@@ -490,7 +490,7 @@ public class LWRStateMachineInterface extends Thread {
 	    if (SMtiming.getMaxTimeMillis() >= 10 * millisectoSleep
 		    || SMtiming.getMeanTimeMillis() >= 2 * millisectoSleep) {
 		errorHandler.errorMessage = "StateMachineIF: Attention! Bad communication quality robot changes state to Error!";
-		ErrorCode = 18;
+		ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
 	    } else if ((SMtiming.getMaxTimeMillis() > 3.0 * millisectoSleep && SMtiming
 		    .getMaxTimeMillis() < 10.0 * millisectoSleep)
 		    || (SMtiming.getMeanTimeMillis() > millisectoSleep + 5 && SMtiming
@@ -533,10 +533,10 @@ public class LWRStateMachineInterface extends Thread {
 		    + ", "
 		    + openIGTClient.getPort() + ")";
 	    ConnectionError = 0;
-	    ErrorCode = 0;
+	    ErrorCode = OpenIGTLinkErrorCode.Ok;
 	} catch (Exception e) {
 	    errorHandler.errorMessage = "Couldn't connect to state machine interface server!";
-	    ErrorCode = 18;
+	    ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
 	}
 
     }
@@ -555,7 +555,7 @@ public class LWRStateMachineInterface extends Thread {
 	boolean ReceivedNewData = false;
 	String messageType = null;
 	String UID_String = "";
-	long UID_max = 999999999999L;
+	long UID_max = Long.MAX_VALUE;
 	int BodySize = 0;
 	String DeviceName = null;
 	byte[] bodyBytes = null;
@@ -646,7 +646,7 @@ public class LWRStateMachineInterface extends Thread {
 		if (UIDrepeat >= 4) {
 		    errorHandler.errorMessage = "State machine interface: UID has not changed for the "
 			    + UIDrepeat + ". time!! Check state control!";
-		    ErrorCode = 18;
+		    ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
 		    ErrorFlag = true;
 		}
 	    } else if (UIDdelay > 1) {

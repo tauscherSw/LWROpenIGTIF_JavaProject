@@ -265,6 +265,41 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     private static final double PATH_DEV_C = 10; // TODO check value
 
     /**
+     * The priority for the slicer-control-thread.
+     */
+    private static final int SLICER_CONTROL_PRIO = 6;
+
+    /**
+     * The priority for the slicer-visualization-thread.
+     */
+    private static final int SLICER_VISUAL_PRIO = 5;
+
+    /**
+     * The port for the slicer-control-thread.
+     */
+    private static final int SLICER_CONTROL_COM_PORT = 49001;
+
+    /**
+     * The port for the slicer-visualization-thread.
+     */
+    private static final int SLICER_VISUAL_COM_PORT = 49002;
+
+    /**
+     * The cycle time of the slicer-control-thread in milliseconds.
+     */
+    private static final int SLICER_CONTROL_CYLCETIME_MS = 20;
+
+    /**
+     * The cycle time of the slicer-visualization-thread in milliseconds.
+     */
+    private static final int SLICER_VISUAL_CYLCETIME_MS = 25;
+
+    /**
+     * Maximum allowed deviation of the statistic timer of the main loop.
+     */
+    private static final int MAXIMUM_TIMING_DEVIATION_MS = 5;
+
+    /**
      * In this function the robot, tool etc are initialized.
      **/
     @Override
@@ -308,7 +343,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	} else {
 	    getLogger().error("SmartPad dialog cancelled.");
 	    throw new IllegalStateException(
-		    "Robot cannot move to intitial pose, because user dialog was cancelled.");
+		    "Robot cannot move to intitial pose, "
+			    + "because user dialog was cancelled.");
 	}
 
 	/*
@@ -344,9 +380,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
     /**
      * Parametrizes the cartesian control mode according to the defined
-     * constants
+     * constants.
+     * 
+     * @param mode
+     *            The control-mode-object, which has to be parameterized.
      */
-    private void paramCartesianImpedanceMode(IMotionControlMode mode) {
+    private void paramCartesianImpedanceMode(final IMotionControlMode mode) {
 	((CartesianImpedanceControlMode) mode).parametrize(CartDOF.TRANSL)
 		.setStiffness(TRANSL_STIFF);
 	((CartesianImpedanceControlMode) controlMode).parametrize(CartDOF.ROT)
@@ -363,22 +402,18 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     private void initInterfaceThreads() {
 	slicerControlIf = new LWRStateMachineInterface();
-	slicerControlIf.setPriority(6);
+	slicerControlIf.setPriority(SLICER_CONTROL_PRIO);
 	slicerControlIf.debugInfos = true;
-	// Setting the port for the Control Interface supported ports are 49001
-	// to 49005. Default Value is 49001
-	slicerControlIf.port = 49001;
-	slicerControlIf.millisectoSleep = 20;
+	slicerControlIf.port = SLICER_CONTROL_COM_PORT;
+	slicerControlIf.millisectoSleep = SLICER_CONTROL_CYLCETIME_MS;
 
 	slicerVisualIf = new LWRVisualizationInterface();
-	slicerVisualIf.setPriority(5);
+	slicerVisualIf.setPriority(SLICER_VISUAL_PRIO);
 	slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.JOINTSPACE;
 
 	slicerVisualIf.DebugInfos = true;
-	// Setting the port for the Visualization Interface supported ports are
-	// 49001 to 49005. Default Value is 49002
-	slicerVisualIf.port = 49002;
-	slicerVisualIf.millisectoSleep = 25;
+	slicerVisualIf.port = SLICER_VISUAL_COM_PORT;
+	slicerVisualIf.millisectoSleep = SLICER_VISUAL_CYLCETIME_MS;
 
 	slicerVisualIf.jntPose_StateM = smartServoRuntime
 		.getAxisQMsrOnController();
@@ -442,15 +477,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     @Override
     public final void run() {
-	String LastPrintedError = "";
-	String ErrorMessage = "";
-	boolean VISUAL_ON = false;
-	boolean StatemachineRun = true;
+	String lastPrintedError = "";
+	String errMsg = "";
+	boolean visualOnFlag = false;
+	boolean stateMachineRun = true;
 	int i = 0;
-	long curTime = 0;
-	int curTime_nanos = 0;
 	long startTimeStamp = System.nanoTime();
-	long curTime_millis = 0;
 	JointPosition initialPosition = imesLBR.getCurrentJointPosition();
 
 	getLogger().info("Starting Thread for state control communication ");
@@ -458,8 +490,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 	StatisticTimer timing = new StatisticTimer();
 
-	// Hauptschleife
-	while (StatemachineRun && i < N_OF_RUNS) {
+	// Main loop
+	while (stateMachineRun && i < N_OF_RUNS) {
 
 	    try {
 
@@ -470,25 +502,20 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		OneTimeStep aStep = timing.newTimeStep();
 
 		/* Update with controller of LWR. */
-		{
-
-		    try {
-			smartServoRuntime.updateWithRealtimeSystem();
-			// Get the measured position in cartesian pose
-			imesStatemachine.curPose = MatrixTransformation
-				.of((ITransformation) imesTool
-					.getDefaultMotionFrame());
-
-			// TODO auslagern in updatePose()
-			imesStatemachine.curJntPose = smartServoRuntime
-				.getAxisQMsrOnController();
-			imesStatemachine.TCPForce = smartServoRuntime
-				.getExtForceVector();
-			imesStatemachine.PoseUID++;
-		    } catch (Exception e) {
-			ErrorMessage = "Error: Failed Update with RealtimeSystem!!";
-			// TODO Exception handling später anpacken
-		    }
+		try {
+		    smartServoRuntime.updateWithRealtimeSystem();
+		    // Get the measured position in cartesian pose
+		    imesStatemachine.curPose = MatrixTransformation
+			    .of((ITransformation) imesTool
+				    .getDefaultMotionFrame());
+		    imesStatemachine.curJntPose = smartServoRuntime
+			    .getAxisQMsrOnController();
+		    imesStatemachine.TCPForce = smartServoRuntime
+			    .getExtForceVector();
+		    imesStatemachine.PoseUID++;
+		} catch (Exception e) {
+		    errMsg = "Error: Failed Update with RealtimeSystem!!";
+		    // TODO exception concept.
 		}
 
 		if (slicerVisualIf.VisualRun) {
@@ -505,27 +532,27 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			}
 
 			else {
-			    ErrorMessage = "Error: Couldn't acquire VisualIF Semaphore!!";
-			    // TODO exception handling einbauen.
+			    errMsg = "Error: Couldn't acquire VisualIF Semaphore!!";
+			    // TODO exception concept.
 			}
 		    } catch (InterruptedException e) {
 			e.printStackTrace();
-			// TODO reaktion festlegen.
+			// TODO exception concept.
 		    }
 		}
 
-		if (imesStatemachine.StartVisual && VISUAL_ON == false) {
+		if (!(imesStatemachine.StartVisual && visualOnFlag)) {
 
 		    updatePose();
 		    slicerVisualIf.jntPose_StateM = initialPosition;
 		    slicerVisualIf.VisualActive = true;
 		    // Start the Visualization thread
 		    slicerVisualIf.start();
-		    VISUAL_ON = true;
+		    visualOnFlag = true;
 
 		}
 
-		else if (imesStatemachine.StartVisual && VISUAL_ON
+		else if (imesStatemachine.StartVisual && visualOnFlag
 			&& !slicerVisualIf.VisualActive) {
 		    /*
 		     * if Visualization interface is started, not active but is
@@ -552,7 +579,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    i = 0;
 		    // Try to read new command String from SlicerControl (Alive)
 		    // Thread
-		    // TODO Austausch könnte über pipes geschehen.
 		    try {
 			boolean semaAcquired = slicerControlIf.controlSemaphore
 				.tryAcquire(1, TimeUnit.MILLISECONDS);
@@ -568,11 +594,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			    slicerControlIf.controlSemaphore.release();
 			} else {
 			    getLogger()
-				    .fine("Acquiring of semaphore for setting state machine parameters failed!");
+				    .fine("Acquiring of semaphore for "
+					    + "setting state machine parameters failed!");
 			}
 
 		    } catch (InterruptedException e) {
-			ErrorMessage = "Couldn't acquire Semaphore!!";
+			errMsg = "Couldn't acquire Semaphore!!";
 			getLogger().error(
 				"Interrupted during waiting on semaphore", e);
 
@@ -581,7 +608,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		else { // if it is not to Error handling
 		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
-		    ErrorMessage = "Slicer Control Interface not Alive...";
+		    errMsg = "Slicer Control Interface not Alive...";
 		    getLogger().error("Slicer control interface isn't running");
 		    i++;
 		}
@@ -590,10 +617,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		// calling the function InterpretCommandString of the Current
 		// State
 
-		imesStatemachine.CheckTransitionRequest();// TODO ein check
-							  // sollte immer! einen
-							  // Rückgabewert
-							  // liefern.
+		imesStatemachine.CheckTransitionRequest(); // TODO check should
+							   // return a boolean
 
 		// If the State has changed print the new State
 		if (imesStatemachine.InitFlag) {
@@ -603,14 +628,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		// Check on Communication Quality
-		if (slicerControlIf.ErrorCode == 18) { // Bad Communication
-		    // Quality!!
-		    // TODO was ist nun die Reaktion auf den Fehler? Wird
-		    // Programm geschlossen?
-		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.HarwareFailure;
-		    imesStatemachine.ErrorMessage = "ERROR: State Control Interface Bad Communication quality setting robot State to IDLE";
+		if (slicerControlIf.ErrorCode == OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
+		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
+		    imesStatemachine.ErrorMessage = "ERROR: State Control Interface "
+			    + "Bad Communication quality setting robot State to IDLE";
 		    imesStatemachine.ErrorFlag = true;
-		    slicerControlIf.ErrorCode = 0;
+		    slicerControlIf.ErrorCode = OpenIGTLinkErrorCode.Ok;
 
 		}
 
@@ -618,9 +641,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		imesStatemachine.ErrorHandler(true);
 
 		// Calculating the new control Param and Change the parameters
-		imesStatemachine.calcControlParam(); // TODO eine calc methode
-		// sollte immer etwas
-		// zurückgeben!
+		imesStatemachine.calcControlParam(); // TODO calc method should
+						     // return a value
 
 		// Change the control mode settings of the robot and send a new
 		// Destination pose
@@ -629,13 +651,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			    .changeControlModeSettings(imesStatemachine.controlMode);
 		    smartServoRuntime.setDestination(imesStatemachine.cmdPose);
 		} catch (Exception e) {
-		    ErrorMessage = "Error: Failed to change Realtime Settings!!";
-		    // TODO Reaktion festlegen
+		    errMsg = "Error: Failed to change Realtime Settings!!";
+		    // TODO exception concept
 		}
 
 		// Defining the Acknowledgement String for Control Interface
-		imesStatemachine.setAckPacket();// TODO Set im Methodenname
-		// deutet auf Parameter hin!
+		imesStatemachine.setAckPacket();
 
 		if (slicerControlIf.ControlRun) {
 		    try {
@@ -645,22 +666,22 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			slicerControlIf.ACK_StateM = imesStatemachine.AckIGTmessage;
 			slicerControlIf.controlSemaphore.release();
 		    } catch (InterruptedException e) {
-			ErrorMessage = "Error: Couldn't Acquire ControlIF Semaphore!!";
+			errMsg = "Error: Couldn't Acquire ControlIF Semaphore!!";
 		    }
 		}
 
-		if (!ErrorMessage.equals(LastPrintedError)) {
-		    getLogger().fine(ErrorMessage);
-		    LastPrintedError = ErrorMessage;
+		if (!errMsg.equals(lastPrintedError)) {
+		    getLogger().fine(errMsg);
+		    lastPrintedError = errMsg;
 		}
 
-		cyclicSleep(startTimeStamp, curTime_millis, curTime,
-			curTime_nanos);
+		//sleep for a specified time (according to the loops iteration time).
+		cyclicSleep(startTimeStamp);
 
 		// Overall timing end
 		aStep.end();
 		if (imesStatemachine.End) {
-		    StatemachineRun = false;
+		    stateMachineRun = false;
 
 		}
 	    } catch (InterruptedException e) {
@@ -677,8 +698,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
     }
 
-    // Stopping the Control Interface thread and the visualization thread
-
+    /**
+     * Prints timing statistics and communication parameters.
+     * 
+     * @param loopTimer
+     *            the timer of the main loop.
+     */
     private void printFinalInfos(final StatisticTimer loopTimer) {
 	// Print the timing statistics
 	getLogger().info(
@@ -699,7 +724,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			+ controlMode.getClass().getName());
 	smartServoRuntime.setDetailedOutput(1);
 
-	if (loopTimer.getMeanTimeMillis() > MS_TO_SLEEP + 5) {
+	if (loopTimer.getMeanTimeMillis() > MS_TO_SLEEP
+		+ MAXIMUM_TIMING_DEVIATION_MS) {
 	    getLogger().info(
 		    "Statistic Timing is unexpected slow, "
 			    + "you should try to optimize TCP/IP Transfer");
@@ -709,35 +735,47 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	}
     }
 
-    private void cyclicSleep(final long startTime, long currentTime_millis,
-	    long currentTime, int currentTimeNanos) throws InterruptedException {
-	// Set the Module in Sleep mode for stability enhancement
-	// TODO Code zur Zeitumrechnung wurde mehrfach implementiert!
-	// TODO vereinfachen mit TimeUnit
-	currentTime = (long) ((System.nanoTime() - startTime));
-	currentTime_millis = TimeUnit.NANOSECONDS.toMillis(currentTime);
-	currentTimeNanos = (int) (currentTime % 1000000);
-	if (currentTime_millis < MS_TO_SLEEP - 2) {
-	    Thread.sleep(MS_TO_SLEEP - 2 - currentTime_millis,
-		    999999 - currentTimeNanos);
+    /**
+     * Sleeps for a specified period of time. It should be called every
+     * iteration in the main loop. The time to sleep is calculated according to
+     * the loop iteration duration. This method is used for stability
+     * enhancement.
+     * 
+     * @param startTimeNanos
+     *            the start time of the loop
+     * @throws InterruptedException
+     *             when sleeping of this thread was interrupted.
+     */
+    private void cyclicSleep(final long startTimeNanos)
+	    throws InterruptedException {
+	long runtime = (long) ((System.nanoTime() - startTimeNanos));
+	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
+	long runtimeNanoS = TimeUnit.NANOSECONDS.toNanos(runtime);
+	final long sleepRangeNanosMax = 999999;
+	final int cycleToleranceMs = 2;
+	if (runtimeMS < MS_TO_SLEEP - cycleToleranceMs) {
+	    Thread.sleep(MS_TO_SLEEP - cycleToleranceMs - runtimeMS,
+		    (int) (sleepRangeNanosMax - runtimeNanoS));
 
 	}
     }
 
+    /**
+     * Updates several fields of the slicer-visualization thread, which
+     * correspond to the current pose of the robot. Furthermore the data, set
+     * before, can be send to slicer for visualization purposes.
+     */
     private void updatePose() {
 
 	slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
 	slicerVisualIf.datatype = imesStatemachine.currentVisualIFDatatype;
 	switch (imesStatemachine.currentVisualIFDatatype) {
-	case IMAGESPACE: {
+	case IMAGESPACE:
 	    if (imesStatemachine.TransformRecieved) {
 		slicerVisualIf.T_IMGBASE_StateM = imesStatemachine.TransformRobotImage;
 	    }
-	}
-
-	case JOINTSPACE: {
+	case JOINTSPACE:
 	    slicerVisualIf.jntPose_StateM = imesStatemachine.curJntPose;
-	}
 	default:
 	    break;
 
@@ -746,18 +784,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     }
 
     /**
-     * In this function the communication with the robot via RealTimePTP, the
-     * communication with the Visualization and Control Software (e.g. 3D
-     * Slicer, Matlab) and the State machine it self are operated. TODO
-     * Parameterbeschreibung.
-     */
-    // TODO Methode ist zu lang und schwer zu verstehen.
-    private void runRealtimeMotion(IMotionControlMode controlMode) {
-
-    }
-
-    /**
      * Auto-generated method stub. Do not modify the contents of this method.
+     * @param args unused arguments.
      */
     public static void main(final String[] args) {
 	StateMachineApplication app = new StateMachineApplication();
