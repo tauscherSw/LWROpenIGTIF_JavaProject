@@ -675,8 +675,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    lastPrintedError = errMsg;
 		}
 
-		//sleep for a specified time (according to the loops iteration time).
-		cyclicSleep(startTimeStamp);
+		// sleep for a specified time (according to the loops iteration
+		// time).
+		cyclicSleep(startTimeStamp, 2);
 
 		// Overall timing end
 		aStep.end();
@@ -739,22 +740,25 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * Sleeps for a specified period of time. It should be called every
      * iteration in the main loop. The time to sleep is calculated according to
      * the loop iteration duration. This method is used for stability
-     * enhancement.
+     * enhancement. TODO method should be moved to utility class.
      * 
      * @param startTimeNanos
      *            the start time of the loop
+     * @param cycleTimeToleranceMs
+     *            the tolerance border. If {@code MS_TO_SLEEP} -
+     *            {@code cycleTimeToleranceMs} is bigger than the loop-iteration
+     *            runtime, then sleeping is necessary.
      * @throws InterruptedException
      *             when sleeping of this thread was interrupted.
      */
-    private void cyclicSleep(final long startTimeNanos)
-	    throws InterruptedException {
+    private void cyclicSleep(final long startTimeNanos,
+	    final int cycleTimeToleranceMs) throws InterruptedException {
 	long runtime = (long) ((System.nanoTime() - startTimeNanos));
 	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
 	long runtimeNanoS = TimeUnit.NANOSECONDS.toNanos(runtime);
 	final long sleepRangeNanosMax = 999999;
-	final int cycleToleranceMs = 2;
-	if (runtimeMS < MS_TO_SLEEP - cycleToleranceMs) {
-	    Thread.sleep(MS_TO_SLEEP - cycleToleranceMs - runtimeMS,
+	if (runtimeMS < MS_TO_SLEEP - cycleTimeToleranceMs) {
+	    Thread.sleep(MS_TO_SLEEP - cycleTimeToleranceMs - runtimeMS,
 		    (int) (sleepRangeNanosMax - runtimeNanoS));
 
 	}
@@ -785,7 +789,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
     /**
      * Auto-generated method stub. Do not modify the contents of this method.
-     * @param args unused arguments.
+     * 
+     * @param args
+     *            unused arguments.
      */
     public static void main(final String[] args) {
 	StateMachineApplication app = new StateMachineApplication();
