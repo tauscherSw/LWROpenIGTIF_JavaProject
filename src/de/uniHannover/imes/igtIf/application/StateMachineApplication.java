@@ -277,12 +277,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     /**
      * The port for the slicer-control-thread.
      */
-    private static final int SLICER_CONTROL_COM_PORT = 49001;
+    public static final int SLICER_CONTROL_COM_PORT = 49001;
 
     /**
      * The port for the slicer-visualization-thread.
      */
-    private static final int SLICER_VISUAL_COM_PORT = 49002;
+    public static final int SLICER_VISUAL_COM_PORT = 49002;
 
     /**
      * The cycle time of the slicer-control-thread in milliseconds.
