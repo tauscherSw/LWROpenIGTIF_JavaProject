@@ -751,7 +751,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * @throws InterruptedException
      *             when sleeping of this thread was interrupted.
      */
-    private void cyclicSleep(final long startTimeNanos,
+    public static final void cyclicSleep(final long startTimeNanos,
 	    final int cycleTimeToleranceMs) throws InterruptedException {
 	long runtime = (long) ((System.nanoTime() - startTimeNanos));
 	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
