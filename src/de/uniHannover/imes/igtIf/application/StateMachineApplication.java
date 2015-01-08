@@ -411,11 +411,11 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	slicerVisualIf.setPriority(SLICER_VISUAL_PRIO);
 	slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.JOINTSPACE;
 
-	slicerVisualIf.DebugInfos = true;
+	slicerVisualIf.debugInfoFlag = true;
 	slicerVisualIf.port = SLICER_VISUAL_COM_PORT;
-	slicerVisualIf.millisectoSleep = SLICER_VISUAL_CYLCETIME_MS;
+	slicerVisualIf.cycleTime = SLICER_VISUAL_CYLCETIME_MS;
 
-	slicerVisualIf.jntPose_StateM = smartServoRuntime
+	slicerVisualIf.jntPoseStateM = smartServoRuntime
 		.getAxisQMsrOnController();
 	slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
 
@@ -518,17 +518,17 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    // TODO exception concept.
 		}
 
-		if (slicerVisualIf.VisualRun) {
+		if (slicerVisualIf.visualRun) {
 
 		    try {
-			final boolean semaReqResult = slicerVisualIf.VisualSemaphore
+			final boolean semaReqResult = slicerVisualIf.visualSema
 				.tryAcquire(1, TimeUnit.MILLISECONDS);
 			if (semaReqResult) {
-			    slicerVisualIf.PoseUID = imesStatemachine.PoseUID;
+			    slicerVisualIf.poseUid = imesStatemachine.PoseUID;
 			    slicerVisualIf.TCPForce = imesStatemachine.TCPForce;
-			    slicerVisualIf.SendTCPForce = true;
+			    slicerVisualIf.sendTcpForce = true;
 			    updatePose();
-			    slicerVisualIf.VisualSemaphore.release();
+			    slicerVisualIf.visualSema.release();
 			}
 
 			else {
@@ -544,8 +544,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		if (!(imesStatemachine.StartVisual && visualOnFlag)) {
 
 		    updatePose();
-		    slicerVisualIf.jntPose_StateM = initialPosition;
-		    slicerVisualIf.VisualActive = true;
+		    slicerVisualIf.jntPoseStateM = initialPosition;
+		    slicerVisualIf.visualActive = true;
 		    // Start the Visualization thread
 		    slicerVisualIf.start();
 		    visualOnFlag = true;
@@ -553,23 +553,23 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		else if (imesStatemachine.StartVisual && visualOnFlag
-			&& !slicerVisualIf.VisualActive) {
+			&& !slicerVisualIf.visualActive) {
 		    /*
 		     * if Visualization interface is started, not active but is
 		     * set active Change VisualActive to true. Thereby, the pose
 		     * is send to the visualization.
 		     */
-		    slicerVisualIf.VisualActive = true;
+		    slicerVisualIf.visualActive = true;
 
 		} else if (!imesStatemachine.StartVisual
-			&& slicerVisualIf.VisualActive) {
+			&& slicerVisualIf.visualActive) {
 		    /*
 		     * if the visualization is running and the the Start Visual
 		     * flag is false and the interface is still active Set the
 		     * VisualACtive flag to false - thereby, no more data is
 		     * send to the visualization.
 		     */
-		    slicerVisualIf.VisualActive = false;
+		    slicerVisualIf.visualActive = false;
 
 		}
 
@@ -690,7 +690,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		System.out.println(e);
 		e.printStackTrace();
 		slicerControlIf.ControlRun = false;
-		slicerVisualIf.VisualRun = false;
+		slicerVisualIf.visualRun = false;
 	    }
 
 	} // end while
@@ -716,8 +716,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			+ slicerControlIf.UIDrepeat_max + ")");
 	getLogger().info(
 		"Statistic Timing of Visualisation interface thread "
-			+ slicerVisualIf.Visualtiming);
-	getLogger().info("PoseUID miss: " + slicerVisualIf.PoseUIDOldCount);
+			+ slicerVisualIf.visualTiming);
+	getLogger().info("PoseUID miss: " + slicerVisualIf.poseUidOldCount);
 	getLogger().info("Statistic Timing of Statemachine Mean:" + loopTimer);
 
 	getLogger().info(
@@ -779,10 +779,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	switch (imesStatemachine.currentVisualIFDatatype) {
 	case IMAGESPACE:
 	    if (imesStatemachine.TransformRecieved) {
-		slicerVisualIf.T_IMGBASE_StateM = imesStatemachine.TransformRobotImage;
+		slicerVisualIf.tImgBaseStateM = imesStatemachine.TransformRobotImage;
 	    }
 	case JOINTSPACE:
-	    slicerVisualIf.jntPose_StateM = imesStatemachine.curJntPose;
+	    slicerVisualIf.jntPoseStateM = imesStatemachine.curJntPose;
 	default:
 	    break;
 
@@ -807,7 +807,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     public final void dispose() {
 
 	slicerControlIf.ControlRun = false;
-	slicerVisualIf.VisualRun = false;
+	slicerVisualIf.visualRun = false;
 
 	// Stop the motion
 	final boolean motionStopped = smartServoRuntime.stopMotion();

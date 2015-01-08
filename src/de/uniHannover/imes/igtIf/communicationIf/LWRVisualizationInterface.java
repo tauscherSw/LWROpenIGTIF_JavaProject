@@ -45,6 +45,8 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
+
 /**
  * This Class for the Communication with a Visualization system using the
  * opnIGTLink protocol is based on the igtlink4j class developed at the WPI.
@@ -65,203 +67,253 @@ public class LWRVisualizationInterface extends Thread {
     }
 
     /**
-     * Time step for statistic timing of the Visualization Interface thread
+     * Time step for statistic timing of the Visualization Interface thread.
      */
     private OneTimeStep aStep;
 
     /**
      * Statistic Timer for the Visualization Interface Thread.
      */
-    public StatisticTimer Visualtiming = new StatisticTimer();
+    public StatisticTimer visualTiming = new StatisticTimer(); // TODO design
+							       // failure other
+							       // threads access
+							       // this field.
 
     /**
-     * OpenIGTLink Client socket - socket of the connected Client
+     * OpenIGTLink Client socket - socket of the connected Client.
      */
     private java.net.Socket openIGTClient = null;
 
     /**
-     * openIGTLink visualization server socket
+     * openIGTLink visualization server socket.
      */
     private ServerSocket openIGTServer;
 
     /**
      * Error Message Handler which takes care of the time consuming Error output
-     * in a separate thread
+     * in a separate thread.
      */
-    private IGTMessageHandler ErrorHandler;
+    private IGTMessageHandler errHandler;
 
     /**
      * Output stream for sending the currant transformation or joint angles to
-     * visualization software
+     * visualization software.
      */
     private OutputStream outstr;
 
     /**
-     * Flag to indicate if an Error occurred during the last cycle
+     * Flag to indicate if an Error occurred during the last cycle.
      */
-    @SuppressWarnings("unused")
-    private boolean ErrorFlag = false;
+    private boolean errorFlag = false; // TODO unused field
 
     /**
      * Enum for the client status. Possible states are connected and
-     * disconnected
-     *
+     * disconnected.
      */
-    private static enum ClientStatus {
-	CONNECTED, DISCONNECTED
-    }; // possible client states
+    private static enum ClientStatus { // TODO duplicate enumeration
+	/** the client is connected. */
+	CONNECTED,
+	/** the client is disconnected. */
+	DISCONNECTED
+    };
 
     /**
-     * current client status. Possible states are connected and disconnected
-     *
+     * current client status. Intitialized as disconnected state.
      */
-    @SuppressWarnings("unused")
-    private ClientStatus currentStatus = ClientStatus.DISCONNECTED; // start as
-								    // stopped
-								    // status
+    private ClientStatus currentStatus = ClientStatus.DISCONNECTED; // TODO
+								    // unused
+								    // field
 
     /**
      * Enum for the type of date requested from the visualization Software
-     * (Image space, roboter base COF, joint space)
-     * 
+     * (Image space, robot base COF, joint space).
      */
     public static enum VisualIFDatatypes {
-	IMAGESPACE, ROBOTBASE, JOINTSPACE
-    }; // possible client states
+	/** type of robot data is in imagespace. */
+	IMAGESPACE,
+	/** type of robot data is in cartesian space. */
+	ROBOTBASE,
+	/** type of robot data is in jointspace. */
+	JOINTSPACE
+    }; 
 
     /**
-     * Current selected data type to be send to the robot.
+     * Current selected data type to be send to the robot. Initialized as
+     * datatype Robsotbase.
      */
-    public VisualIFDatatypes datatype = VisualIFDatatypes.ROBOTBASE; // start as
-								     // stopped
-								     // status
+    public VisualIFDatatypes datatype = VisualIFDatatypes.ROBOTBASE; // TODO
+								     // design
+								     // failure
+								     // other
+								     // threads
+								     // access
+								     // this
+								     // field.
 
     /**
      * Flag to indicate if the Visualization interface is set active or not.
      */
-    public boolean VisualActive = false;
+    public boolean visualActive = false; // TODO design failure other threads
+					 // access this field.
     /**
      * Flag to indicate if the Visualization interface is running or if the
      * thread is stopped.
      */
-    public boolean VisualRun = false;
+    public boolean visualRun = false; // TODO design failure other threads
+				      // access this field.
     /**
-     * Current Cartesian position in robot base coordinate system of the robot
+     * Current Cartesian position in robot base coordinate system of the robot.
      */
-    public MatrixTransformation cartPose_StateM = null;
+    public MatrixTransformation cartPose_StateM = null; // TODO design failure
+							// other threads access
+							// this field.
     /**
      * Transformation from robot base coordinate system to image space
-     * coordinate system
+     * coordinate system.
      */
-    public MatrixTransformation T_IMGBASE_StateM = null;
+    public MatrixTransformation tImgBaseStateM = null; // TODO design failure
+						       // other threads access
+						       // this field.
 
     /**
-     * Current Joint positions
+     * Current Joint positions.
      */
-    public JointPosition jntPose_StateM = null;
+    public JointPosition jntPoseStateM = null; // TODO design failure other
+					       // threads access this field.
 
     /**
      * Working copy of the transformation from robot base coordinate system to
      * image space coordinate system.
      */
-    public MatrixTransformation T_IMGBASE = MatrixTransformation.IDENTITY;
+    public MatrixTransformation tImgBase = MatrixTransformation.IDENTITY; // TODO
+									  // design
+									  // failure
+									  // other
+									  // threads
+									  // access
+									  // this
+									  // field.
 
     /**
      * Working copy of the Current Cartesian position in robot base coordinate
-     * system of the robot
+     * system of the robot.
      */
     private MatrixTransformation cartPose = null;
 
     /**
-     * Working copy of the Current Joint6 position of the robot
+     * Working copy of the Current Joint6 position of the robot.
      */
     private JointPosition jntPose = null;
 
     /**
-     * Error code
+     * Semaphore for secure access to the shared variables.
      */
-    public int ErrorCode = 0;
-
-    /**
-     * Semaphore for secure acces to the shared variables
-     */
-    public Semaphore VisualSemaphore = new Semaphore(1, true);
+    public Semaphore visualSema = new Semaphore(1, true); // TODO design failure
+							  // other threads
+							  // access this field.
 
     /**
      * Port number for the communication with visualization software e.g. 3D
      * Slicer. Possible ports 49001 - 49005
      */
-    public int port = 49002;
+    public int port = StateMachineApplication.SLICER_VISUAL_COM_PORT; // TODO
+								      // design
+								      // failure
+								      // other
+								      // threads
+								      // access
+								      // this
+								      // field.
 
     /**
      * Flag to indicate if the Debug Information should be printed or not.
      */
-    public boolean DebugInfos = false;
+    public boolean debugInfoFlag = false; // TODO design failure other threads
+					  // access this field.
 
     /**
      * Flag to indicate if force at the tool center point should be sent or not.
      */
-    public boolean SendTCPForce = false;
+    public boolean sendTcpForce = false; // TODO design failure other threads
+					 // access this field.
 
     /**
-     * UID of the current pose sent to the visualization software
+     * UID of the current pose sent to the visualization software.
      */
-    public int PoseUID = 0;
+    public int poseUid = 0;// TODO design failure other threads access this
+			   // field.
 
     /**
-     * UID of the last pose sent to the visualization software
+     * UID of the last pose sent to the visualization software.
      */
-    public int PoseUIDOldCount = 0;
+    public int poseUidOldCount = 0;// TODO design failure other threads access
+				   // this field.
 
     /**
-     * Working copy of UID
+     * Working copy of UID.
      */
-    private int PoseUIDLocal = 0;
+    private int poseUidTmp = 0;
 
     /**
-     * Working copy of old UID
+     * Working copy of old UID.
      */
-    private int PoseUIDOldLocal = -1;
+    private int poseUidTmpOld = -1;
 
     /**
      * This integer is set to true if an connection error occurs.
      */
-    private int ConnectionError = 0;
+    private int connectionErr = 0;
 
     /**
-     * cycle time of the visualization interface thread. Default value is 25 ms
+     * cycle time of the visualization interface thread. Default value is 25 ms.
      */
-    public int millisectoSleep = 25;
+    public int cycleTime = 25; // TODO design failure other threads access this
+			       // field.
 
     /**
      * Array of Matrix Transformation used to save the 8 Transformation from the
-     * robot base coordinate frame to the nth coordinate system
+     * robot base coordinate frame to the nth coordinate system.
      */
-    private MatrixTransformation[] T_DH = new MatrixTransformation[8];
+    private MatrixTransformation[] trafoMatrixArray = new MatrixTransformation[8];
 
     /**
      * Vector containing the force estimated at the tool center point by the
-     * internal torque sensors
+     * internal torque sensors.
      */
-    public Vector TCPForce;
+    public Vector TCPForce; // TODO design failure other threads access this
+			    // field.
+    
+    /**
+     * Represents the d parameter of the Denavit-Hartenberg robot
+     * representation. It is the distance between on the perpendicular line of
+     * two joints in millimeters.
+     */
+    private static final double[] DH_D_PARAMETER_LWRIIWA7 = new double []{
+	160, 180, 180, 220, 180, 220, 80, 50
+    };
+    
+    /**
+     * The maximum number of allowed connection errors via openIGTlink.
+     */
+    private static final int MAX_ALLOWED_CONNECTION_ERROR = 100;
+    
 
+    // TODO duplicate code same method can be found in LWRStateMachineInterface
     /**
      * Starts the listening server on the defined port.
      * 
-     * @param port
-     *            the port for the communication with state control
      * @throws IOException
+     *             when connection to openIGT server fails.
      */
-    private void ConnectServer(int port) throws IOException {
+    private void connectServer() throws IOException {
 	stopServer();
 	try {
 	    ServerSocketFactory serverSocketFactory = ServerSocketFactory
 		    .getDefault();
 	    openIGTServer = serverSocketFactory.createServerSocket(this.port);
 	    openIGTServer.setReuseAddress(true);
-	    System.out
-		    .println("Visualization interface server socket succesfully created (port "
-			    + this.port + ")");
+	    System.out.println("Visualization interface server socket "
+		    + "succesfully created (port " + this.port + ")");
 
 	} catch (IOException e) {
 	    System.out
@@ -271,8 +323,7 @@ public class LWRVisualizationInterface extends Thread {
     }
 
     /**
-     * Stops the listening OpenIGTLink server
-     * 
+     * Stops the listening OpenIGTLink server.
      */
     private void stopServer() {
 	if (openIGTServer != null) {
@@ -284,17 +335,23 @@ public class LWRVisualizationInterface extends Thread {
 		System.out.println("Visualization interface server stopped");
 	    } catch (IOException e) {
 		e.printStackTrace();
+		// TODO exception concept.
 	    }
 	}
-	// socket = null;
-	// currentStatus = ServerStatus.STOPPED;
     }
 
+    /**
+     * Constructor, which initializes this thread as a deamon.
+     */
     public LWRVisualizationInterface() {
 	setDaemon(true);
     }
 
-    public void finalize() {
+    /**
+     * Disposes the openIGT connection by closing the connection and setting the
+     * corresponding objects to null.
+     */
+    public final void finalize() {
 	if (openIGTServer != null) {
 	    try {
 		openIGTServer.close();
@@ -304,60 +361,66 @@ public class LWRVisualizationInterface extends Thread {
 		System.out.println("Visualization interface server stopped");
 	    } catch (IOException e) {
 		e.printStackTrace();
+		//TODO exception concept.
 	    }
 	}
 
     }
 
     /**
-     * In this function the Matrixtransformation for each Joint is calculated
-     * from the set of denavit hardenberg parameter
+     * In this function the homogeneous Matrix-Transformation for each Joint is
+     * calculated from the set of denavit hartenberg parameter.
+     * @param q The joint position for calculation.
      */
-    private void SetDHTransformation(JointPosition q) {
-	MatrixTransformation T_1 = MatrixTransformation.of(
-		Vector.of(0, 0, 160), Matrix.ofRowFirst(Math.cos(q.get(0)),
-			-Math.sin(q.get(0)), 0, Math.sin(q.get(0)),
-			Math.cos(q.get(0)), 0, 0, 0, 1));
+    private void calcDirectKinematic(final JointPosition q) {
+	MatrixTransformation trafoBaseToJoint1 = MatrixTransformation.of(Vector
+		.of(0, 0, DH_D_PARAMETER_LWRIIWA7[0]), Matrix.ofRowFirst(
 
-	MatrixTransformation T_2 = MatrixTransformation.of(
-		Vector.of(0, 0, 180), Matrix.ofRowFirst(Math.cos(q.get(1)), 0,
-			Math.sin(q.get(1)), 0, 1, 0, -Math.sin(q.get(1)), 0,
-			Math.cos(q.get(1))));
+	Math.cos(q.get(0)), -Math.sin(q.get(0)), 0, Math.sin(q.get(0)),
+		Math.cos(q.get(0)), 0, 0, 0, 1));
 
-	MatrixTransformation T_3 = MatrixTransformation.of(
-		Vector.of(0, 0, 180), Matrix.ofRowFirst(Math.cos(q.get(2)),
-			-Math.sin(q.get(2)), 0, Math.sin(q.get(2)),
-			Math.cos(q.get(2)), 0, 0, 0, 1));
+	MatrixTransformation trafoJoint1ToJoint2 = MatrixTransformation.of(
+		Vector.of(0, 0, DH_D_PARAMETER_LWRIIWA7[1]), Matrix.ofRowFirst(
+			Math.cos(q.get(1)), 0, Math.sin(q.get(1)), 0, 1, 0,
+			-Math.sin(q.get(1)), 0, Math.cos(q.get(1))));
 
-	MatrixTransformation T_4 = MatrixTransformation.of(
-		Vector.of(0, 0, 220), Matrix.ofRowFirst(Math.cos(-q.get(3)), 0,
-			Math.sin(-q.get(3)), 0, 1, 0, -Math.sin(-q.get(3)), 0,
-			Math.cos(-q.get(3))));
+	MatrixTransformation trafoJoint2ToJoint3 = MatrixTransformation.of(
+		Vector.of(0, 0, DH_D_PARAMETER_LWRIIWA7[2]), Matrix.ofRowFirst(
+			Math.cos(q.get(2)), -Math.sin(q.get(2)), 0,
+			Math.sin(q.get(2)), Math.cos(q.get(2)), 0, 0, 0, 1));
 
-	MatrixTransformation T_5 = MatrixTransformation.of(
-		Vector.of(0, 0, 180), Matrix.ofRowFirst(Math.cos(q.get(4)),
-			-Math.sin(q.get(4)), 0, Math.sin(q.get(4)),
-			Math.cos(q.get(4)), 0, 0, 0, 1));
+	MatrixTransformation trafoJoint3ToJoint4 = MatrixTransformation.of(
+		Vector.of(0, 0, DH_D_PARAMETER_LWRIIWA7[3]), Matrix.ofRowFirst(
+			Math.cos(-q.get(3)), 0, Math.sin(-q.get(3)), 0, 1, 0,
+			-Math.sin(-q.get(3)), 0, Math.cos(-q.get(3))));
 
-	MatrixTransformation T_6 = MatrixTransformation.of(
-		Vector.of(0, 0, 220), Matrix.ofRowFirst(Math.cos(q.get(5)), 0,
-			Math.sin(q.get(5)), 0, 1, 0, -Math.sin(q.get(5)), 0,
-			Math.cos(q.get(5))));
+	MatrixTransformation trafoJoint4ToJoint5 = MatrixTransformation.of(
+		Vector.of(0, 0, DH_D_PARAMETER_LWRIIWA7[4]), Matrix.ofRowFirst(
+			Math.cos(q.get(4)), -Math.sin(q.get(4)), 0,
+			Math.sin(q.get(4)), Math.cos(q.get(4)), 0, 0, 0, 1));
 
-	MatrixTransformation T_7 = MatrixTransformation.of(Vector.of(0, 0, 80),
-		Matrix.ofRowFirst(Math.cos(q.get(6)), -Math.sin(q.get(6)), 0,
+	MatrixTransformation trafoJoint5ToJoint6 = MatrixTransformation.of(
+		Vector.of(0, 0, DH_D_PARAMETER_LWRIIWA7[5]), Matrix.ofRowFirst(
+			Math.cos(q.get(5)), 0, Math.sin(q.get(5)), 0, 1, 0,
+			-Math.sin(q.get(5)), 0, Math.cos(q.get(5))));
+
+	MatrixTransformation trafoJoint6ToJoint7 = MatrixTransformation.of(
+		Vector.of(0, 0, DH_D_PARAMETER_LWRIIWA7[6]), Matrix.ofRowFirst(
+			Math.cos(q.get(6)), -Math.sin(q.get(6)), 0,
 			Math.sin(q.get(6)), Math.cos(q.get(6)), 0, 0, 0, 1));
 
-	MatrixTransformation T_8 = MatrixTransformation.of(Vector.of(0, 0, 50),
-		Matrix.ofRowFirst(1, 0, 0, 0, 1, 0, 0, 0, 1));
-	T_DH[0] = T_1;
-	T_DH[1] = T_DH[0].compose(T_2);
-	T_DH[2] = T_DH[1].compose(T_3);
-	T_DH[3] = T_DH[2].compose(T_4);
-	T_DH[4] = T_DH[3].compose(T_5);
-	T_DH[5] = T_DH[4].compose(T_6);
-	T_DH[6] = T_DH[5].compose(T_7);
-	T_DH[7] = T_DH[6].compose(T_8);
+	MatrixTransformation trafoJoint7ToEndeffector = MatrixTransformation
+		.of(Vector.of(0, 0, DH_D_PARAMETER_LWRIIWA7[7]),
+			Matrix.IDENTITY);
+	trafoMatrixArray[0] = trafoBaseToJoint1;
+	trafoMatrixArray[1] = trafoMatrixArray[0].compose(trafoJoint1ToJoint2);
+	trafoMatrixArray[2] = trafoMatrixArray[1].compose(trafoJoint2ToJoint3);
+	trafoMatrixArray[3] = trafoMatrixArray[2].compose(trafoJoint3ToJoint4);
+	trafoMatrixArray[4] = trafoMatrixArray[3].compose(trafoJoint4ToJoint5);
+	trafoMatrixArray[5] = trafoMatrixArray[4].compose(trafoJoint5ToJoint6);
+	trafoMatrixArray[6] = trafoMatrixArray[5].compose(trafoJoint6ToJoint7);
+	trafoMatrixArray[7] = trafoMatrixArray[6]
+		.compose(trafoJoint7ToEndeffector);
 
     }
 
@@ -368,23 +431,22 @@ public class LWRVisualizationInterface extends Thread {
      * String send.
      **/
     public void run() {
-	// TODO Automatisch generierter Methodenstub
 
-	ErrorHandler = new IGTMessageHandler();
-	ErrorHandler.setPriority(2);
-	ErrorHandler.sendername = "Visualization Interface:";
-	ErrorHandler.debugInfos = DebugInfos;
-	ErrorHandler.start();
+	errHandler = new IGTMessageHandler();
+	errHandler.setPriority(2);
+	errHandler.sendername = "Visualization Interface:";
+	errHandler.debugInfos = debugInfoFlag;
+	errHandler.start();
 
 	// Initializing the Communication with the Visualization Software
 	try {
 	    // Set up server
-	    ConnectServer(port);
-	    VisualRun = true;
-	    VisualActive = true;
+	    connectServer();
+	    visualRun = true;
+	    visualActive = true;
 	    openIGTClient = openIGTServer.accept();
 	    openIGTClient.setTcpNoDelay(true);
-	    openIGTClient.setSoTimeout(10 * millisectoSleep);
+	    openIGTClient.setSoTimeout(10 * cycleTime); //TODO @Sebastian unknown value.
 	    this.outstr = openIGTClient.getOutputStream();
 	    this.currentStatus = ClientStatus.CONNECTED;
 	    System.out.println("Visualization interface client connected ( "
@@ -392,93 +454,80 @@ public class LWRVisualizationInterface extends Thread {
 		    + openIGTClient.getPort() + ")");
 
 	} catch (Exception e) {
-	    // TODO Auto-generated catch block
-	    ErrorFlag = true;
-	    ErrorHandler.errorMessage = "Couldn't connect to Visualization interface server!";
+	    // TODO exception concept.
+	    errorFlag = true;
+	    errHandler.errorMessage = 
+		    "Couldn't connect to Visualization interface server!";
 	}
 
-	while (VisualRun) {
+	while (visualRun) {
 	    long startTimeStamp = (long) (System.nanoTime());
-	    aStep = Visualtiming.newTimeStep();
-	    if (VisualActive) {
+	    aStep = visualTiming.newTimeStep();
+	    if (visualActive) {
 		// Get new data from State machine
 		try {
-		    VisualSemaphore.acquire();
-		    jntPose = jntPose_StateM;
+		    visualSema.acquire();
+		    jntPose = jntPoseStateM;
 		    cartPose = cartPose_StateM;
-		    PoseUIDLocal = PoseUID;
+		    poseUidTmp = poseUid;
 		    if (datatype.equals(VisualIFDatatypes.IMAGESPACE)) {
-			T_IMGBASE = T_IMGBASE_StateM;
+			tImgBase = tImgBaseStateM;
 		    }
-		    VisualSemaphore.release();
+		    visualSema.release();
 		    // Send the transform to Visualization
 
 		} catch (InterruptedException e) {
-		    ErrorFlag = true;
-		    ErrorHandler.errorMessage = "Unable to Acquire Visual Semaphore";
+		    errorFlag = true;
+		    errHandler.errorMessage = "Unable to Acquire Visual Semaphore";
 		}
 
-		if (!openIGTClient.isClosed() && ConnectionError < 100) {
-		    SendTransform(cartPose, jntPose);
+		if (!openIGTClient.isClosed() 
+			&& connectionErr < MAX_ALLOWED_CONNECTION_ERROR) {
+		    sendTransformation(cartPose, jntPose);
 		} else {
-		    RestartIGTServer();
+		    restartIGTServer();
 		}
 
 	    }
-	    if (PoseUIDLocal == PoseUIDOldLocal) {
-		ErrorFlag = true;
-		ErrorHandler.errorMessage = "Visual IF: Getting Old Data from State Machine Thread";
-		PoseUIDOldCount++;
+	    if (poseUidTmp == poseUidTmpOld) {
+		errorFlag = true;
+		errHandler.errorMessage = 
+			"Visual IF: Getting Old Data from State Machine Thread";
+		poseUidOldCount++;
 	    }
-	    PoseUIDOldLocal = PoseUIDLocal;
+	    poseUidTmpOld = poseUidTmp;
 
 	    // Set the Module in Sleep mode for stability enhancement
-	    long curTime = (long) ((System.nanoTime() - startTimeStamp));
-	    long curTime_millis = (long) curTime / 1000000;
-	    int curTime_nanos = (int) (curTime % 1000000);
-	    if (curTime_millis < millisectoSleep - 2) {
-		try {
-		    Thread.sleep(millisectoSleep - 2 - curTime_millis,
-			    999999 - curTime_nanos);
+	    try {
+		    StateMachineApplication.cyclicSleep(startTimeStamp, 2, cycleTime);
 		} catch (InterruptedException e) {
-		    ErrorFlag = true;
-		    ErrorHandler.errorMessage = "Visual Thread Sleep failed!!";
+		    errorFlag = true;
+		    errHandler.errorMessage = "Visual Thread Sleep failed!!";
+		    //TODO exception concept.
 		}
 	    }
 	    aStep.end();
-	    if (Visualtiming.getMaxTimeMillis() > (double) 3 * millisectoSleep
-		    || Visualtiming.getMeanTimeMillis() > (double) 2
-			    * millisectoSleep) {
-		ErrorFlag = true;
-		ErrorHandler.errorMessage = "VisualIF: Warning bad communication quality!";
+	    //TODO define following used constants as class constants.
+	    if (visualTiming.getMaxTimeMillis() > (double) 3 * cycleTime
+		    || visualTiming.getMeanTimeMillis() > (double) 2
+			    * cycleTime) {
+		errorFlag = true;
+		errHandler.errorMessage = 
+			"VisualIF: Warning bad communication quality!";
 
 	    }
 	}
 
-    }
+    
 
+
+    //TODO duplicate code, same method in stateMachineInterface class.
     /**
-     * In this function the tranform message is packed and send to the
-     * openIGTClient by calling the sendMessage function.
-     * 
-     * @param deviceName
-     *            - Device Name of the open IGTLink Transform message send to
-     *            the visualization software
-     * @param t
-     *            - the transformation to be send
+     * Sends bytes.
+     * @param bytes the bytes to be send.
+     * @throws IOException when sending fails.
      */
-
-    /***************************************************************************
-     * Sends bytes
-     * <p>
-     * 
-     * @throws IOException
-     *             - Exception in I/O.
-     *             <p>
-     * @param bytes
-     *            - byte[] array.
-     **************************************************************************/
-    final public synchronized void sendBytes(byte[] bytes) throws IOException {
+    public final synchronized void sendBytes(final byte[] bytes) throws IOException {
 	outstr.write(bytes);
 	outstr.flush();
     }
@@ -496,8 +545,8 @@ public class LWRVisualizationInterface extends Thread {
      */
 
     public boolean SendIGTLTransform(String DeviceName, float[] transform) {
-	byte[] BodyByte = new byte[IGTLtransform.IGTL_TRANSFORM_SIZE];
-	byte[] HeaderByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
+	byte[] bodyByte = new byte[IGTLtransform.IGTL_TRANSFORM_SIZE];
+	byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
 	igtl_header header = new igtl_header();
 	boolean check = false;
 	header.setVersion(IGTLheader.IGTL_HEADER_VERSION);
@@ -507,27 +556,28 @@ public class LWRVisualizationInterface extends Thread {
 	header.setDevice_name(DeviceName); /* Device name */
 	header.setTimestamp(BigInteger.valueOf(System.nanoTime()));
 	// BodyBuffer = ByteBuffer.wrap(BodyByte);
-	ByteBuffer BodyBuffer = ByteBuffer
+	ByteBuffer bodyBuffer = ByteBuffer
 		.allocate(IGTLtransform.IGTL_TRANSFORM_SIZE);
-	for (int i = 0; i < 12; i++) {
-	    BodyBuffer.putFloat(transform[i]);
+	final int size = 12; //TODO define all communication constants in seperate class.
+	for (int i = 0; i < size; i++) {
+	    bodyBuffer.putFloat(transform[i]);
 	}
 
-	BodyByte = BodyBuffer.array();
-	ByteArr BodyArr = new ByteArr(BodyByte.length);
-	for (int i = 0; i < BodyByte.length; i++) {
-	    BodyArr.setitem(i, BodyByte[i]);
+	bodyByte = bodyBuffer.array();
+	ByteArr bodyArray = new ByteArr(bodyByte.length);
+	for (int i = 0; i < bodyByte.length; i++) {
+	    bodyArray.setitem(i, bodyByte[i]);
 	}
 
-	ByteArr HeaderArr = ByteArr.frompointer(IGTLheader.PackHeader(header,
-		BodyArr.cast()));
+	ByteArr headerArray = ByteArr.frompointer(IGTLheader.PackHeader(header,
+		bodyArray.cast()));
 	for (int i = 0; i < IGTLheader.IGTL_HEADER_SIZE; i++) {
-	    HeaderByte[i] = (byte) HeaderArr.getitem(i);
+	    headerByte[i] = (byte) headerArray.getitem(i);
 	}
 
 	try {
-	    sendBytes(HeaderByte);
-	    sendBytes(BodyByte);
+	    sendBytes(headerByte);
+	    sendBytes(bodyByte);
 	    check = true;
 	} catch (IOException e) {
 	    check = false;
@@ -536,60 +586,66 @@ public class LWRVisualizationInterface extends Thread {
 
     }
 
+    // TODO duplicate code. This method already exists in
+    // state-machine-interface.
     /**
-     * Function to restart the IGTLink Server and reinitialize the connection
+     * Function to restart the IGTLink Server and reinitialize the connection.
      */
-    private void RestartIGTServer() {
+    private void restartIGTServer() {
 
-	ErrorFlag = true;
+	errorFlag = true;
 	try {
-	    ErrorHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
-	    ErrorHandler.errorMessage = "StateMachineIF: Lost Connection to Client. Try to reconnect...";
-	    ErrorHandler.messageSemaphore.release();
+	    errHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
+	    errHandler.errorMessage = 
+		    "StateMachineIF: Lost Connection to Client. Try to reconnect...";
+	    errHandler.messageSemaphore.release();
 	} catch (InterruptedException e) {
-
+	    //TODO exception concept.
 	}
 	stopServer();
 	try {
 	    // Set up server
-	    ConnectServer(port);
-	    VisualRun = true;
+	    connectServer();
+	    visualRun = true;
 	    openIGTClient = openIGTServer.accept();
 	    openIGTClient.setTcpNoDelay(true);
-	    openIGTClient.setSoTimeout(1 * millisectoSleep);
+	    openIGTClient.setSoTimeout(1 * cycleTime);
 	    this.outstr = openIGTClient.getOutputStream();
 	    this.currentStatus = ClientStatus.CONNECTED;
-	    ErrorHandler.errorMessage = "Visual interface client connected ( "
+	    errHandler.errorMessage = "Visual interface client connected ( "
 		    + openIGTClient.getInetAddress() + ", "
 		    + openIGTClient.getPort() + ")";
-	    ConnectionError = 0;
-	    ErrorCode = 0;
+	    connectionErr = 0;
+
 	} catch (Exception e) {
-	    ErrorHandler.errorMessage = "Couldn't connect to visualisation interface server!";
-	    ErrorCode = 18;
+	    errHandler.errorMessage = 
+		    "Couldn't connect to visualisation interface server!";
+
 	}
 
     }
 
+    //TODO method's calculations should be moved to utility class.
     /**
      * Sending the Cartesian or Joint position of the robot.
      * 
-     * @param T_curPose
+     * @param transformCurrentPose
      *            the current position of the robot
+     * @param curJntPose the current joint position.
      */
+    private void sendTransformation(
+	    final MatrixTransformation transformCurrentPose,
+	    final JointPosition curJntPose) {
 
-    private void SendTransform(MatrixTransformation T_curPose,
-	    JointPosition curJntPose) {
+	float[] transformTmp = new float[12];
+	transformTmp[9] = (float) transformCurrentPose.getTranslation().getX();
+	transformTmp[10] = (float) transformCurrentPose.getTranslation().getY();
+	transformTmp[11] = (float) transformCurrentPose.getTranslation().getZ();
 
-	float[] T_tmp = new float[12];
-	T_tmp[9] = (float) T_curPose.getTranslation().getX();
-	T_tmp[10] = (float) T_curPose.getTranslation().getY();
-	T_tmp[11] = (float) T_curPose.getTranslation().getZ();
-
-	if (SendTCPForce) {
-	    T_tmp[9] = (float) T_curPose.getTranslation().getX();
-	    T_tmp[10] = (float) T_curPose.getTranslation().getY();
-	    T_tmp[11] = (float) T_curPose.getTranslation().getZ();
+	if (sendTcpForce) {
+	    transformTmp[9] = (float) transformCurrentPose.getTranslation().getX();
+	    transformTmp[10] = (float) transformCurrentPose.getTranslation().getY();
+	    transformTmp[11] = (float) transformCurrentPose.getTranslation().getZ();
 	    double theta = 0;
 	    double phi = 0;
 	    theta = -Math.asin(TCPForce.normalize().getX());
@@ -600,12 +656,12 @@ public class LWRVisualizationInterface extends Thread {
 		    Rotation.ofRad(0, phi, 0));
 	    for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-		    T_tmp[i + 3 * j] = (float) (TCPForce.length() * rot
+		    transformTmp[i + 3 * j] = (float) (TCPForce.length() * rot
 			    .getMatrix().get(i, j));
 		}
 	    }
 
-	    SendIGTLTransform("TCPForce", T_tmp);
+	    SendIGTLTransform("TCPForce", transformTmp);
 
 	}
 
@@ -627,31 +683,34 @@ public class LWRVisualizationInterface extends Thread {
 									 // joint
 									 // angles
 
-	    SetDHTransformation(jntPose);
+	    calcDirectKinematic(jntPose);
 	    for (int njoint = 0; njoint < 9; njoint++) {
 		if (njoint == 8) {
-		    T_tmp[9] = (float) T_curPose.getTranslation().getX();
-		    T_tmp[10] = (float) T_curPose.getTranslation().getY();
-		    T_tmp[11] = (float) T_curPose.getTranslation().getZ();
+		    transformTmp[9] = (float) transformCurrentPose.getTranslation().getX();
+		    transformTmp[10] = (float) transformCurrentPose.getTranslation().getY();
+		    transformTmp[11] = (float) transformCurrentPose.getTranslation().getZ();
 		    for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
-			    T_tmp[i + 3 * j] = (float) T_curPose
+			    transformTmp[i + 3 * j] = (float) transformCurrentPose
 				    .getRotationMatrix().get(i, j);
 			}
 		    }
-		    SendIGTLTransform("T_EE", T_tmp);
+		    SendIGTLTransform("T_EE", transformTmp);
 
 		} else {
-		    T_tmp[9] = (float) T_DH[njoint].getTranslation().getX();
-		    T_tmp[10] = (float) T_DH[njoint].getTranslation().getY();
-		    T_tmp[11] = (float) T_DH[njoint].getTranslation().getZ();
+		    transformTmp[9] = (float) trafoMatrixArray[njoint]
+			    .getTranslation().getX();
+		    transformTmp[10] = (float) trafoMatrixArray[njoint]
+			    .getTranslation().getY();
+		    transformTmp[11] = (float) trafoMatrixArray[njoint]
+			    .getTranslation().getZ();
 		    for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
-			    T_tmp[i + 3 * j] = (float) T_DH[njoint]
+			    transformTmp[i + 3 * j] = (float) trafoMatrixArray[njoint]
 				    .getRotationMatrix().get(i, j);
 			}
 		    }
-		    SendIGTLTransform("T_" + 0 + (njoint + 1), T_tmp);
+		    SendIGTLTransform("T_" + 0 + (njoint + 1), transformTmp);
 		}
 
 	    }
@@ -663,26 +722,26 @@ public class LWRVisualizationInterface extends Thread {
 							 // position in image
 							 // space is calculated
 							 // and send
-	    MatrixTransformation T = T_IMGBASE.compose(T_curPose);
-	    T_tmp[9] = (float) T.getTranslation().getX();
-	    T_tmp[10] = (float) T.getTranslation().getY();
-	    T_tmp[11] = (float) T.getTranslation().getZ();
+	    MatrixTransformation T = tImgBase.compose(transformCurrentPose);
+	    transformTmp[9] = (float) T.getTranslation().getX();
+	    transformTmp[10] = (float) T.getTranslation().getY();
+	    transformTmp[11] = (float) T.getTranslation().getZ();
 	    for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-		    T_tmp[i + 3 * j] = (float) T.getRotationMatrix().get(i, j);
+		    transformTmp[i + 3 * j] = (float) T.getRotationMatrix().get(i, j);
 		}
 	    }
-	    SendIGTLTransform("T_EE", T_tmp);
+	    SendIGTLTransform("T_EE", transformTmp);
 
-	} else {// if the robot base pose was requested the current position in
+	} else { // if the robot base pose was requested the current position in
 		// robot space is send
 	    for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-		    T_tmp[i + 3 * j] = (float) T_curPose.getRotationMatrix()
+		    transformTmp[i + 3 * j] = (float) transformCurrentPose.getRotationMatrix()
 			    .get(i, j);
 		}
 	    }
-	    SendIGTLTransform("T_EE", T_tmp);
+	    SendIGTLTransform("T_EE", transformTmp);
 	}
 
     }
