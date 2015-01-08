@@ -138,11 +138,184 @@ import com.kuka.roboticsAPI.userInterface.ServoMotionUtilities;
  */
 public class StateMachineApplication extends RoboticsAPIApplication {
 
+    /**
+     * Acceleration of robot movements during state-machine execution. Value in
+     * %.
+     */
+    private static final double ACC = 1;
+
+    /**
+     * Definition of the initial robot position before the state-machine starts
+     * working.
+     */
+    private static final JointPosition INITIAL_ROBOT_POSE = new JointPosition(
+	    0.0, Math.toRadians(30), 0., -Math.toRadians(60), 0.,
+	    Math.toRadians(90), 0.);
+    /**
+     * Maximum allowed deviation of the statistic timer of the main loop.
+     */
+    private static final int MAXIMUM_TIMING_DEVIATION_MS = 5;
+
+    /**
+     * Cyclic time of each loop of the main (state machine) thread.
+     */
+    private static final int MS_TO_SLEEP = 10;
+    /**
+     * number of loops to run with out any communication with the state control.
+     */
+    private static final int N_OF_RUNS = 500;
+
+    /**
+     * The nullspace stiffness (rotational), when the robot is moving in
+     * cartesian impedance mode. Value in Nm/rad.
+     */
+    private static final double NULLSP_STIFF = 5000;
+    /**
+     * The maximum path-orientation deviation in a-angle, when the robot is
+     * moving in cartesian impedance mode. Values in rad.
+     */
+    private static final double PATH_DEV_A = 10; // TODO check value
+
+    /**
+     * The maximum path-orientation deviation in b-angle, when the robot is
+     * moving in cartesian impedance mode. Values in rad.
+     */
+    private static final double PATH_DEV_B = 10; // TODO check value
+
+    /**
+     * The maximum path-orientation deviation in c-angle, when the robot is
+     * moving in cartesian impedance mode. Values in rad.
+     */
+    private static final double PATH_DEV_C = 10; // TODO check value
+
+    /**
+     * The maximum path deviation in x direction, when the robot is moving in
+     * cartesian impedance mode. Values in mm.
+     */
+    private static final double PATH_DEV_X = 500;
+
+    /**
+     * The maximum path deviation in y direction, when the robot is moving in
+     * cartesian impedance mode. Values in mm.
+     */
+    private static final double PATH_DEV_Y = 500;
+
+    /**
+     * The maximum path deviation in z direction, when the robot is moving in
+     * cartesian impedance mode. Values in mm.
+     */
+    private static final double PATH_DEV_Z = 500;
+
+    /**
+     * The rotational stiffness, when the robot is moving in cartesian impedance
+     * mode. Value in Nm/rad.
+     */
+    private static final double ROT_STIFF = 300;
+
+    /**
+     * The port for the slicer-control-thread.
+     */
+    public static final int SLICER_CONTROL_COM_PORT = 49001;
+
+    /**
+     * The cycle time of the slicer-control-thread in milliseconds.
+     */
+    private static final int SLICER_CONTROL_CYLCETIME_MS = 20;
+    /**
+     * The priority for the slicer-control-thread.
+     */
+    private static final int SLICER_CONTROL_PRIO = 6;
+    /**
+     * The port for the slicer-visualization-thread.
+     */
+    public static final int SLICER_VISUAL_COM_PORT = 49002;
+
+    /**
+     * The cycle time of the slicer-visualization-thread in milliseconds.
+     */
+    private static final int SLICER_VISUAL_CYLCETIME_MS = 25;
+    /**
+     * The priority for the slicer-visualization-thread.
+     */
+    private static final int SLICER_VISUAL_PRIO = 5;
+    /**
+     * Minimum trajectory execution time during state-machine execution. Value
+     * in seconds.
+     */
+    private static final double TRAJ_EXC_TIME = 5e-03;
+    /**
+     * The translational stiffness, when the robot is moving in cartesian
+     * impedance mode. Value in N/m.
+     */
+    private static final double TRANSL_STIFF = 5000;
+    /**
+     * Velocity of robot movements during state-machine execution. Value in %.
+     */
+    private static final double VEL = 1;
+    /**
+     * Sleeps for a specified period of time. It should be called every
+     * iteration in the main loop. The time to sleep is calculated according to
+     * the loop iteration duration. This method is used for stability
+     * enhancement. TODO method should be moved to utility class.
+     * 
+     * @param startTimeNanos
+     *            the start time of the loop
+     * @param cycleTimeToleranceMs
+     *            the tolerance border. If {@code MS_TO_SLEEP} -
+     *            {@code cycleTimeToleranceMs} is bigger than the loop-iteration
+     *            runtime, then sleeping is necessary.
+     * @param cycleTime
+     *            the desired cycle time for a loop iteration in milliseconds.
+     * @throws InterruptedException
+     *             when sleeping of this thread was interrupted.
+     */
+    public static final void cyclicSleep(final long startTimeNanos,
+	    final int cycleTimeToleranceMs, final int cycleTime)
+	    throws InterruptedException {
+	long runtime = (long) ((System.nanoTime() - startTimeNanos));
+	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
+	long runtimeNanoS = TimeUnit.NANOSECONDS.toNanos(runtime);
+	final long sleepRangeNanosMax = 999999;
+	if (runtimeMS < cycleTime - cycleTimeToleranceMs) {
+	    Thread.sleep(cycleTime - cycleTimeToleranceMs - runtimeMS,
+		    (int) (sleepRangeNanosMax - runtimeNanoS));
+
+	}
+    }
+
+    /**
+     * Auto-generated method stub. Do not modify the contents of this method.
+     * 
+     * @param args
+     *            unused arguments.
+     */
+    public static void main(final String[] args) {
+	StateMachineApplication app = new StateMachineApplication();
+	app.runApplication();
+    }
+
+    /**
+     * Control mode for movements during state control.
+     */
+    private IMotionControlMode controlMode;
+
     /** The robot object for controlling robot movements. */
     private LBR imesLBR;
 
-    /** Sunrise specific interface to control the robot's movements. */
-    private ISmartServoRuntime smartServoRuntime;
+    /**
+     * Object of the State machine class.
+     * 
+     * @see LwrStatemachine
+     */
+    private LwrStatemachine imesStatemachine;
+
+    /**
+     * The tool object describing the physical properties of the tool attached
+     * to the robot's flange.
+     */
+    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.6,
+	    MatrixTransformation.ofTranslation(-5, 0, 50), Inertia.ZERO));
+
     /**
      * Object of the state machine interface class for the communication with a
      * state control software using the OpenIGTLink protocol.
@@ -158,33 +331,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * @see LWRVisualizationInterface
      */
     private LWRVisualizationInterface slicerVisualIf;
-    /**
-     * Object of the State machine class.
-     * 
-     * @see LwrStatemachine
-     */
-    private LwrStatemachine imesStatemachine;
 
-    /**
-     * Control mode for movements during state control.
-     */
-    private IMotionControlMode controlMode;
-    /**
-     * number of loops to run with out any communication with the state control.
-     */
-    private static final int N_OF_RUNS = 500;
-
-    /**
-     * Cyclic time of each loop of the main (state machine) thread.
-     */
-    private static final int MS_TO_SLEEP = 10;
-
-    /**
-     * The tool object describing the physical properties of the tool attached
-     * to the robot's flange.
-     */
-    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.6,
-	    MatrixTransformation.ofTranslation(-5, 0, 50), Inertia.ZERO));
+    /** Sunrise specific interface to control the robot's movements. */
+    private ISmartServoRuntime smartServoRuntime;
 
     /**
      * Definition of the tool-center-point.
@@ -193,111 +342,28 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	    .ofTranslation(-40, 10, 207);
 
     /**
-     * Definition of the initial robot position before the state-machine starts
-     * working.
+     * Stops all running communication threads.
      */
-    private static final JointPosition INITIAL_ROBOT_POSE = new JointPosition(
-	    0.0, Math.toRadians(30), 0., -Math.toRadians(60), 0.,
-	    Math.toRadians(90), 0.);
+    public final void dispose() {
 
-    /**
-     * Velocity of robot movements during state-machine execution. Value in %.
-     */
-    private static final double VEL = 1;
+	slicerControlIf.ControlRun = false;
+	slicerVisualIf.visualRun = false;
 
-    /**
-     * Acceleration of robot movements during state-machine execution. Value in
-     * %.
-     */
-    private static final double ACC = 1;
+	// Stop the motion
+	final boolean motionStopped = smartServoRuntime.stopMotion();
+	if (!motionStopped) {
+	    getLogger().error("Cannot stop motion of smartServoRuntime.");
+	}
 
-    /**
-     * Minimum trajectory execution time during state-machine execution. Value
-     * in seconds.
-     */
-    private static final double TRAJ_EXC_TIME = 5e-03;
+	if (slicerControlIf != null) {
+	    slicerControlIf.finalize();
+	}
+	if (slicerVisualIf != null) {
+	    slicerVisualIf.finalize();
 
-    /**
-     * The translational stiffness, when the robot is moving in cartesian
-     * impedance mode. Value in N/m.
-     */
-    private static final double TRANSL_STIFF = 5000;
-    /**
-     * The rotational stiffness, when the robot is moving in cartesian impedance
-     * mode. Value in Nm/rad.
-     */
-    private static final double ROT_STIFF = 300;
-    /**
-     * The nullspace stiffness (rotational), when the robot is moving in
-     * cartesian impedance mode. Value in Nm/rad.
-     */
-    private static final double NULLSP_STIFF = 5000;
+	}
 
-    /**
-     * The maximum path deviation in x direction, when the robot is moving in
-     * cartesian impedance mode. Values in mm.
-     */
-    private static final double PATH_DEV_X = 500;
-    /**
-     * The maximum path deviation in y direction, when the robot is moving in
-     * cartesian impedance mode. Values in mm.
-     */
-    private static final double PATH_DEV_Y = 500;
-    /**
-     * The maximum path deviation in z direction, when the robot is moving in
-     * cartesian impedance mode. Values in mm.
-     */
-    private static final double PATH_DEV_Z = 500;
-    /**
-     * The maximum path-orientation deviation in a-angle, when the robot is
-     * moving in cartesian impedance mode. Values in rad.
-     */
-    private static final double PATH_DEV_A = 10; // TODO check value
-    /**
-     * The maximum path-orientation deviation in b-angle, when the robot is
-     * moving in cartesian impedance mode. Values in rad.
-     */
-    private static final double PATH_DEV_B = 10; // TODO check value
-    /**
-     * The maximum path-orientation deviation in c-angle, when the robot is
-     * moving in cartesian impedance mode. Values in rad.
-     */
-    private static final double PATH_DEV_C = 10; // TODO check value
-
-    /**
-     * The priority for the slicer-control-thread.
-     */
-    private static final int SLICER_CONTROL_PRIO = 6;
-
-    /**
-     * The priority for the slicer-visualization-thread.
-     */
-    private static final int SLICER_VISUAL_PRIO = 5;
-
-    /**
-     * The port for the slicer-control-thread.
-     */
-    public static final int SLICER_CONTROL_COM_PORT = 49001;
-
-    /**
-     * The port for the slicer-visualization-thread.
-     */
-    public static final int SLICER_VISUAL_COM_PORT = 49002;
-
-    /**
-     * The cycle time of the slicer-control-thread in milliseconds.
-     */
-    private static final int SLICER_CONTROL_CYLCETIME_MS = 20;
-
-    /**
-     * The cycle time of the slicer-visualization-thread in milliseconds.
-     */
-    private static final int SLICER_VISUAL_CYLCETIME_MS = 25;
-
-    /**
-     * Maximum allowed deviation of the statistic timer of the main loop.
-     */
-    private static final int MAXIMUM_TIMING_DEVIATION_MS = 5;
+    }
 
     /**
      * In this function the robot, tool etc are initialized.
@@ -379,24 +445,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     }
 
     /**
-     * Parametrizes the cartesian control mode according to the defined
-     * constants.
-     * 
-     * @param mode
-     *            The control-mode-object, which has to be parameterized.
-     */
-    private void paramCartesianImpedanceMode(final IMotionControlMode mode) {
-	((CartesianImpedanceControlMode) mode).parametrize(CartDOF.TRANSL)
-		.setStiffness(TRANSL_STIFF);
-	((CartesianImpedanceControlMode) controlMode).parametrize(CartDOF.ROT)
-		.setStiffness(ROT_STIFF);
-	((CartesianImpedanceControlMode) mode)
-		.setNullSpaceStiffness(NULLSP_STIFF);
-	((CartesianImpedanceControlMode) mode).setMaxPathDeviation(PATH_DEV_X,
-		PATH_DEV_Y, PATH_DEV_Z, PATH_DEV_A, PATH_DEV_B, PATH_DEV_C);
-    }
-
-    /**
      * Initializes the slicer control interface thread and the slicer
      * visualization interface thread.
      */
@@ -418,22 +466,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	slicerVisualIf.jntPoseStateM = smartServoRuntime
 		.getAxisQMsrOnController();
 	slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
-
-    }
-
-    /**
-     * Initializes the state machine.
-     */
-    private void initStateMachine() {
-	imesStatemachine = new LwrStatemachine();
-	imesStatemachine.StartVisual = true;
-
-	MatrixTransformation currentPose = MatrixTransformation
-		.of((ITransformation) imesTool.getDefaultMotionFrame());
-	imesStatemachine.curPose = currentPose;
-	imesStatemachine.cmdPose = currentPose;
-	imesStatemachine.controlMode = controlMode;
-	imesStatemachine.currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
 
     }
 
@@ -468,6 +500,77 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	ThreadUtil.milliSleep(MS_TO_SLEEP);
 	smartServoRuntime.updateWithRealtimeSystem();
 	ThreadUtil.milliSleep(MS_TO_SLEEP);
+    }
+
+    /**
+     * Initializes the state machine.
+     */
+    private void initStateMachine() {
+	imesStatemachine = new LwrStatemachine();
+	imesStatemachine.StartVisual = true;
+
+	MatrixTransformation currentPose = MatrixTransformation
+		.of((ITransformation) imesTool.getDefaultMotionFrame());
+	imesStatemachine.curPose = currentPose;
+	imesStatemachine.cmdPose = currentPose;
+	imesStatemachine.controlMode = controlMode;
+	imesStatemachine.currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
+
+    }
+
+    /**
+     * Parametrizes the cartesian control mode according to the defined
+     * constants.
+     * 
+     * @param mode
+     *            The control-mode-object, which has to be parameterized.
+     */
+    private void paramCartesianImpedanceMode(final IMotionControlMode mode) {
+	((CartesianImpedanceControlMode) mode).parametrize(CartDOF.TRANSL)
+		.setStiffness(TRANSL_STIFF);
+	((CartesianImpedanceControlMode) controlMode).parametrize(CartDOF.ROT)
+		.setStiffness(ROT_STIFF);
+	((CartesianImpedanceControlMode) mode)
+		.setNullSpaceStiffness(NULLSP_STIFF);
+	((CartesianImpedanceControlMode) mode).setMaxPathDeviation(PATH_DEV_X,
+		PATH_DEV_Y, PATH_DEV_Z, PATH_DEV_A, PATH_DEV_B, PATH_DEV_C);
+    }
+
+    /**
+     * Prints timing statistics and communication parameters.
+     * 
+     * @param loopTimer
+     *            the timer of the main loop.
+     */
+    private void printFinalInfos(final StatisticTimer loopTimer) {
+	// Print the timing statistics
+	getLogger().info(
+		"Statistic Timing of Statemachine interface thread "
+			+ slicerControlIf.SMtiming);
+	getLogger().info(
+		"UID miss: " + slicerControlIf.UIDmiss + " UIDrepeats: "
+			+ slicerControlIf.UIDrepeatNum + "(max: "
+			+ slicerControlIf.UIDrepeat_max + ")");
+	getLogger().info(
+		"Statistic Timing of Visualisation interface thread "
+			+ slicerVisualIf.visualTiming);
+	getLogger().info("PoseUID miss: " + slicerVisualIf.poseUidOldCount);
+	getLogger().info("Statistic Timing of Statemachine Mean:" + loopTimer);
+
+	getLogger().info(
+		"Displaying final states after loop "
+			+ controlMode.getClass().getName());
+	smartServoRuntime.setDetailedOutput(1);
+
+	if (loopTimer.getMeanTimeMillis() > MS_TO_SLEEP
+		+ MAXIMUM_TIMING_DEVIATION_MS) {
+	    getLogger().info(
+		    "Statistic Timing is unexpected slow, "
+			    + "you should try to optimize TCP/IP Transfer");
+	    getLogger()
+		    .info("Under Windows, you should play with the registry, "
+			    + "see the e.g. the RealtimePTP Class javaDoc for details");
+	}
     }
 
     /**
@@ -700,74 +803,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     }
 
     /**
-     * Prints timing statistics and communication parameters.
-     * 
-     * @param loopTimer
-     *            the timer of the main loop.
-     */
-    private void printFinalInfos(final StatisticTimer loopTimer) {
-	// Print the timing statistics
-	getLogger().info(
-		"Statistic Timing of Statemachine interface thread "
-			+ slicerControlIf.SMtiming);
-	getLogger().info(
-		"UID miss: " + slicerControlIf.UIDmiss + " UIDrepeats: "
-			+ slicerControlIf.UIDrepeatNum + "(max: "
-			+ slicerControlIf.UIDrepeat_max + ")");
-	getLogger().info(
-		"Statistic Timing of Visualisation interface thread "
-			+ slicerVisualIf.visualTiming);
-	getLogger().info("PoseUID miss: " + slicerVisualIf.poseUidOldCount);
-	getLogger().info("Statistic Timing of Statemachine Mean:" + loopTimer);
-
-	getLogger().info(
-		"Displaying final states after loop "
-			+ controlMode.getClass().getName());
-	smartServoRuntime.setDetailedOutput(1);
-
-	if (loopTimer.getMeanTimeMillis() > MS_TO_SLEEP
-		+ MAXIMUM_TIMING_DEVIATION_MS) {
-	    getLogger().info(
-		    "Statistic Timing is unexpected slow, "
-			    + "you should try to optimize TCP/IP Transfer");
-	    getLogger()
-		    .info("Under Windows, you should play with the registry, "
-			    + "see the e.g. the RealtimePTP Class javaDoc for details");
-	}
-    }
-
-    /**
-     * Sleeps for a specified period of time. It should be called every
-     * iteration in the main loop. The time to sleep is calculated according to
-     * the loop iteration duration. This method is used for stability
-     * enhancement. TODO method should be moved to utility class.
-     * 
-     * @param startTimeNanos
-     *            the start time of the loop
-     * @param cycleTimeToleranceMs
-     *            the tolerance border. If {@code MS_TO_SLEEP} -
-     *            {@code cycleTimeToleranceMs} is bigger than the loop-iteration
-     *            runtime, then sleeping is necessary.
-     * @param cycleTime
-     *            the desired cycle time for a loop iteration in milliseconds.
-     * @throws InterruptedException
-     *             when sleeping of this thread was interrupted.
-     */
-    public static final void cyclicSleep(final long startTimeNanos,
-	    final int cycleTimeToleranceMs, final int cycleTime)
-	    throws InterruptedException {
-	long runtime = (long) ((System.nanoTime() - startTimeNanos));
-	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
-	long runtimeNanoS = TimeUnit.NANOSECONDS.toNanos(runtime);
-	final long sleepRangeNanosMax = 999999;
-	if (runtimeMS < cycleTime - cycleTimeToleranceMs) {
-	    Thread.sleep(cycleTime - cycleTimeToleranceMs - runtimeMS,
-		    (int) (sleepRangeNanosMax - runtimeNanoS));
-
-	}
-    }
-
-    /**
      * Updates several fields of the slicer-visualization thread, which
      * correspond to the current pose of the robot. Furthermore the data, set
      * before, can be send to slicer for visualization purposes.
@@ -785,41 +820,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	    slicerVisualIf.jntPoseStateM = imesStatemachine.curJntPose;
 	default:
 	    break;
-
-	}
-
-    }
-
-    /**
-     * Auto-generated method stub. Do not modify the contents of this method.
-     * 
-     * @param args
-     *            unused arguments.
-     */
-    public static void main(final String[] args) {
-	StateMachineApplication app = new StateMachineApplication();
-	app.runApplication();
-    }
-
-    /**
-     * Stops all running communication threads.
-     */
-    public final void dispose() {
-
-	slicerControlIf.ControlRun = false;
-	slicerVisualIf.visualRun = false;
-
-	// Stop the motion
-	final boolean motionStopped = smartServoRuntime.stopMotion();
-	if (!motionStopped) {
-	    getLogger().error("Cannot stop motion of smartServoRuntime.");
-	}
-
-	if (slicerControlIf != null) {
-	    slicerControlIf.finalize();
-	}
-	if (slicerVisualIf != null) {
-	    slicerVisualIf.finalize();
 
 	}
 

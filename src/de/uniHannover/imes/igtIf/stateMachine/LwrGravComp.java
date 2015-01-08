@@ -84,23 +84,6 @@ public class LwrGravComp implements ILwrState {
     }
 
     /**
-     * In this function the acknowledge string, which is send to the state
-     * control is defined due the current LWR State. In the GravComp State the
-     * String is Set to "GravComp;".
-     * 
-     * @param lwrStatemachine
-     *            The operated state machine
-     */
-    @Override
-    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
-
-	String ack;
-	ack = "GravComp;";
-	lwrStatemachine.AckIGTmessage = ack;
-
-    }
-
-    /**
      * In this function the command string which is received from the state
      * control is interpreted and the parameters are set. It is only called
      * after a State transition. For the LWRState LWRGravComp because no
@@ -120,5 +103,22 @@ public class LwrGravComp implements ILwrState {
 	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
 		    .indexOf(";"));
 	}
+    }
+
+    /**
+     * In this function the acknowledge string, which is send to the state
+     * control is defined due the current LWR State. In the GravComp State the
+     * String is Set to "GravComp;".
+     * 
+     * @param lwrStatemachine
+     *            The operated state machine
+     */
+    @Override
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
+
+	String ack;
+	ack = "GravComp;";
+	lwrStatemachine.AckIGTmessage = ack;
+
     }
 }

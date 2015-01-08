@@ -50,107 +50,28 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
 
 public class LwrVirtualFixtures implements ILwrState {
 
-    public Vector VirtualFixture_ap;
-    public Vector VirtualFixture_n;
-    public double VirtualFixture_phi;
-    public int VFtype = 0;
-    public boolean ImageSpace = false;
+    private double awaredist = 20;
+    boolean ConeTip = false;
     // Some Variables for Stiffness Control
     private double distance;
-    private double awaredist = 20;
+    boolean EndPoint = false;
+    int i = 0;
+    public boolean ImageSpace = false;
     private double last_distance = 0.0;
     private double max_stiff = 5000;
-    private MatrixTransformation T_Base_cone;
     private Vector normvec = Vector.of(0, 0, 1);
+    private Vector normvec_new = Vector.of(0, 0, 1);
     private Vector normvec_old = Vector.of(0, 0, 1);
     private Vector normvec_old2 = Vector.of(0, 0, 1);
     private Vector normvec_old3 = Vector.of(0, 0, 1);
     private Vector normvec_old4 = Vector.of(0, 0, 1);
     private Vector normvec_old5 = Vector.of(0, 0, 1);
-    private Vector normvec_new = Vector.of(0, 0, 1);;
-    int i = 0;
+    private MatrixTransformation T_Base_cone;
+    public int VFtype = 0;;
+    public Vector VirtualFixture_ap;
 
-    boolean ConeTip = false;
-    boolean EndPoint = false;
-
-    /**
-     * In this Function the Stiffness value for the case that the robot is
-     * getting closer to a virtual fixture is calculated.
-     * 
-     * @param dist
-     *            the minimum distance to the Virtual Fixture
-     * @param awareDistance
-     *            the minimum distance from where on the stiffness is changed
-     *            @return the calculated stiffness value.
-     */
-
-    public final double getStiffnessValueApproach(
-	    final double dist, final double awareDistance){ 
-    /*
-     * Berechnung der Daempfung bei Annaeherung an die Grenze
-     */
-    
-	if (dist >= awareDistance) {
-	    return 0.01;
-	} else if (dist < awareDistance && dist > 0) {
-	    double y;
-	    double m = max_stiff / Math.pow(awareDistance, 2);
-	    y = m * Math.pow(awareDistance - dist, 2);
-	    return y;
-	} else {
-	    return max_stiff;
-	}
-    }
-
-    /**
-     * In this Function the Stiffness value for the case that the robot is
-     * getting further away from a virtual fixture is calculated.
-     * 
-     * @param dist
-     *            the minimum distance to the Virtual Fixture
-     * @param awareDistance
-     *            the minimum distance from where on the stiffness is changed
-     *            @return the calculated stiffness value.
-     */
-    public final double getStiffnessValueRemoved(
-	    final double dist, final double awareDistance) {
-
-	double zero_point = awareDistance / 2;
-	if (dist >= zero_point) {
-	    return 0.01;
-	} else if (dist < zero_point && dist > 0) {
-	    double y;
-	    double m = max_stiff / Math.pow(zero_point, 3);
-	    y = m * Math.pow(zero_point - dist, 3);
-	    return y;
-	} else {
-	    return max_stiff;
-	}
-    }
-
-    /**
-     * In this Function the Stiffness value for the case that the robot is
-     * getting further away from a virtual fixture is calculated.
-     * 
-     * @param dist
-     *            the minimum distance to the Virtual Fixture
-     * @param awareDistance
-     *            the minimum distance from where on the stiffness is changed
-     *            @return the calculated stiffness value.
-     */
-    public final double getStiffnessValueConeTip(
-	    final double dist, final double awareDistance) {
-
-	double max = max_stiff / 2;
-	if (dist < awareDistance && dist > 0) {
-	    double y;
-	    double m = max / Math.pow(awareDistance, 3);
-	    y = max_stiff - m * Math.pow(awareDistance - dist, 3);
-	    return y;
-	} else {
-	    return max;
-	}
-    }
+    public Vector VirtualFixture_n;
+    public double VirtualFixture_phi;
 
     /**
      * In this Function control Mode Parameters are set and the commanded pose
@@ -345,38 +266,82 @@ public class LwrVirtualFixtures implements ILwrState {
     }
 
     /**
-     * In this Function the Acknowledge IGTMessage which is send to the State
-     * Control is defined due the current LWR State. In the Virtual Fixtures
-     * State IGTString is Set to
-     * "VirtualFixtures;plane;"/"VirtualFixtures;cone;" or
-     * "VirtualFixtures;none;" dependent on the selected Virtual Fixtures type.
+     * In this Function the Stiffness value for the case that the robot is
+     * getting closer to a virtual fixture is calculated.
      * 
-     * @param lwrStatemachine
-     *            The operated Statemachine
+     * @param dist
+     *            the minimum distance to the Virtual Fixture
+     * @param awareDistance
+     *            the minimum distance from where on the stiffness is changed
+     *            @return the calculated stiffness value.
      */
-    @Override
-    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
-	String ack;
-	if (VFtype == 1) {
-	    if (distance >= awaredist) {
-		ack = "VirtualFixtures;plane;0;";
-	    } else if (distance < awaredist && distance > 0) {
-		ack = "VirtualFixtures;plane;1;";
-	    } else {
-		ack = "VirtualFixtrues;plane;2;";
-	    }
-	} else if (VFtype == 2) {
-	    if (distance >= awaredist) {
-		ack = "VirtualFixtures;cone;0;";
-	    } else if (distance < awaredist && distance > 0) {
-		ack = "VirtualFixtures;cone;1;";
-	    } else {
-		ack = "VirtualFixtrues;cone;2;";
-	    }
+
+    public final double getStiffnessValueApproach(
+	    final double dist, final double awareDistance){ 
+    /*
+     * Berechnung der Daempfung bei Annaeherung an die Grenze
+     */
+    
+	if (dist >= awareDistance) {
+	    return 0.01;
+	} else if (dist < awareDistance && dist > 0) {
+	    double y;
+	    double m = max_stiff / Math.pow(awareDistance, 2);
+	    y = m * Math.pow(awareDistance - dist, 2);
+	    return y;
 	} else {
-	    ack = "VirtualFixtures;none;";
+	    return max_stiff;
 	}
-	lwrStatemachine.AckIGTmessage = ack;
+    }
+
+    /**
+     * In this Function the Stiffness value for the case that the robot is
+     * getting further away from a virtual fixture is calculated.
+     * 
+     * @param dist
+     *            the minimum distance to the Virtual Fixture
+     * @param awareDistance
+     *            the minimum distance from where on the stiffness is changed
+     *            @return the calculated stiffness value.
+     */
+    public final double getStiffnessValueConeTip(
+	    final double dist, final double awareDistance) {
+
+	double max = max_stiff / 2;
+	if (dist < awareDistance && dist > 0) {
+	    double y;
+	    double m = max / Math.pow(awareDistance, 3);
+	    y = max_stiff - m * Math.pow(awareDistance - dist, 3);
+	    return y;
+	} else {
+	    return max;
+	}
+    }
+
+    /**
+     * In this Function the Stiffness value for the case that the robot is
+     * getting further away from a virtual fixture is calculated.
+     * 
+     * @param dist
+     *            the minimum distance to the Virtual Fixture
+     * @param awareDistance
+     *            the minimum distance from where on the stiffness is changed
+     *            @return the calculated stiffness value.
+     */
+    public final double getStiffnessValueRemoved(
+	    final double dist, final double awareDistance) {
+
+	double zero_point = awareDistance / 2;
+	if (dist >= zero_point) {
+	    return 0.01;
+	} else if (dist < zero_point && dist > 0) {
+	    double y;
+	    double m = max_stiff / Math.pow(zero_point, 3);
+	    y = m * Math.pow(zero_point - dist, 3);
+	    return y;
+	} else {
+	    return max_stiff;
+	}
     }
 
     /**
@@ -461,6 +426,41 @@ public class LwrVirtualFixtures implements ILwrState {
 	    lwrStatemachine.ErrorMessage = 
 		    "Unexpected Messagetype recieved! Expected STRING";
 	}
+    }
+
+    /**
+     * In this Function the Acknowledge IGTMessage which is send to the State
+     * Control is defined due the current LWR State. In the Virtual Fixtures
+     * State IGTString is Set to
+     * "VirtualFixtures;plane;"/"VirtualFixtures;cone;" or
+     * "VirtualFixtures;none;" dependent on the selected Virtual Fixtures type.
+     * 
+     * @param lwrStatemachine
+     *            The operated Statemachine
+     */
+    @Override
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
+	String ack;
+	if (VFtype == 1) {
+	    if (distance >= awaredist) {
+		ack = "VirtualFixtures;plane;0;";
+	    } else if (distance < awaredist && distance > 0) {
+		ack = "VirtualFixtures;plane;1;";
+	    } else {
+		ack = "VirtualFixtrues;plane;2;";
+	    }
+	} else if (VFtype == 2) {
+	    if (distance >= awaredist) {
+		ack = "VirtualFixtures;cone;0;";
+	    } else if (distance < awaredist && distance > 0) {
+		ack = "VirtualFixtures;cone;1;";
+	    } else {
+		ack = "VirtualFixtrues;cone;2;";
+	    }
+	} else {
+	    ack = "VirtualFixtures;none;";
+	}
+	lwrStatemachine.AckIGTmessage = ack;
     }
 
 }

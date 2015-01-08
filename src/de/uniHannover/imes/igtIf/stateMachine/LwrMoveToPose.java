@@ -41,16 +41,16 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
  * @version 0.1
  */
 public class LwrMoveToPose implements ILwrState {
+    private Vector ap = null;
+    private Vector ap_null = null;
     private boolean EndofPath = false;
     public boolean ImageSpace = false;
-    public Vector TargetPosition = null;
-    public MatrixTransformation TargetOrientation = null;
 
     private double lambda_end = 0.0;
     double lambda_null = 0.0;
+    public MatrixTransformation TargetOrientation = null;
+    public Vector TargetPosition = null;
     private Vector u = null;
-    private Vector ap = null;
-    private Vector ap_null = null;
 
 
     /**
@@ -123,27 +123,6 @@ public class LwrMoveToPose implements ILwrState {
     }
 
     /**
-     * In this Function the Acknowledge String which is send to the State
-     * Control is defined due the current LWR State. In the MovetoPose State the
-     * String is Set to "MovetoPose;true;" or "MoveToPose;false;" according to
-     * the value of the boolean ReachedPose.
-     * 
-     * @param lwrStatemachine
-     *            The operated Statemachine
-     */
-    @Override
-    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
-	String ack;
-	if (EndofPath) {
-	    ack = "MoveToPose;true;";
-	} else {
-	    ack = "MoveToPose;false;";
-	}
-	lwrStatemachine.AckIGTmessage = ack;
-    }
-
-    /**
      * In this Function the Command String which is received from the State
      * Control is read and interpreted due to the Current State and if requested
      * and allowed the State is Changed. In The MoveToPose State the allowed
@@ -207,6 +186,27 @@ public class LwrMoveToPose implements ILwrState {
 		    "Unexpected Messagetype recieved! Expected STRING";
 	}
 
+    }
+
+    /**
+     * In this Function the Acknowledge String which is send to the State
+     * Control is defined due the current LWR State. In the MovetoPose State the
+     * String is Set to "MovetoPose;true;" or "MoveToPose;false;" according to
+     * the value of the boolean ReachedPose.
+     * 
+     * @param lwrStatemachine
+     *            The operated Statemachine
+     */
+    @Override
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
+	// TODO Automatisch generierter Methodenstub
+	String ack;
+	if (EndofPath) {
+	    ack = "MoveToPose;true;";
+	} else {
+	    ack = "MoveToPose;false;";
+	}
+	lwrStatemachine.AckIGTmessage = ack;
     }
 
 }

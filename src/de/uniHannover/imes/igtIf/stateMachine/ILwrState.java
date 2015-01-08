@@ -65,21 +65,6 @@ interface ILwrState {
     void calcControlParam(LwrStatemachine lwrStatemachine);
 
     /**
-     * In this Function the Acknowledge String which is send to the State
-     * Control is defined due the current LWR State. For Further information see
-     * the Documentation of the particular State.
-     * 
-     * @param lwrStatemachine
-     *            The operated state machine
-     * @see LwrIdle
-     * @see LwrGravComp
-     * @see LwrVirtualFixtures
-     * @see LwrPathImp
-     * @see LwrMoveToPose
-     */
-    void setAckPacket(LwrStatemachine lwrStatemachine);
-
-    /**
      * In this Function the Command String which is received from the State
      * Control is read and interpreted due to the Current State and if requested
      * and allowed the State is Changed. For Further information see the
@@ -95,4 +80,19 @@ interface ILwrState {
      * @see LwrMoveToPose
      */
     void interpretCmdPacket(LwrStatemachine lwrStatemachine);
+
+    /**
+     * In this Function the Acknowledge String which is send to the State
+     * Control is defined due the current LWR State. For Further information see
+     * the Documentation of the particular State.
+     * 
+     * @param lwrStatemachine
+     *            The operated state machine
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
+     */
+    void setAckPacket(LwrStatemachine lwrStatemachine);
 }

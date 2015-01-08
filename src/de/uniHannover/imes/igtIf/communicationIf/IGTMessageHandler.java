@@ -38,38 +38,38 @@ import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 public class IGTMessageHandler extends Thread {
 
     /**
-     * Error Message String for error in the State machine interface.
-     */
-    public String errorMessage = ""; //TODO design failure other threads access this field.
-    /**
-     * Name of the thread using this Message handler.
-     */
-    public String sendername = ""; //TODO design failure other threads access this field.
-    /**
-     * in this String the last printed error message is saved to check if it is
-     * error message has already been printed.
-     */
-    private String lastPrintedError = "";
-
-    /**
-     * Semaphore for save reading and writing the variables.
-     */
-    public Semaphore messageSemaphore = new Semaphore(1, true); //TODO design failure other threads access this field.
-    /**
      * cycle time of the state control interface thread in milliseconds. Default
      * value is 20 ms.
      */
-    private static final int MS_TO_SLEEP = 1000; 
-    /**
-     * Flag indicating if the message handler thread is active.
-     */
-    private boolean threadAlive = true;
-
+    private static final int MS_TO_SLEEP = 1000;
     /**
      * Flag to indicate if this message handler is displaying the errors at the
      * smartPad or not.
      */
     public boolean debugInfos = false; //TODO design failure other threads access this field.
+    /**
+     * Error Message String for error in the State machine interface.
+     */
+    public String errorMessage = ""; //TODO design failure other threads access this field.
+
+    /**
+     * in this String the last printed error message is saved to check if it is
+     * error message has already been printed.
+     */
+    private String lastPrintedError = "";
+    /**
+     * Semaphore for save reading and writing the variables.
+     */
+    public Semaphore messageSemaphore = new Semaphore(1, true); //TODO design failure other threads access this field. 
+    /**
+     * Name of the thread using this Message handler.
+     */
+    public String sendername = ""; //TODO design failure other threads access this field.
+
+    /**
+     * Flag indicating if the message handler thread is active.
+     */
+    private boolean threadAlive = true;
 
     /**
      * Constructor, which initializes this thread as a daemon.

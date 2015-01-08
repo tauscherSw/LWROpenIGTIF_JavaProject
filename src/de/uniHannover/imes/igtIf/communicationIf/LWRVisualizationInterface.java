@@ -57,6 +57,44 @@ import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 public class LWRVisualizationInterface extends Thread {
 
     /**
+     * Enum for the client status. Possible states are connected and
+     * disconnected.
+     */
+    private static enum ClientStatus { // TODO duplicate enumeration
+	/** the client is connected. */
+	CONNECTED,
+	/** the client is disconnected. */
+	DISCONNECTED
+    }
+
+    /**
+     * Enum for the type of date requested from the visualization Software
+     * (Image space, robot base COF, joint space).
+     */
+    public static enum VisualIFDatatypes {
+	/** type of robot data is in imagespace. */
+	IMAGESPACE,
+	/** type of robot data is in jointspace. */
+	JOINTSPACE,
+	/** type of robot data is in cartesian space. */
+	ROBOTBASE
+    }
+
+    /**
+     * Represents the d parameter of the Denavit-Hartenberg robot
+     * representation. It is the distance between on the perpendicular line of
+     * two joints in millimeters.
+     */
+    private static final double[] DH_D_PARAMETER_LWRIIWA7 = new double []{
+	160, 180, 180, 220, 180, 220, 80, 50
+    };
+
+    /**
+     * The maximum number of allowed connection errors via openIGTlink.
+     */
+    private static final int MAX_ALLOWED_CONNECTION_ERROR = 100;
+
+    /**
      * Load SWIG igtlutil library (Default Library folder is
      * "..\OpenIGTLinkLib\swig\"
      */
@@ -72,50 +110,21 @@ public class LWRVisualizationInterface extends Thread {
     private OneTimeStep aStep;
 
     /**
-     * Statistic Timer for the Visualization Interface Thread.
+     * Working copy of the Current Cartesian position in robot base coordinate
+     * system of the robot.
      */
-    public StatisticTimer visualTiming = new StatisticTimer(); // TODO design
-							       // failure other
-							       // threads access
-							       // this field.
+    private MatrixTransformation cartPose = null;
+
+    // access this field.
+    /**
+     * Current Cartesian position in robot base coordinate system of the robot.
+     */
+    public MatrixTransformation cartPose_StateM = null; // TODO design failure
 
     /**
-     * OpenIGTLink Client socket - socket of the connected Client.
+     * This integer is set to true if an connection error occurs.
      */
-    private java.net.Socket openIGTClient = null;
-
-    /**
-     * openIGTLink visualization server socket.
-     */
-    private ServerSocket openIGTServer;
-
-    /**
-     * Error Message Handler which takes care of the time consuming Error output
-     * in a separate thread.
-     */
-    private IGTMessageHandler errHandler;
-
-    /**
-     * Output stream for sending the currant transformation or joint angles to
-     * visualization software.
-     */
-    private OutputStream outstr;
-
-    /**
-     * Flag to indicate if an Error occurred during the last cycle.
-     */
-    private boolean errorFlag = false; // TODO unused field
-
-    /**
-     * Enum for the client status. Possible states are connected and
-     * disconnected.
-     */
-    private static enum ClientStatus { // TODO duplicate enumeration
-	/** the client is connected. */
-	CONNECTED,
-	/** the client is disconnected. */
-	DISCONNECTED
-    };
+    private int connectionErr = 0;;
 
     /**
      * current client status. Intitialized as disconnected state.
@@ -125,17 +134,10 @@ public class LWRVisualizationInterface extends Thread {
 								    // field
 
     /**
-     * Enum for the type of date requested from the visualization Software
-     * (Image space, robot base COF, joint space).
+     * cycle time of the visualization interface thread. Default value is 25 ms.
      */
-    public static enum VisualIFDatatypes {
-	/** type of robot data is in imagespace. */
-	IMAGESPACE,
-	/** type of robot data is in cartesian space. */
-	ROBOTBASE,
-	/** type of robot data is in jointspace. */
-	JOINTSPACE
-    }; 
+    public int cycleTime = 25; // TODO design failure other threads access this
+			       // field.; 
 
     /**
      * Current selected data type to be send to the robot. Initialized as
@@ -151,29 +153,23 @@ public class LWRVisualizationInterface extends Thread {
 								     // field.
 
     /**
-     * Flag to indicate if the Visualization interface is set active or not.
+     * Flag to indicate if the Debug Information should be printed or not.
      */
-    public boolean visualActive = false; // TODO design failure other threads
-					 // access this field.
-    /**
-     * Flag to indicate if the Visualization interface is running or if the
-     * thread is stopped.
+    public boolean debugInfoFlag = false; // TODO design failure other threads
+					  // access this field.
+					 /**
+     * Error Message Handler which takes care of the time consuming Error output
+     * in a separate thread.
      */
-    public boolean visualRun = false; // TODO design failure other threads
-				      // access this field.
-    /**
-     * Current Cartesian position in robot base coordinate system of the robot.
+    private IGTMessageHandler errHandler;
+				      /**
+     * Flag to indicate if an Error occurred during the last cycle.
      */
-    public MatrixTransformation cartPose_StateM = null; // TODO design failure
-							// other threads access
-							// this field.
-    /**
-     * Transformation from robot base coordinate system to image space
-     * coordinate system.
+    private boolean errorFlag = false; // TODO unused field
+							/**
+     * Working copy of the Current Joint6 position of the robot.
      */
-    public MatrixTransformation tImgBaseStateM = null; // TODO design failure
-						       // other threads access
-						       // this field.
+    private JointPosition jntPose = null;
 
     /**
      * Current Joint positions.
@@ -182,35 +178,20 @@ public class LWRVisualizationInterface extends Thread {
 					       // threads access this field.
 
     /**
-     * Working copy of the transformation from robot base coordinate system to
-     * image space coordinate system.
+     * OpenIGTLink Client socket - socket of the connected Client.
      */
-    public MatrixTransformation tImgBase = MatrixTransformation.IDENTITY; // TODO
-									  // design
-									  // failure
-									  // other
-									  // threads
-									  // access
-									  // this
-									  // field.
+    private java.net.Socket openIGTClient = null;
 
     /**
-     * Working copy of the Current Cartesian position in robot base coordinate
-     * system of the robot.
+     * openIGTLink visualization server socket.
      */
-    private MatrixTransformation cartPose = null;
+    private ServerSocket openIGTServer;
 
     /**
-     * Working copy of the Current Joint6 position of the robot.
+     * Output stream for sending the currant transformation or joint angles to
+     * visualization software.
      */
-    private JointPosition jntPose = null;
-
-    /**
-     * Semaphore for secure access to the shared variables.
-     */
-    public Semaphore visualSema = new Semaphore(1, true); // TODO design failure
-							  // other threads
-							  // access this field.
+    private OutputStream outstr;
 
     /**
      * Port number for the communication with visualization software e.g. 3D
@@ -224,18 +205,6 @@ public class LWRVisualizationInterface extends Thread {
 								      // access
 								      // this
 								      // field.
-
-    /**
-     * Flag to indicate if the Debug Information should be printed or not.
-     */
-    public boolean debugInfoFlag = false; // TODO design failure other threads
-					  // access this field.
-
-    /**
-     * Flag to indicate if force at the tool center point should be sent or not.
-     */
-    public boolean sendTcpForce = false; // TODO design failure other threads
-					 // access this field.
 
     /**
      * UID of the current pose sent to the visualization software.
@@ -260,15 +229,40 @@ public class LWRVisualizationInterface extends Thread {
     private int poseUidTmpOld = -1;
 
     /**
-     * This integer is set to true if an connection error occurs.
+     * Flag to indicate if force at the tool center point should be sent or not.
      */
-    private int connectionErr = 0;
+    public boolean sendTcpForce = false; // TODO design failure other threads
+					 // access this field.
 
     /**
-     * cycle time of the visualization interface thread. Default value is 25 ms.
+     * Vector containing the force estimated at the tool center point by the
+     * internal torque sensors.
      */
-    public int cycleTime = 25; // TODO design failure other threads access this
-			       // field.
+    public Vector TCPForce; // TODO design failure other threads access this
+			    // field.
+
+    /**
+     * Working copy of the transformation from robot base coordinate system to
+     * image space coordinate system.
+     */
+    public MatrixTransformation tImgBase = MatrixTransformation.IDENTITY; // TODO
+									  // design
+									  // failure
+									  // other
+									  // threads
+									  // access
+									  // this
+									  // field.
+
+    // other threads access
+							// this field.
+    /**
+     * Transformation from robot base coordinate system to image space
+     * coordinate system.
+     */
+    public MatrixTransformation tImgBaseStateM = null; // TODO design failure
+						       // other threads access
+						       // this field.
 
     /**
      * Array of Matrix Transformation used to save the 8 Transformation from the
@@ -277,94 +271,38 @@ public class LWRVisualizationInterface extends Thread {
     private MatrixTransformation[] trafoMatrixArray = new MatrixTransformation[8];
 
     /**
-     * Vector containing the force estimated at the tool center point by the
-     * internal torque sensors.
+     * Flag to indicate if the Visualization interface is set active or not.
      */
-    public Vector TCPForce; // TODO design failure other threads access this
-			    // field.
+    public boolean visualActive = false; // TODO design failure other threads
+
+    // access this field.
+    /**
+     * Flag to indicate if the Visualization interface is running or if the
+     * thread is stopped.
+     */
+    public boolean visualRun = false; // TODO design failure other threads
     
     /**
-     * Represents the d parameter of the Denavit-Hartenberg robot
-     * representation. It is the distance between on the perpendicular line of
-     * two joints in millimeters.
+     * Semaphore for secure access to the shared variables.
      */
-    private static final double[] DH_D_PARAMETER_LWRIIWA7 = new double []{
-	160, 180, 180, 220, 180, 220, 80, 50
-    };
+    public Semaphore visualSema = new Semaphore(1, true); // TODO design failure
+							  // other threads
+							  // access this field.
     
     /**
-     * The maximum number of allowed connection errors via openIGTlink.
+     * Statistic Timer for the Visualization Interface Thread.
      */
-    private static final int MAX_ALLOWED_CONNECTION_ERROR = 100;
+    public StatisticTimer visualTiming = new StatisticTimer(); // TODO design
+							       // failure other
+							       // threads access
+							       // this field.
     
-
-    // TODO duplicate code same method can be found in LWRStateMachineInterface
-    /**
-     * Starts the listening server on the defined port.
-     * 
-     * @throws IOException
-     *             when connection to openIGT server fails.
-     */
-    private void connectServer() throws IOException {
-	stopServer();
-	try {
-	    ServerSocketFactory serverSocketFactory = ServerSocketFactory
-		    .getDefault();
-	    openIGTServer = serverSocketFactory.createServerSocket(this.port);
-	    openIGTServer.setReuseAddress(true);
-	    System.out.println("Visualization interface server socket "
-		    + "succesfully created (port " + this.port + ")");
-
-	} catch (IOException e) {
-	    System.out
-		    .println("Could not Connect to Visualization interface server");
-	    throw e;
-	}
-    }
-
-    /**
-     * Stops the listening OpenIGTLink server.
-     */
-    private void stopServer() {
-	if (openIGTServer != null) {
-	    try {
-		openIGTServer.close();
-		openIGTServer = null;
-		openIGTClient.close();
-		openIGTClient = null;
-		System.out.println("Visualization interface server stopped");
-	    } catch (IOException e) {
-		e.printStackTrace();
-		// TODO exception concept.
-	    }
-	}
-    }
 
     /**
      * Constructor, which initializes this thread as a deamon.
      */
     public LWRVisualizationInterface() {
 	setDaemon(true);
-    }
-
-    /**
-     * Disposes the openIGT connection by closing the connection and setting the
-     * corresponding objects to null.
-     */
-    public final void finalize() {
-	if (openIGTServer != null) {
-	    try {
-		openIGTServer.close();
-		openIGTServer = null;
-		openIGTClient.close();
-		openIGTClient = null;
-		System.out.println("Visualization interface server stopped");
-	    } catch (IOException e) {
-		e.printStackTrace();
-		//TODO exception concept.
-	    }
-	}
-
     }
 
     /**
@@ -421,6 +359,89 @@ public class LWRVisualizationInterface extends Thread {
 	trafoMatrixArray[6] = trafoMatrixArray[5].compose(trafoJoint6ToJoint7);
 	trafoMatrixArray[7] = trafoMatrixArray[6]
 		.compose(trafoJoint7ToEndeffector);
+
+    }
+
+    // TODO duplicate code same method can be found in LWRStateMachineInterface
+    /**
+     * Starts the listening server on the defined port.
+     * 
+     * @throws IOException
+     *             when connection to openIGT server fails.
+     */
+    private void connectServer() throws IOException {
+	stopServer();
+	try {
+	    ServerSocketFactory serverSocketFactory = ServerSocketFactory
+		    .getDefault();
+	    openIGTServer = serverSocketFactory.createServerSocket(this.port);
+	    openIGTServer.setReuseAddress(true);
+	    System.out.println("Visualization interface server socket "
+		    + "succesfully created (port " + this.port + ")");
+
+	} catch (IOException e) {
+	    System.out
+		    .println("Could not Connect to Visualization interface server");
+	    throw e;
+	}
+    }
+
+    /**
+     * Disposes the openIGT connection by closing the connection and setting the
+     * corresponding objects to null.
+     */
+    public final void finalize() {
+	if (openIGTServer != null) {
+	    try {
+		openIGTServer.close();
+		openIGTServer = null;
+		openIGTClient.close();
+		openIGTClient = null;
+		System.out.println("Visualization interface server stopped");
+	    } catch (IOException e) {
+		e.printStackTrace();
+		//TODO exception concept.
+	    }
+	}
+
+    }
+
+    // TODO duplicate code. This method already exists in
+    // state-machine-interface.
+    /**
+     * Function to restart the IGTLink Server and reinitialize the connection.
+     */
+    private void restartIGTServer() {
+
+	errorFlag = true;
+	try {
+	    errHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
+	    errHandler.errorMessage = 
+		    "StateMachineIF: Lost Connection to Client. Try to reconnect...";
+	    errHandler.messageSemaphore.release();
+	} catch (InterruptedException e) {
+	    //TODO exception concept.
+	}
+	stopServer();
+	try {
+	    // Set up server
+	    connectServer();
+	    visualRun = true;
+	    openIGTClient = openIGTServer.accept();
+	    openIGTClient.setTcpNoDelay(true);
+	    openIGTClient.setSoTimeout(1 * cycleTime);
+	    this.outstr = openIGTClient.getOutputStream();
+	    this.currentStatus = ClientStatus.CONNECTED;
+	    errHandler.errorMessage = "Visual interface client connected ( "
+		    + openIGTClient.getInetAddress() + ", "
+		    + openIGTClient.getPort() + ")";
+	    connectionErr = 0;
+
+	} catch (Exception e) {
+	    errHandler.errorMessage = 
+		    "Couldn't connect to visualisation interface server!";
+
+	}
 
     }
 
@@ -586,45 +607,6 @@ public class LWRVisualizationInterface extends Thread {
 
     }
 
-    // TODO duplicate code. This method already exists in
-    // state-machine-interface.
-    /**
-     * Function to restart the IGTLink Server and reinitialize the connection.
-     */
-    private void restartIGTServer() {
-
-	errorFlag = true;
-	try {
-	    errHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
-	    errHandler.errorMessage = 
-		    "StateMachineIF: Lost Connection to Client. Try to reconnect...";
-	    errHandler.messageSemaphore.release();
-	} catch (InterruptedException e) {
-	    //TODO exception concept.
-	}
-	stopServer();
-	try {
-	    // Set up server
-	    connectServer();
-	    visualRun = true;
-	    openIGTClient = openIGTServer.accept();
-	    openIGTClient.setTcpNoDelay(true);
-	    openIGTClient.setSoTimeout(1 * cycleTime);
-	    this.outstr = openIGTClient.getOutputStream();
-	    this.currentStatus = ClientStatus.CONNECTED;
-	    errHandler.errorMessage = "Visual interface client connected ( "
-		    + openIGTClient.getInetAddress() + ", "
-		    + openIGTClient.getPort() + ")";
-	    connectionErr = 0;
-
-	} catch (Exception e) {
-	    errHandler.errorMessage = 
-		    "Couldn't connect to visualisation interface server!";
-
-	}
-
-    }
-
     //TODO method's calculations should be moved to utility class.
     /**
      * Sending the Cartesian or Joint position of the robot.
@@ -744,6 +726,24 @@ public class LWRVisualizationInterface extends Thread {
 	    SendIGTLTransform("T_EE", transformTmp);
 	}
 
+    }
+
+    /**
+     * Stops the listening OpenIGTLink server.
+     */
+    private void stopServer() {
+	if (openIGTServer != null) {
+	    try {
+		openIGTServer.close();
+		openIGTServer = null;
+		openIGTClient.close();
+		openIGTClient = null;
+		System.out.println("Visualization interface server stopped");
+	    } catch (IOException e) {
+		e.printStackTrace();
+		// TODO exception concept.
+	    }
+	}
     }
 
 }

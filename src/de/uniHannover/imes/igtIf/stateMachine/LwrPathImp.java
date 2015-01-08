@@ -44,16 +44,28 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
 public class LwrPathImp implements ILwrState {
 
     /**
+     * vector to define the line path from start to End point. g: x= ap +
+     * lambda*u.
+     */
+    private Vector ap = null;
+
+    private double distance = 0.0;
+
+    /**
+     * Flag indicates if the target pose is reached.
+     */
+    private boolean endOfPath = false;
+
+    /**
      * Flag indicates if the Position is send in Image or robot base coordinate
      * system.
      */
     private boolean imageSpace = false;
 
     /**
-     * TargetPosition in Image or robot base coordinate system due to ImageSpace
-     * flag.
+     * directional vector of the line g: x= ap + lambda*u.
      */
-    private Vector targetPosition = null;
+    private double lambdaEnd = 0;
 
     /**
      * Target Orientation as rotation matrix in Image or robot base coordinate
@@ -62,61 +74,21 @@ public class LwrPathImp implements ILwrState {
     private MatrixTransformation targetOrientation = null;
 
     /**
-     * Flag indicates if the target pose is reached.
+     * TargetPosition in Image or robot base coordinate system due to ImageSpace
+     * flag.
      */
-    private boolean endOfPath = false;
-
-    /**
-     * vector to define the line path from start to End point. g: x= ap +
-     * lambda*u.
-     */
-    private Vector ap = null;
-
-    /**
-     * directional vector of the line g: x= ap + lambda*u.
-     */
-    private Vector u = null;
-
-    /**
-     * directional vector of the line g: x= ap + lambda*u.
-     */
-    private double lambdaEnd = 0;
+    private Vector targetPosition = null;
 
     /**
      * Allowed euclidean distance from current robot position to the path from
      * start to end pose.
      */
     private double tolerance = 10.0;
-    private double distance = 0.0;
-
     /**
-     * In this Function the Stiffness value is calculated.
-     * 
-     * @param dist
-     *            the minimum distance to path
-     * @param tol
-     *            the maximum allowed distance from the path
-     * @return the stiffness value.
+     * directional vector of the line g: x= ap + lambda*u.
      */
+    private Vector u = null;
 
-    public final double getStiffness(final double dist, final double tol) {
-	/*
-	 * Berechnung der Daempfung bei Annaeherung an die Grenze.
-	 */
-	double maxStiff = 5000;
-	if (dist >= tol) {
-	    return maxStiff;
-	} else if (dist < tol && dist > 0) {
-	    double y;
-	    double m = maxStiff / Math.pow(tol, 2);
-	    y = m * Math.pow(dist, 2);
-	    return y;
-	} else {
-	    return 0;
-	}
-    }
-
-    
     /**
      * In this Function control Mode Parameters are set and the commanded pose
      * are calculated due the current LWR State. During the PathImp State the
@@ -235,32 +207,32 @@ public class LwrPathImp implements ILwrState {
 	lwrStatemachine.controlMode = cartImp;
     }
 
+    
     /**
-     * In this Function the Acknowledge IGTMessage which is send to the State
-     * Control is defined due the current LWR State. In the PathImp State the
-     * IGTMessageString is Set to "PathImp;true;" or "PathImp;false,"according
-     * to the value of the boolean PathImp.
+     * In this Function the Stiffness value is calculated.
      * 
-     * @param lwrStatemachine
-     *            The operated Statemachine
+     * @param dist
+     *            the minimum distance to path
+     * @param tol
+     *            the maximum allowed distance from the path
+     * @return the stiffness value.
      */
-    @Override
-    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
-	String ack;
-	if (endOfPath) {
-	    ack = "PathImp;0;true;";
-	} else {
-	    if (distance > tolerance) {
-		ack = "PathImp;2;false;";
-	    } else if (distance == 0) {
-		ack = "PathImp;0;false;";
-	    } else {
-		ack = "PathImp;1;false;";
-	    }
-	}
 
-	lwrStatemachine.AckIGTmessage = ack;
+    public final double getStiffness(final double dist, final double tol) {
+	/*
+	 * Berechnung der Daempfung bei Annaeherung an die Grenze.
+	 */
+	double maxStiff = 5000;
+	if (dist >= tol) {
+	    return maxStiff;
+	} else if (dist < tol && dist > 0) {
+	    double y;
+	    double m = maxStiff / Math.pow(tol, 2);
+	    y = m * Math.pow(dist, 2);
+	    return y;
+	} else {
+	    return 0;
+	}
     }
 
     /**
@@ -335,6 +307,34 @@ public class LwrPathImp implements ILwrState {
 	    lwrStatemachine.ErrorMessage = 
 		    "Unexpected Messagetype recieved! Expected STRING";
 	}
+    }
+
+    /**
+     * In this Function the Acknowledge IGTMessage which is send to the State
+     * Control is defined due the current LWR State. In the PathImp State the
+     * IGTMessageString is Set to "PathImp;true;" or "PathImp;false,"according
+     * to the value of the boolean PathImp.
+     * 
+     * @param lwrStatemachine
+     *            The operated Statemachine
+     */
+    @Override
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
+	// TODO Automatisch generierter Methodenstub
+	String ack;
+	if (endOfPath) {
+	    ack = "PathImp;0;true;";
+	} else {
+	    if (distance > tolerance) {
+		ack = "PathImp;2;false;";
+	    } else if (distance == 0) {
+		ack = "PathImp;0;false;";
+	    } else {
+		ack = "PathImp;1;false;";
+	    }
+	}
+
+	lwrStatemachine.AckIGTmessage = ack;
     }
 
 }

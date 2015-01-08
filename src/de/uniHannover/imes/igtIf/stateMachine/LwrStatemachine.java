@@ -65,7 +65,7 @@ public class LwrStatemachine {
      * VirtualFixtures, PathImp, MovetoPose, Error}possible client states.
      */
     public static enum LWRStatus {
-	IDLE, GravComp, VirtualFixtures, PathImp, MovetoPose
+	GravComp, IDLE, MovetoPose, PathImp, VirtualFixtures
     }
 
     /**
@@ -75,61 +75,61 @@ public class LwrStatemachine {
      * 
      */
     public static enum OpenIGTLinkErrorCode {
-	/** Invalid packet. */
-	InvalidPacket(0),
-	/** Ok (Default status. */
-	Ok(1),
-	/** Unknown error. */
-	UnknownError(2),
-	/** Panic mode. */
-	PanicMode(3),
-	/** Not found. */
-	NotFound(4),
 	/** Acces denied 06 - Busy. */
 	AccessDenied(5),
-	/** Time out / Connection lost. */
-	TimeOut(7),
-	/** Overflow / Can't be reached.*/
-	Overflow(8),
 	/** Checksum error. */
 	ChecksumError(9),
 	/** Configuration error. */
 	ConfigurationError(10),
-	/** Not enough resource (memory, storage etc). */
-	NotEnoughResource(11),
+	/** Device disabled. */
+	DeviceDisabled(15),
+	/** Device not present. */
+	DeviceNotPresent(16),
+	/** Device not ready (starting up). */
+	DeviceNotReady(13),
+	/** Device version not known. */
+	DeviceVersionNotFound(17),
+	/** Exiting / shut down in progress. */
+	Exiting(19),
+	/** Hardware failure / bad communication. */
+	HardwareOrCommunicationFailure(18),
 	/**
 	 * Illegal/Unknown instruction (or feature not implemented / Unknown
 	 * command received).
 	 */
 	IllegalInstruction(12),
+	/** Invalid packet. */
+	InvalidPacket(0),
+	/** Manual mode (device does not accept commands). */
+	ManualMode(14),
+	/** Not enough resource (memory, storage etc). */
+	NotEnoughResource(11),
+	/** Not found. */
+	NotFound(4),
+	/** Ok (Default status. */
+	Ok(1),
+	/** Overflow / Can't be reached.*/
+	Overflow(8),
+	/** Panic mode. */
+	PanicMode(3),
+	/** Time out / Connection lost. */
+	TimeOut(7),
+	/** Unknown error. */
+	UnknownError(2),
 	/**
 	 * Illegal/Unknown instruction (or feature not implemented / Unknown
 	 * command received).
 	 */
-	UnknownInstruction(12),
-	/** Device not ready (starting up). */
-	DeviceNotReady(13),
-	/** Manual mode (device does not accept commands). */
-	ManualMode(14),
-	/** Device disabled. */
-	DeviceDisabled(15),
-	/** Device not present. */
-	DeviceNotPresent(16),
-	/** Device version not known. */
-	DeviceVersionNotFound(17),
-	/** Hardware failure / bad communication. */
-	HardwareOrCommunicationFailure(18),
-	/** Exiting / shut down in progress. */
-	Exiting(19);
-
-	/** error number corresponding to the openIGTLink defined error numbers. */
-	private final int errorNumber;
+	UnknownInstruction(12);
 
 	/** maximum error number. */
 	private static final int MAX_ERROR_NUM = 20;
 
 	/** minimum error number. */
 	private static final int MIN_ERROR_NUM = 0;
+
+	/** error number corresponding to the openIGTLink defined error numbers. */
+	private final int errorNumber;
 
 	/**
 	 * Constructs the different error-code-objects and validates the number.
@@ -159,17 +159,6 @@ public class LwrStatemachine {
     }
 
     /**
-     * Represents the current datatype of the visualization interface.
-     */
-    public VisualIFDatatypes currentVisualIFDatatype = 
-	    VisualIFDatatypes.ROBOTBASE;
-
-    /**
-     * visualInterfaceDatatype.Robotbase current status of the client status.
-     */
-    public LWRStatus RobotState = LWRStatus.IDLE; // start as stopped status
-
-    /**
      * ACknowledgement OpenIGTLink Message for the state machine Interface.
      */
     public String AckIGTmessage = null;
@@ -178,30 +167,6 @@ public class LwrStatemachine {
      * Command OpenIGTLink Message for the state machine interface.
      */
     public String CmdIGTmessage = null;
-    /**
-     * Error Message which is attached to the OpenIGT Status Message in cas e of
-     * an error.
-     */
-    public String ErrorMessage = "";
-
-    /**
-     * Current State machine UID.
-     */
-    public long UID = 0;
-    /**
-     * The current State of the LWR state machine.
-     */
-    public ILwrState m_CurrentState;
-
-    /**
-     * The new State of the LWR state machine.
-     */
-    public ILwrState m_newState;
-
-    /**
-     * The current pose in Cartesian space of the LWR in robot coordinates.
-     */
-    public MatrixTransformation curPose;
 
     /**
      * The command pose in Cartesian space of the LWR in robot coordinates.
@@ -209,40 +174,28 @@ public class LwrStatemachine {
     public MatrixTransformation cmdPose;
 
     /**
-     * The Transformation from the robot coordinate system or to the images
-     * space coordinate system.
-     */
-    public MatrixTransformation TransformRobotImage;
-
-    /**
-     * Flag to identify if the Transform from image to robot space was
-     * successfully .
-     */
-    public boolean TransformRecieved = false;
-
-    /**
-     * Flag to identify if the LWR State was changed in the current cycle.
-     */
-    public boolean ErrorFlag = false;
-
-    /**
-     * Flag to identify if the LWR State was changed in the current cycle.
-     */
-    public boolean InitFlag = true;
-
-    /**
      * The control mode of the operated state machine.
      */
     public IMotionControlMode controlMode;
+    /**
+     * Current Stiffness of the LWR as a 1x6 stiffness vector (x, y, z, A, B, C).
+     */
+    public int[] curCartStiffness = { 0, 0, 0, 0, 0, 0 };
 
     /**
-     * Flag to identify if the Visualization should be started or not.
+     * Current Joint Position of the LWR received via SmartServo.
      */
-    public boolean StartVisual = false;
+    public JointPosition curJntPose;
     /**
-     * String containing the data type of the IGTLink Message which is received.
+     * The current pose in Cartesian space of the LWR in robot coordinates.
      */
-    public String IGTLdatatype = "STRING";
+    public MatrixTransformation curPose;
+
+    /**
+     * Represents the current datatype of the visualization interface.
+     */
+    public VisualIFDatatypes currentVisualIFDatatype = 
+	    VisualIFDatatypes.ROBOTBASE;
 
     /**
      * Flag to identify if the StateMachine should be Stopped.The robot state is
@@ -254,19 +207,41 @@ public class LwrStatemachine {
     public OpenIGTLinkErrorCode ErrorCode = OpenIGTLinkErrorCode.Ok;
 
     /**
+     * Flag to identify if the LWR State was changed in the current cycle.
+     */
+    public boolean ErrorFlag = false;
+
+    /**
+     * Error Message which is attached to the OpenIGT Status Message in cas e of
+     * an error.
+     */
+    public String ErrorMessage = "";
+
+    /**
+     * String containing the data type of the IGTLink Message which is received.
+     */
+    public String IGTLdatatype = "STRING";
+
+    /**
+     * Flag to identify if the LWR State was changed in the current cycle.
+     */
+    public boolean InitFlag = true;
+
+    /**
      * String containing the last printed Error Message. This String is used to
      * avoid to print the same error message again and again.
      */
     private String LastPrintedError = "";
 
     /**
-     * Current Joint Position of the LWR received via SmartServo.
+     * The current State of the LWR state machine.
      */
-    public JointPosition curJntPose;
+    public ILwrState m_CurrentState;
     /**
-     * Current Stiffness of the LWR as a 1x6 stiffness vector (x, y, z, A, B, C).
+     * The new State of the LWR state machine.
      */
-    public int[] curCartStiffness = { 0, 0, 0, 0, 0, 0 };
+    public ILwrState m_newState;
+
     /**
      * SubString containing the Parameters set of the received Command String,
      * e.g. the VirtualFixtures definition or the destination point for
@@ -281,10 +256,35 @@ public class LwrStatemachine {
     public int PoseUID = 0;
 
     /**
+     * visualInterfaceDatatype.Robotbase current status of the client status.
+     */
+    public LWRStatus RobotState = LWRStatus.IDLE; // start as stopped status
+
+    /**
+     * Flag to identify if the Visualization should be started or not.
+     */
+    public boolean StartVisual = false;
+    /**
      * Vector containing the force estimated at the tool center point by the
      * internal torque sensors.
      */
     public Vector TCPForce;
+    /**
+     * Flag to identify if the Transform from image to robot space was
+     * successfully .
+     */
+    public boolean TransformRecieved = false;
+
+    /**
+     * The Transformation from the robot coordinate system or to the images
+     * space coordinate system.
+     */
+    public MatrixTransformation TransformRobotImage;
+
+    /**
+     * Current State machine UID.
+     */
+    public long UID = 0;
 
     /**
      * Constructor of LWRStatemachine. The Current state is set to the save
@@ -298,16 +298,6 @@ public class LwrStatemachine {
 	TransformRecieved = false;
 	ErrorCode = OpenIGTLinkErrorCode.Ok;
 
-    }
-
-    /**
-     * This function change the current state of the robot to the new state.
-     * 
-     * @param newState
-     *            the new LWRState
-     */
-    public final void changeLWRState(ILwrState newState) {
-	m_CurrentState = newState;
     }
 
     /**
@@ -325,31 +315,13 @@ public class LwrStatemachine {
     }
 
     /**
-     * calls the SetACKPacket of the current LWR state.
+     * This function change the current state of the robot to the new state.
      * 
-     * @see ILwrState
-     * @see LwrIdle
-     * @see LwrGravComp
-     * @see LwrVirtualFixtures
-     * @see LwrPathImp
-     * @see LwrMoveToPose
+     * @param newState
+     *            the new LWRState
      */
-    public final void setAckPacket() {
-	m_CurrentState.setAckPacket(this);
-    }
-
-    /**
-     * Calls the InterpretCMDPacket of the current LWR state.
-     * 
-     * @see ILwrState
-     * @see LwrIdle
-     * @see LwrGravComp
-     * @see LwrVirtualFixtures
-     * @see LwrPathImp
-     * @see LwrMoveToPose
-     */
-    public final void interpretCmdPacket() {
-	m_CurrentState.interpretCmdPacket(this);
+    public final void changeLWRState(ILwrState newState) {
+	m_CurrentState = newState;
     }
 
     /**
@@ -658,6 +630,34 @@ public class LwrStatemachine {
 	} else {
 	    this.LastPrintedError = "";
 	}
+    }
+
+    /**
+     * Calls the InterpretCMDPacket of the current LWR state.
+     * 
+     * @see ILwrState
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
+     */
+    public final void interpretCmdPacket() {
+	m_CurrentState.interpretCmdPacket(this);
+    }
+
+    /**
+     * calls the SetACKPacket of the current LWR state.
+     * 
+     * @see ILwrState
+     * @see LwrIdle
+     * @see LwrGravComp
+     * @see LwrVirtualFixtures
+     * @see LwrPathImp
+     * @see LwrMoveToPose
+     */
+    public final void setAckPacket() {
+	m_CurrentState.setAckPacket(this);
     }
 
 }

@@ -138,27 +138,6 @@ class LwrIdle implements ILwrState {
     }
 
     /**
-     * In this function the acknowledge string which is send to the State
-     * Control is defined due the current LWR State. In the Idle State the
-     * String is Set to "IDLE;".
-     * 
-     * @param lwrStatemachine
-     *            The operated Statemachine
-     */
-    @Override
-    public void setAckPacket(final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
-	String ack;
-	ack = "IDLE;";
-	// Send the string to StateControl
-	if (lwrStatemachine.End) {
-	    lwrStatemachine.AckIGTmessage = "SHUTDOWN;";
-	} else {
-	    lwrStatemachine.AckIGTmessage = ack;
-	}
-    }
-
-    /**
      * In this function the Command String which is received from the State
      * Control is interpreted and the parameters are set. It is just called
      * after a State transition For the LWRState LWRIdle this is empty because
@@ -179,6 +158,27 @@ class LwrIdle implements ILwrState {
 	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
 		    .indexOf(";"));
 
+	}
+    }
+
+    /**
+     * In this function the acknowledge string which is send to the State
+     * Control is defined due the current LWR State. In the Idle State the
+     * String is Set to "IDLE;".
+     * 
+     * @param lwrStatemachine
+     *            The operated Statemachine
+     */
+    @Override
+    public void setAckPacket(final LwrStatemachine lwrStatemachine) {
+	// TODO Automatisch generierter Methodenstub
+	String ack;
+	ack = "IDLE;";
+	// Send the string to StateControl
+	if (lwrStatemachine.End) {
+	    lwrStatemachine.AckIGTmessage = "SHUTDOWN;";
+	} else {
+	    lwrStatemachine.AckIGTmessage = ack;
 	}
     }
 
