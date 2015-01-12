@@ -37,6 +37,22 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel
 class LwrIdle implements ILwrState {
     /** Flag for increasing the stiffness params of the robot.*/
     private boolean incStiffness = false;
+    
+    //TODO @Sebastian add javadoc
+    private static final int MAX_DELTA_STIFFNESS_PARAMS = 100;
+    
+    //TODO @Sebastian add javadoc
+    private static final int MIN_DELTA_STIFFNESS_PARAMS = 30;
+    
+    
+    /**
+     * Maximum cartesian stiffness in N/m.
+     */
+    private static final int MAX_CART_STIFFNESS = 4950;
+    /**
+     * Increment of cartesian stiffness parameter in n/m.
+     */
+    private static final int CART_STIFFNESS_INCREMENT = 50;
 
     /**
      * In this function control mode parameters are set and the command pose are
@@ -54,15 +70,16 @@ class LwrIdle implements ILwrState {
      */
     @Override
     public void calcControlParam(final LwrStatemachine lwrStatemachine) {
-	double aTransStiffVal = 5000;
-	double aRotStiffVal = 300;
+	final double aTransStiffVal = 5000;
+	final double aRotStiffVal = 300;
+	final int numOfDeltaStiffnessParam = 6;
 	CartesianImpedanceControlMode cartImp = 
 		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
-	int[] deltaStiffness = new int[6];
+	int[] deltaStiffness = new int[numOfDeltaStiffnessParam];
 	int[] newStiffness = { (int) aTransStiffVal, (int) aTransStiffVal,
 		(int) aTransStiffVal, (int) aRotStiffVal, (int) aRotStiffVal,
 		(int) aRotStiffVal };
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < numOfDeltaStiffnessParam; i++) {
 	    deltaStiffness[i] = newStiffness[i]
 		    - lwrStatemachine.curCartStiffness[i];
 	}
@@ -73,8 +90,8 @@ class LwrIdle implements ILwrState {
 
 	if (lwrStatemachine.InitFlag) {
 
-	    if (deltaStiffnessTrans.length() <= 100
-		    && deltaStiffnessRot.length() <= 30) {
+	    if (deltaStiffnessTrans.length() <= MAX_DELTA_STIFFNESS_PARAMS
+		    && deltaStiffnessRot.length() <= MIN_DELTA_STIFFNESS_PARAMS) {
 		cartImp.parametrize(CartDOF.TRANSL)
 			.setStiffness(aTransStiffVal);
 		cartImp.parametrize(CartDOF.ROT).setStiffness(aRotStiffVal);
@@ -92,12 +109,13 @@ class LwrIdle implements ILwrState {
 	if (incStiffness) {
 	    boolean increaseTrans = true;
 	    boolean increaseRot = true;
-	    if (deltaStiffnessTrans.length() > 100) {
+	    if (deltaStiffnessTrans.length() > MAX_DELTA_STIFFNESS_PARAMS) {
 		for (int k = 0; k < 3; k++) {
-		    if (lwrStatemachine.curCartStiffness[k] <= 4950) {
-			newStiffness[k] = lwrStatemachine.curCartStiffness[k] + 50;
+		    if (lwrStatemachine.curCartStiffness[k] <= MAX_CART_STIFFNESS) {
+			newStiffness[k] = 
+				lwrStatemachine.curCartStiffness[k] + CART_STIFFNESS_INCREMENT;
 		    } else {
-			newStiffness[k] = 5000;
+			newStiffness[k] = MAX_CART_STIFFNESS + CART_STIFFNESS_INCREMENT;
 		    }
 		    lwrStatemachine.curCartStiffness[k] = newStiffness[k];
 		}
@@ -150,7 +168,7 @@ class LwrIdle implements ILwrState {
 
     @Override
     public void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
+	
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String cmdString;
 
@@ -171,7 +189,7 @@ class LwrIdle implements ILwrState {
      */
     @Override
     public void setAckPacket(final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
+	
 	String ack;
 	ack = "IDLE;";
 	// Send the string to StateControl

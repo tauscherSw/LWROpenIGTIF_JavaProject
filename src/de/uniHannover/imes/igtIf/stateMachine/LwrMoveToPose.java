@@ -27,11 +27,9 @@ import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
-import com.kuka.roboticsAPI.motionModel.controlModeModel
-.CartesianImpedanceControlMode;
+import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
-import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
-.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 
 /**
  * In This State the LWR is moving to a specified position in Cartesian space.
@@ -41,23 +39,44 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
  * @version 0.1
  */
 public class LwrMoveToPose implements ILwrState {
+    
+    /** Cartesian-rotational stiffness in Nm/rad.*/
+    private static final int CART_ROT_STIFFNESS = 300;
+    /** Cartesian-translational stiffness in N/m.*/
+    private static final int CART_TRANSL_STIFFNESS = 5000;
+    /** Distance in mm, when path is interpreted as end-reached.*/
+    private static final double END_OF_PATH_DEVIATION = 10;
+    
+    
+    //TODO @Sebastian add javadoc and rename.
     private Vector ap = null;
-    private Vector ap_null = null;
-    private boolean EndofPath = false;
-    public boolean ImageSpace = false;
-
-    private double lambda_end = 0.0;
-    double lambda_null = 0.0;
-    public MatrixTransformation TargetOrientation = null;
-    public Vector TargetPosition = null;
+    //TODO @Sebastian add javadoc and rename.
+    private Vector apNull = null;
+    /** 
+     * Flag indicating if the robot has reached the end of 
+     * the commanded path. 
+     */
+    private boolean endOfPathFlag = false;
+    /** Flag indicating if the robots pose data is represented in imagespace. */
+    private boolean imageSpace = false;
+    //TODO @Sebastian add javadoc
+    private double lambdaEnd = 0.0;
+    //TODO @Sebastian add javadoc
+    private double lambdaNull = 0.0;
+    
+    /** Orientation of the target frame.*/
+    private MatrixTransformation targetOri = null;
+    /** Translation of the target frame.*/
+    private Vector targetPos = null;
+    
+    //TODO @Sebastian add javadoc and rename.
     private Vector u = null;
-
 
     /**
      * In this function control mode parameters are set and the command pose are
-     * calculated due the current LWR State. During the MoveToPose State the
-     * Cartesian Stiffness is set to the maximum value of 5000 and the Pose is
-     * set to the closest point at the path plus an offset in the desired
+     * calculated based on the current LWR State. During the MoveToPose State
+     * the Cartesian Stiffness is set to the maximum value of 5000 and the Pose
+     * is set to the closest point at the path plus an offset in the desired
      * direction. When the End point of the path is reached the robot holds his
      * position and the boolean EndPath is set true.
      * 
@@ -66,7 +85,6 @@ public class LwrMoveToPose implements ILwrState {
      * @see LWRState
      */
     public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
 
 	Vector curPosition = null;
 	Vector aim = null;
@@ -77,43 +95,45 @@ public class LwrMoveToPose implements ILwrState {
 		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 
 	if (lwrStatemachine.InitFlag) {
-	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(5000);
-	    cartImp.parametrize(CartDOF.ROT).setStiffness(300);
+	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(CART_TRANSL_STIFFNESS);
+	    cartImp.parametrize(CartDOF.ROT).setStiffness(CART_ROT_STIFFNESS);
 	    cartImp.setNullSpaceStiffness(0);
-	    int[] NewStiffness = { 5000, 5000, 5000, 300, 300, 300 };
-	    lwrStatemachine.curCartStiffness = NewStiffness;
+	    int[] newStiffness = { 
+		    CART_TRANSL_STIFFNESS, CART_TRANSL_STIFFNESS, CART_TRANSL_STIFFNESS, 
+		    CART_ROT_STIFFNESS, CART_ROT_STIFFNESS, CART_ROT_STIFFNESS };
+	    lwrStatemachine.curCartStiffness = newStiffness;
 	    ap = Vector.of(lwrStatemachine.curPose.getTranslation().getX(),
 		    lwrStatemachine.curPose.getTranslation().getY(),
 		    lwrStatemachine.curPose.getTranslation().getZ());
-	    ap_null = ap;
-	    u = TargetPosition.subtract(ap).normalize();
-	    lambda_end = TargetPosition.subtract(ap).length();
+	    apNull = ap;
+	    u = targetPos.subtract(ap).normalize();
+	    lambdaEnd = targetPos.subtract(ap).length();
 	    lwrStatemachine.InitFlag = false;
 	}
 	curPosition = lwrStatemachine.curPose.getTranslation();
-	if (!EndofPath) {
-	    if (curPosition.subtract(TargetPosition).length() < 10) {
+	if (!endOfPathFlag) {
+	    if (curPosition.subtract(targetPos).length() < END_OF_PATH_DEVIATION) {
 		lwrStatemachine.cmdPose = MatrixTransformation.of(
-			TargetPosition, TargetOrientation.getRotationMatrix());
-		EndofPath = true;
+			targetPos, targetOri.getRotationMatrix());
+		endOfPathFlag = true;
 	    } else {
 
 		d = curPosition.dotProduct(u);
 		lambda = d - u.dotProduct(ap);
-		lambda_null = d - u.dotProduct(ap_null);
-		aim = u.multiply(1);
-		if (lambda_null >= 0 && lambda_null <= lambda_end) {
+		lambdaNull = d - u.dotProduct(apNull);
+		aim = u.multiply(1); //TODO @Sebastian Comment.
+		if (lambdaNull >= 0 && lambdaNull <= lambdaEnd) {
 		    ap = ap.add(u.multiply(lambda));
 
 		}
-		aim = u.multiply(10);
+		aim = u.multiply(10); //TODO @Sebastian Comment.
 
 		lwrStatemachine.cmdPose = MatrixTransformation.of(ap.add(aim),
-			TargetOrientation.getRotationMatrix());
+			targetOri.getRotationMatrix());
 	    }
 	} else {
-	    lwrStatemachine.cmdPose = MatrixTransformation.of(TargetPosition,
-		    TargetOrientation.getRotationMatrix());
+	    lwrStatemachine.cmdPose = MatrixTransformation.of(targetPos,
+		    targetOri.getRotationMatrix());
 	}
 
 	// Send the new Stiffness settings down to the
@@ -124,9 +144,9 @@ public class LwrMoveToPose implements ILwrState {
 
     /**
      * In this Function the Command String which is received from the State
-     * Control is read and interpreted due to the Current State and if requested
-     * and allowed the State is Changed. In The MoveToPose State the allowed
-     * state transitions are:<br>
+     * Control is read and interpreted based on to the Current State and if
+     * requested and allowed the State is Changed. In The MoveToPose State the
+     * allowed state transitions are:<br>
      * - IDLE (transition condition: none)<br>
      * - GravComp (transition condition: none)<br>
      * - VirtualFixtures (transition condition: RegistrationFinished AND
@@ -142,8 +162,7 @@ public class LwrMoveToPose implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public final void interpretCmdPacket(
-	    final LwrStatemachine lwrStatemachine) {
+    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String cmdString;
 	    cmdString = lwrStatemachine.CmdIGTmessage;
@@ -151,37 +170,36 @@ public class LwrMoveToPose implements ILwrState {
 		    .indexOf(";"));
 	    String[] cmdArray = cmdString.split(";");
 	    if (cmdArray[1].contentEquals("img")) {
-		this.ImageSpace = true;
+		this.imageSpace = true;
 	    } else if (cmdArray[1].contentEquals("rob")) {
-		this.ImageSpace = false;
+		this.imageSpace = false;
 	    } else {
 		lwrStatemachine.ErrorMessage = ("Unexpected coordinate system "
 			+ "(supported are img or plane)");
 		lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 		lwrStatemachine.ErrorFlag = true;
 	    }
-	    this.TargetPosition = Vector.of(Double.parseDouble(cmdArray[2]),
+	    this.targetPos = Vector.of(Double.parseDouble(cmdArray[2]),
 		    Double.parseDouble(cmdArray[3]),
 		    Double.parseDouble(cmdArray[4]));
-	    this.TargetOrientation = MatrixTransformation.of(
-		    Vector.of(0, 0, 0),
-		    Rotation.ofRad(Math.toRadians(Double.parseDouble(cmdArray[5]))
-			    , Math.toRadians(Double.parseDouble(cmdArray[6]))
-			    , Math.toRadians(Double.parseDouble(cmdArray[7]))));
-	    if (this.ImageSpace && lwrStatemachine.TransformRecieved) {
+	    this.targetOri = MatrixTransformation.of(
+		    Vector.of(0, 0, 0), Rotation.ofRad(
+			    Math.toRadians(Double.parseDouble(cmdArray[5])),
+			    Math.toRadians(Double.parseDouble(cmdArray[6])),
+			    Math.toRadians(Double.parseDouble(cmdArray[7]))));
+	    if (this.imageSpace && lwrStatemachine.TransformRecieved) {
 		MatrixTransformation tmp = MatrixTransformation.of(
-			TargetPosition, TargetOrientation.getRotationMatrix());
+			targetPos, targetOri.getRotationMatrix());
 		tmp = lwrStatemachine.TransformRobotImage.invert().compose(tmp);
-		this.TargetPosition = tmp.getTranslation();
-		this.TargetOrientation = tmp
+		this.targetPos = tmp.getTranslation();
+		this.targetOri = tmp
 			.withTranslation(Vector.of(0, 0, 0));
 
 	    }
 
 	} else {
 	    lwrStatemachine.ErrorCode = 
-		    OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown
-										 // instruction
+		    OpenIGTLinkErrorCode.IllegalInstruction;
 	    lwrStatemachine.ErrorMessage = 
 		    "Unexpected Messagetype recieved! Expected STRING";
 	}
@@ -199,9 +217,9 @@ public class LwrMoveToPose implements ILwrState {
      */
     @Override
     public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
+
 	String ack;
-	if (EndofPath) {
+	if (endOfPathFlag) {
 	    ack = "MoveToPose;true;";
 	} else {
 	    ack = "MoveToPose;false;";

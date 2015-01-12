@@ -115,7 +115,6 @@ public class LwrPathImp implements ILwrState {
 	Vector aTransStiffVal = null;
 	int[] newStiffness = { 0, 0, 0, 0, 0, 0 };
 
-	// TODO Automatisch generierter Methodenstub
 	if (lwrStatemachine.InitFlag) {
 	    aim = Vector.of(0, 0, 0);
 	    targetOrientation = MatrixTransformation.of(Vector.of(0, 0, 0),
@@ -163,7 +162,6 @@ public class LwrPathImp implements ILwrState {
 		aTransStiffVal = Vector.of(5000, 5000, 5000);
 		aim = ap.subtract(curPosition).normalize()
 			.multiply(distance - tolerance);
-		// System.out.println("Out of bounds!!!!!!! ");
 	    } else {
 		stiffVal = getStiffness(distance, tolerance);
 		aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
