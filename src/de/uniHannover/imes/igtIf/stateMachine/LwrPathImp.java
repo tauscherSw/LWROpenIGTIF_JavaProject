@@ -25,11 +25,9 @@ package de.uniHannover.imes.igtIf.stateMachine;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
-import com.kuka.roboticsAPI.motionModel.controlModeModel
-.CartesianImpedanceControlMode;
+import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
-import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
-.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 
 /**
  * In This State the LWR can be moved along a linear Path in one direction to a
@@ -43,25 +41,39 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine
  */
 public class LwrPathImp implements ILwrState {
 
+    /** Cartesian rotational stiffness value in Nm/rad. */
+    private static final int CART_ROT_STIFFNESS = 300;
+
+    /** Initial cartesian translational stiffness value in N/m. */
+     private static final int CART_TRANSL_STIFFNESS_INITIAL = 3000;
+
+    /** Maximum cartesian translational stiffness value in N/m. */
+     private static final int CART_TRANSL_STIFFNESS_MAX = 5000;
+
+    /**
+     * Allowed euclidean distance from current robot position to the path from
+     * start to end pose in mm.
+     */
+    private static final double TOLERANCE = 10.0;
+
     /**
      * vector to define the line path from start to End point. g: x= ap +
      * lambda*u.
      */
     private Vector ap = null;
 
+    /** Distance in mm from the current robot position to the line path. */
     private double distance = 0.0;
 
     /**
      * Flag indicates if the target pose is reached.
      */
     private boolean endOfPath = false;
-
     /**
      * Flag indicates if the Position is send in Image or robot base coordinate
      * system.
      */
     private boolean imageSpace = false;
-
     /**
      * directional vector of the line g: x= ap + lambda*u.
      */
@@ -69,23 +81,16 @@ public class LwrPathImp implements ILwrState {
 
     /**
      * Target Orientation as rotation matrix in Image or robot base coordinate
-     * system due to ImageSpace flag HINT: Not used YET!!!
+     * system due to ImageSpace flag.
      */
     private MatrixTransformation targetOrientation = null;
-
     /**
      * TargetPosition in Image or robot base coordinate system due to ImageSpace
      * flag.
      */
     private Vector targetPosition = null;
-
-    /**
-     * Allowed euclidean distance from current robot position to the path from
-     * start to end pose.
-     */
-    private double tolerance = 10.0;
-    /**
-     * directional vector of the line g: x= ap + lambda*u.
+     /**
+     * Directional vector of the line g: x= ap + lambda*u.
      */
     private Vector u = null;
 
@@ -110,8 +115,7 @@ public class LwrPathImp implements ILwrState {
 	Vector curPosition = null;
 	double lambda = 0.0;
 	Vector aim = null;
-	double aRotStiffVal = 300;
-	double stiffVal = 3000;
+	double stiffVal = CART_TRANSL_STIFFNESS_INITIAL;
 	Vector aTransStiffVal = null;
 	int[] newStiffness = { 0, 0, 0, 0, 0, 0 };
 
@@ -128,14 +132,14 @@ public class LwrPathImp implements ILwrState {
 	}
 	curPosition = lwrStatemachine.curPose.getTranslation();
 
-	if (curPosition.subtract(targetPosition).length() < tolerance) {
-	    stiffVal = 3000 - 1000
-		    * curPosition.subtract(targetPosition).length() / tolerance;
+	if (curPosition.subtract(targetPosition).length() < TOLERANCE) {
+	    stiffVal = 3000 - 1000 //@TODO @Sebastian comment on.
+		    * curPosition.subtract(targetPosition).length() / TOLERANCE;
 	    aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
 	    lwrStatemachine.cmdPose = MatrixTransformation.of(targetOrientation
 		    .withTranslation(targetPosition));
-	    if (curPosition.subtract(targetPosition).length() < 10) {
-		stiffVal = 5000;
+	    if (curPosition.subtract(targetPosition).length() < TOLERANCE) {
+		stiffVal = CART_TRANSL_STIFFNESS_MAX;
 		aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
 		lwrStatemachine.cmdPose = MatrixTransformation
 			.of(targetOrientation.withTranslation(targetPosition));
@@ -156,14 +160,14 @@ public class LwrPathImp implements ILwrState {
 	    distance = ap.subtract(curPosition).length();
 
 	    // Beginn der Impedanzregelung fuer Pfad
+	    if (distance > TOLERANCE) { // Bahngrenze uebertreten
 
-	    if (distance > tolerance) { // Bahngrenze uebertreten
-	    
-		aTransStiffVal = Vector.of(5000, 5000, 5000);
+		aTransStiffVal = Vector.of(CART_TRANSL_STIFFNESS_MAX,
+			CART_TRANSL_STIFFNESS_MAX,CART_TRANSL_STIFFNESS_MAX);
 		aim = ap.subtract(curPosition).normalize()
-			.multiply(distance - tolerance);
+			.multiply(distance - TOLERANCE);
 	    } else {
-		stiffVal = getStiffness(distance, tolerance);
+		stiffVal = getStiffness(distance, TOLERANCE);
 		aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
 		aim = Vector.of(0, 0, 0);
 	    }
@@ -177,26 +181,26 @@ public class LwrPathImp implements ILwrState {
 	if (endOfPath) {
 	    lwrStatemachine.cmdPose = MatrixTransformation.of(targetPosition,
 		    targetOrientation.getRotation());
-	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(5000);
-	    cartImp.parametrize(CartDOF.ROT).setStiffness(300);
-	    newStiffness[0] = 5000;
-	    newStiffness[1] = 5000;
-	    newStiffness[2] = 5000;
-	    newStiffness[3] = 300;
-	    newStiffness[3] = 300;
-	    newStiffness[3] = 300;
+	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(CART_TRANSL_STIFFNESS_MAX);
+	    cartImp.parametrize(CartDOF.ROT).setStiffness(CART_ROT_STIFFNESS);
+	    newStiffness[0] = CART_TRANSL_STIFFNESS_MAX;
+	    newStiffness[1] = CART_TRANSL_STIFFNESS_MAX;
+	    newStiffness[2] = CART_TRANSL_STIFFNESS_MAX;
+	    newStiffness[3] = CART_ROT_STIFFNESS;
+	    newStiffness[4] = CART_ROT_STIFFNESS;
+	    newStiffness[5] = CART_ROT_STIFFNESS;
 	} else {
 	    cartImp.parametrize(CartDOF.X).setStiffness(aTransStiffVal.getX());
 	    cartImp.parametrize(CartDOF.Y).setStiffness(aTransStiffVal.getY());
 	    cartImp.parametrize(CartDOF.Z).setStiffness(aTransStiffVal.getZ());
-	    cartImp.parametrize(CartDOF.ROT).setStiffness(aRotStiffVal);
+	    cartImp.parametrize(CartDOF.ROT).setStiffness(CART_ROT_STIFFNESS);
 	    cartImp.setNullSpaceStiffness(0.0);
-	    newStiffness[0] = (int) aTransStiffVal.getX();
-	    newStiffness[1] = (int) aTransStiffVal.getY();
-	    newStiffness[2] = (int) aTransStiffVal.getZ();
-	    newStiffness[3] = (int) aRotStiffVal;
-	    newStiffness[3] = (int) aRotStiffVal;
-	    newStiffness[3] = (int) aRotStiffVal;
+	    newStiffness[0] = Math.toIntExact(Math.round(aTransStiffVal.getX()));
+	    newStiffness[1] = Math.toIntExact(Math.round(aTransStiffVal.getY()));
+	    newStiffness[2] = Math.toIntExact(Math.round(aTransStiffVal.getZ()));
+	    newStiffness[3] = CART_ROT_STIFFNESS;
+	    newStiffness[4] = CART_ROT_STIFFNESS;
+	    newStiffness[5] = CART_ROT_STIFFNESS;
 
 	}
 	// Send the new Stiffness settings down to the
@@ -205,7 +209,6 @@ public class LwrPathImp implements ILwrState {
 	lwrStatemachine.controlMode = cartImp;
     }
 
-    
     /**
      * In this Function the Stiffness value is calculated.
      * 
@@ -220,7 +223,7 @@ public class LwrPathImp implements ILwrState {
 	/*
 	 * Berechnung der Daempfung bei Annaeherung an die Grenze.
 	 */
-	double maxStiff = 5000;
+	double maxStiff = CART_TRANSL_STIFFNESS_MAX;
 	if (dist >= tol) {
 	    return maxStiff;
 	} else if (dist < tol && dist > 0) {
@@ -253,14 +256,13 @@ public class LwrPathImp implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public final void interpretCmdPacket(
-	    final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
+    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
+
 	boolean err = false;
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String cmdString;
-	    cmdString = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
+	    cmdString = lwrStatemachine.cmdIgtMsg;
+	    lwrStatemachine.paramString = cmdString.substring(cmdString
 		    .indexOf(";"));
 	    String[] cmdArray = cmdString.split(";");
 	    if (cmdArray[1].contentEquals("img")) {
@@ -276,32 +278,28 @@ public class LwrPathImp implements ILwrState {
 		    Double.parseDouble(cmdArray[3]),
 		    Double.parseDouble(cmdArray[4]));
 	    System.out.println("Targetposition...: " + this.targetPosition);
-	    // newState.TargetOrientation = MatrixTransformation.of(Vector.of(0,
-	    // 0, 0),
-	    // Rotation.ofRad(Double.parseDouble(CMD_Array[5])*Math.PI/180,
-	    // Double.parseDouble(CMD_Array[6])*Math.PI/180,
-	    // Double.parseDouble(CMD_Array[7])*Math.PI/180));
-	    if (this.imageSpace && lwrStatemachine.TransformRecieved) {
-		Vector Tmp;
-		Tmp = lwrStatemachine.TransformRobotImage
+
+	    if (this.imageSpace && lwrStatemachine.transformReceivedFlag) {
+		Vector tmp;
+		tmp = lwrStatemachine.transfRobotImg
 			.invert()
 			.applyTo(targetPosition)
-			.add(lwrStatemachine.TransformRobotImage.invert()
+			.add(lwrStatemachine.transfRobotImg.invert()
 				.getTranslation());
-		this.targetPosition = Tmp;
+		this.targetPosition = tmp;
 		System.out.println("After Transformation...: "
 			+ this.targetPosition);
 
 	    }
 	    if (err) {
 		lwrStatemachine.ErrorCode = 
-			OpenIGTLinkErrorCode.ConfigurationError;// Configuration error
+			OpenIGTLinkErrorCode.ConfigurationError;
 		lwrStatemachine.changeLWRState(new LwrIdle());
 	    }
 
 	} else {
 	    lwrStatemachine.ErrorCode = 
-		    OpenIGTLinkErrorCode.IllegalInstruction; // Illegal/unknown instruction
+		    OpenIGTLinkErrorCode.IllegalInstruction;
 	    lwrStatemachine.ErrorMessage = 
 		    "Unexpected Messagetype recieved! Expected STRING";
 	}
@@ -318,12 +316,12 @@ public class LwrPathImp implements ILwrState {
      */
     @Override
     public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
-	// TODO Automatisch generierter Methodenstub
+
 	String ack;
 	if (endOfPath) {
 	    ack = "PathImp;0;true;";
 	} else {
-	    if (distance > tolerance) {
+	    if (distance > TOLERANCE) {
 		ack = "PathImp;2;false;";
 	    } else if (distance == 0) {
 		ack = "PathImp;0;false;";
@@ -332,7 +330,7 @@ public class LwrPathImp implements ILwrState {
 	    }
 	}
 
-	lwrStatemachine.AckIGTmessage = ack;
+	lwrStatemachine.ackIgtMsg = ack;
     }
 
 }

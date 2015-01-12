@@ -39,7 +39,6 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCo
  * @version 0.1
  */
 public class LwrMoveToPose implements ILwrState {
-    
     /** Cartesian-rotational stiffness in Nm/rad.*/
     private static final int CART_ROT_STIFFNESS = 300;
     /** Cartesian-translational stiffness in N/m.*/
@@ -165,8 +164,8 @@ public class LwrMoveToPose implements ILwrState {
     public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String cmdString;
-	    cmdString = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
+	    cmdString = lwrStatemachine.cmdIgtMsg;
+	    lwrStatemachine.paramString = cmdString.substring(cmdString
 		    .indexOf(";"));
 	    String[] cmdArray = cmdString.split(";");
 	    if (cmdArray[1].contentEquals("img")) {
@@ -187,10 +186,10 @@ public class LwrMoveToPose implements ILwrState {
 			    Math.toRadians(Double.parseDouble(cmdArray[5])),
 			    Math.toRadians(Double.parseDouble(cmdArray[6])),
 			    Math.toRadians(Double.parseDouble(cmdArray[7]))));
-	    if (this.imageSpace && lwrStatemachine.TransformRecieved) {
+	    if (this.imageSpace && lwrStatemachine.transformReceivedFlag) {
 		MatrixTransformation tmp = MatrixTransformation.of(
 			targetPos, targetOri.getRotationMatrix());
-		tmp = lwrStatemachine.TransformRobotImage.invert().compose(tmp);
+		tmp = lwrStatemachine.transfRobotImg.invert().compose(tmp);
 		this.targetPos = tmp.getTranslation();
 		this.targetOri = tmp
 			.withTranslation(Vector.of(0, 0, 0));
@@ -224,7 +223,7 @@ public class LwrMoveToPose implements ILwrState {
 	} else {
 	    ack = "MoveToPose;false;";
 	}
-	lwrStatemachine.AckIGTmessage = ack;
+	lwrStatemachine.ackIgtMsg = ack;
     }
 
 }

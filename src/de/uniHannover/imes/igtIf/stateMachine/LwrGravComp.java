@@ -99,8 +99,8 @@ public class LwrGravComp implements ILwrState {
 	    LwrStatemachine lwrStatemachine) {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String cmdString;
-	    cmdString = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
+	    cmdString = lwrStatemachine.cmdIgtMsg;
+	    lwrStatemachine.paramString = cmdString.substring(cmdString
 		    .indexOf(";"));
 	}
     }
@@ -118,7 +118,7 @@ public class LwrGravComp implements ILwrState {
 
 	String ack;
 	ack = "GravComp;";
-	lwrStatemachine.AckIGTmessage = ack;
+	lwrStatemachine.ackIgtMsg = ack;
 
     }
 }

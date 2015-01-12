@@ -372,8 +372,8 @@ public class LwrVirtualFixtures implements ILwrState {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String cmdString;
 
-	    cmdString = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
+	    cmdString = lwrStatemachine.cmdIgtMsg;
+	    lwrStatemachine.paramString = cmdString.substring(cmdString
 		    .indexOf(";"));
 	    String[] cmdArray = cmdString.split(";");
 
@@ -405,10 +405,10 @@ public class LwrVirtualFixtures implements ILwrState {
 		    Double.parseDouble(cmdArray[7]),
 		    Double.parseDouble(cmdArray[8]));
 
-	    if (this.ImageSpace && lwrStatemachine.TransformRecieved) {
-		this.VirtualFixture_ap = lwrStatemachine.TransformRobotImage
+	    if (this.ImageSpace && lwrStatemachine.transformReceivedFlag) {
+		this.VirtualFixture_ap = lwrStatemachine.transfRobotImg
 			.applyTo(this.VirtualFixture_ap);
-		this.VirtualFixture_n = lwrStatemachine.TransformRobotImage
+		this.VirtualFixture_n = lwrStatemachine.transfRobotImg
 			.applyTo(this.VirtualFixture_n);
 
 	    }
@@ -460,7 +460,7 @@ public class LwrVirtualFixtures implements ILwrState {
 	} else {
 	    ack = "VirtualFixtures;none;";
 	}
-	lwrStatemachine.AckIGTmessage = ack;
+	lwrStatemachine.ackIgtMsg = ack;
     }
 
 }

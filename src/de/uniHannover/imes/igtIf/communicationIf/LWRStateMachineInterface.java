@@ -96,7 +96,7 @@ public class LWRStateMachineInterface extends Thread {
      * Acknowledgement OpenIGTLink Message used for data transfer to the state
      * machine default message is "IDLE;".
      */
-    public String ACK_StateM = "IDLE;"; // TODO design failure other threads
+    public String ackStateM = "IDLE;"; // TODO design failure other threads
 					// access this field.
 
     /**
@@ -606,7 +606,7 @@ public class LWRStateMachineInterface extends Thread {
 	    try {
 
 		controlSemaphore.acquire();
-		ackMsg = ACK_StateM;
+		ackMsg = ackStateM;
 		controlSemaphore.release();
 	    } catch (InterruptedException e) {
 		ErrorFlag = true;
@@ -693,7 +693,7 @@ public class LWRStateMachineInterface extends Thread {
 
 	    try {
 		controlSemaphore.acquire();
-		ackMsg = ACK_StateM;
+		ackMsg = ackStateM;
 		controlSemaphore.release();
 	    } catch (InterruptedException e) {
 		// TODO exception concept.

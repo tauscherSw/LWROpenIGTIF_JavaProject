@@ -613,9 +613,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 				    .getDefaultMotionFrame());
 		    imesStatemachine.curJntPose = smartServoRuntime
 			    .getAxisQMsrOnController();
-		    imesStatemachine.TCPForce = smartServoRuntime
+		    imesStatemachine.tcpForce = smartServoRuntime
 			    .getExtForceVector();
-		    imesStatemachine.PoseUID++;
+		    imesStatemachine.poseUid++;
 		} catch (Exception e) {
 		    errMsg = "Error: Failed Update with RealtimeSystem!!";
 		    // TODO exception concept.
@@ -627,8 +627,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			final boolean semaReqResult = slicerVisualIf.visualSema
 				.tryAcquire(1, TimeUnit.MILLISECONDS);
 			if (semaReqResult) {
-			    slicerVisualIf.poseUid = imesStatemachine.PoseUID;
-			    slicerVisualIf.TCPForce = imesStatemachine.TCPForce;
+			    slicerVisualIf.poseUid = imesStatemachine.poseUid;
+			    slicerVisualIf.TCPForce = imesStatemachine.tcpForce;
 			    slicerVisualIf.sendTcpForce = true;
 			    updatePose();
 			    slicerVisualIf.visualSema.release();
@@ -686,13 +686,13 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			boolean semaAcquired = slicerControlIf.controlSemaphore
 				.tryAcquire(1, TimeUnit.MILLISECONDS);
 			if (semaAcquired) {
-			    imesStatemachine.CmdIGTmessage = slicerControlIf.CMD_StateM;
+			    imesStatemachine.cmdIgtMsg = slicerControlIf.CMD_StateM;
 			    imesStatemachine.IGTLdatatype = slicerControlIf.IGTLdatatype;
 			    imesStatemachine.UID = slicerControlIf.UID;
 			    if (slicerControlIf.transformReceived
-				    && !imesStatemachine.TransformRecieved) {
-				imesStatemachine.TransformRobotImage = slicerControlIf.transformImageRobot;
-				imesStatemachine.TransformRecieved = true;
+				    && !imesStatemachine.transformReceivedFlag) {
+				imesStatemachine.transfRobotImg = slicerControlIf.transformImageRobot;
+				imesStatemachine.transformReceivedFlag = true;
 			    }
 			    slicerControlIf.controlSemaphore.release();
 			} else {
@@ -720,7 +720,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		// calling the function InterpretCommandString of the Current
 		// State
 
-		imesStatemachine.CheckTransitionRequest(); // TODO check should
+		imesStatemachine.checkTransitionRequest(); // TODO check should
 							   // return a boolean
 
 		// If the State has changed print the new State
@@ -741,7 +741,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		// Print Error messages if there where any Errors
-		imesStatemachine.ErrorHandler(true);
+		imesStatemachine.errHandler(true);
 
 		// Calculating the new control Param and Change the parameters
 		imesStatemachine.calcControlParam(); // TODO calc method should
@@ -766,7 +766,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			slicerControlIf.controlSemaphore.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
 			// try to update the ACK String for the ControlIF Thread
-			slicerControlIf.ACK_StateM = imesStatemachine.AckIGTmessage;
+			slicerControlIf.ackStateM = imesStatemachine.ackIgtMsg;
 			slicerControlIf.controlSemaphore.release();
 		    } catch (InterruptedException e) {
 			errMsg = "Error: Couldn't Acquire ControlIF Semaphore!!";
@@ -813,8 +813,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	slicerVisualIf.datatype = imesStatemachine.currentVisualIFDatatype;
 	switch (imesStatemachine.currentVisualIFDatatype) {
 	case IMAGESPACE:
-	    if (imesStatemachine.TransformRecieved) {
-		slicerVisualIf.tImgBaseStateM = imesStatemachine.TransformRobotImage;
+	    if (imesStatemachine.transformReceivedFlag) {
+		slicerVisualIf.tImgBaseStateM = imesStatemachine.transfRobotImg;
 	    }
 	case JOINTSPACE:
 	    slicerVisualIf.jntPoseStateM = imesStatemachine.curJntPose;

@@ -172,8 +172,8 @@ class LwrIdle implements ILwrState {
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String cmdString;
 
-	    cmdString = lwrStatemachine.CmdIGTmessage;
-	    lwrStatemachine.ParameterString = cmdString.substring(cmdString
+	    cmdString = lwrStatemachine.cmdIgtMsg;
+	    lwrStatemachine.paramString = cmdString.substring(cmdString
 		    .indexOf(";"));
 
 	}
@@ -194,9 +194,9 @@ class LwrIdle implements ILwrState {
 	ack = "IDLE;";
 	// Send the string to StateControl
 	if (lwrStatemachine.End) {
-	    lwrStatemachine.AckIGTmessage = "SHUTDOWN;";
+	    lwrStatemachine.ackIgtMsg = "SHUTDOWN;";
 	} else {
-	    lwrStatemachine.AckIGTmessage = ack;
+	    lwrStatemachine.ackIgtMsg = ack;
 	}
     }
 
