@@ -44,6 +44,7 @@ import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
+import openIGTLink.swig.IGTLstring;
 import openIGTLink.swig.igtl_header;
 
 /**
@@ -82,7 +83,16 @@ public class LWRStateMachineInterface extends Thread {
      * Maximum allowed number of repitive received equal uids.
      */
     private static final int MAX_EQUAL_UIDS = 4;
-
+    
+    /** Default String encoding for the OpenIGTLink String data type */
+    private static final int DEFAULT_STRING_ENCODING = 3;
+    
+    /** Number of elements of a rotational matrix*/
+    private static final int SIZE_OF_ROTATION = 9;
+    
+    /** Number of elements of a translation vector*/
+    private static final int SIZE_OF_TRANS = 3;
+    
     /**
      * Load SWIG igtlutil library (Default Library folder is
      * "..\OpenIGTLinkLib\swig\"
@@ -464,14 +474,13 @@ public class LWRStateMachineInterface extends Thread {
 		uidRepeat = 0;
 	    }
 
-	    final int bodyDiff = 4; // TODO @Sebastian redefine as class
-				    // constant, usage unknown.
-	    byte[] tmpString = new byte[bodySize - bodyDiff];
+	   
+	    byte[] tmpString = new byte[bodySize - IGTLstring.IGTL_STRING_HEADER_SIZE];
 	    int p = 0;
-	    final int readBeginPos = 4;
+	    final int readBeginPos = IGTLstring.IGTL_STRING_HEADER_SIZE;
 	    for (int z = readBeginPos; z < bodySize; z++) {
-		tmpString[p] = bodyBytes[z];
-		p++;
+	    	tmpString[p] = bodyBytes[z];
+	    	p++;
 	    }
 	    try {
 		String cmdString = new String(tmpString);
@@ -487,18 +496,13 @@ public class LWRStateMachineInterface extends Thread {
 	} else if (messageType.equalsIgnoreCase("TRANSFORM")) {
 	    try {
 		ByteBuffer bodyBuff = ByteBuffer.wrap(bodyBytes);
-		/*
-		 * TODO @Sebastian: Following section holds multiple hardcoded
-		 * constants. Rename variables and define class constants for
-		 * solution.
-		 */
-		double[] R_tmp = new double[9];
-		double[] t_tmp = new double[3];
-		for (int i = 0; i < 12; i++) {
-		    if (i < 9) {
-			R_tmp[i] = bodyBuff.getDouble(i * 8);
-		    } else if (i >= 9 && i < 12) {
-			t_tmp[i - 9] = bodyBuff.getDouble(i * 8);
+		double[] R_tmp = new double[SIZE_OF_ROTATION];
+		double[] t_tmp = new double[SIZE_OF_TRANS];
+		for (int i = 0; i < SIZE_OF_ROTATION + SIZE_OF_TRANS ; i++) {
+		    if (i < SIZE_OF_TRANS) {
+			R_tmp[i] = bodyBuff.getDouble(i * Double.SIZE);
+		    } else if (i >= SIZE_OF_TRANS && i < SIZE_OF_ROTATION + SIZE_OF_TRANS) {
+			t_tmp[i - SIZE_OF_ROTATION] = bodyBuff.getDouble(i * Double.SIZE);
 		    }
 		}
 		transformImageRobot = MatrixTransformation.of(Vector.of(
@@ -767,26 +771,23 @@ public class LWRStateMachineInterface extends Thread {
      *             TODO @Sebastian define more precise exception.
      */
     public void sendIGTStringMessage(String message) throws Exception {
-	/*
-	 * TODO @Sebastian Following sections has few hardcoded constants.
-	 * Define them as class constants.
-	 */
-	byte[] bodyByte = new byte[message.length() + 4];
+	
+	byte[] bodyByte = new byte[message.length() + IGTLstring.IGTL_STRING_HEADER_SIZE];
 	byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
 	igtl_header header = new igtl_header();
 	header.setVersion(IGTLheader.IGTL_HEADER_VERSION);
-	header.setBody_size((BigInteger.valueOf(message.length() + 4)));
+	header.setBody_size((BigInteger.valueOf(message.length() + IGTLstring.IGTL_STRING_HEADER_SIZE)));
 	header.setName("STRING");
 	header.setDevice_name("ACK"); /* Device name */
 	header.setTimestamp(BigInteger.valueOf(System.nanoTime()));
-	ByteBuffer bodyBuffer = ByteBuffer.allocate(message.length() + 4);
-	bodyBuffer.putShort((short) 3);
+	ByteBuffer bodyBuffer = ByteBuffer.allocate(message.length() + IGTLstring.IGTL_STRING_HEADER_SIZE);
+	bodyBuffer.putShort((short) DEFAULT_STRING_ENCODING);
 	bodyBuffer.putShort((short) message.length());
 	bodyBuffer.put(message.getBytes());
 
 	bodyByte = bodyBuffer.array();
-	ByteArr bodyArray = new ByteArr(message.length() + 4);
-	for (int i = 0; i < message.length() + 4; i++) {
+	ByteArr bodyArray = new ByteArr(message.length() + IGTLstring.IGTL_STRING_HEADER_SIZE);
+	for (int i = 0; i < message.length() + IGTLstring.IGTL_STRING_HEADER_SIZE; i++) {
 	    bodyArray.setitem(i, bodyByte[i]);
 	}
 	ByteArr headerArray = ByteArr.frompointer(IGTLheader.PackHeader(header,

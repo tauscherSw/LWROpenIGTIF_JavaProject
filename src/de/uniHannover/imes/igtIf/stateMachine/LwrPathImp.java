@@ -50,6 +50,7 @@ public class LwrPathImp implements ILwrState {
     /** Maximum cartesian translational stiffness value in N/m. */
      private static final int CART_TRANSL_STIFFNESS_MAX = 5000;
 
+
     /**
      * Allowed euclidean distance from current robot position to the path from
      * start to end pose in mm.
@@ -132,13 +133,8 @@ public class LwrPathImp implements ILwrState {
 	}
 	curPosition = lwrStatemachine.curPose.getTranslation();
 
+
 	if (curPosition.subtract(targetPosition).length() < TOLERANCE) {
-	    stiffVal = 3000 - 1000 //@TODO @Sebastian comment on.
-		    * curPosition.subtract(targetPosition).length() / TOLERANCE;
-	    aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
-	    lwrStatemachine.cmdPose = MatrixTransformation.of(targetOrientation
-		    .withTranslation(targetPosition));
-	    if (curPosition.subtract(targetPosition).length() < TOLERANCE) {
 		stiffVal = CART_TRANSL_STIFFNESS_MAX;
 		aTransStiffVal = Vector.of(stiffVal, stiffVal, stiffVal);
 		lwrStatemachine.cmdPose = MatrixTransformation
@@ -148,7 +144,7 @@ public class LwrPathImp implements ILwrState {
 			    + targetPosition + ")");
 		}
 		endOfPath = true;
-	    }
+	
 	} else {
 
 	    d = curPosition.dotProduct(u);

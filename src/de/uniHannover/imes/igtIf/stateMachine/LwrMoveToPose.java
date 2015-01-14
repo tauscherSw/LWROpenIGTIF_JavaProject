@@ -45,12 +45,14 @@ public class LwrMoveToPose implements ILwrState {
     private static final int CART_TRANSL_STIFFNESS = 5000;
     /** Distance in mm, when path is interpreted as end-reached.*/
     private static final double END_OF_PATH_DEVIATION = 10;
+    /** Step length of movement in a cycle in mm.*/
+    private static final double LENGTH_OF_SINGLE_STEP = 10;
     
     
-    //TODO @Sebastian add javadoc and rename.
-    private Vector ap = null;
-    //TODO @Sebastian add javadoc and rename.
-    private Vector apNull = null;
+    /** Current point on the linear path which is closest to the robot position*/
+    private Vector currentPointLine = null;
+    /** start point of the linear path towards target position*/
+    private Vector startPointLine = null;
     /** 
      * Flag indicating if the robot has reached the end of 
      * the commanded path. 
@@ -58,9 +60,9 @@ public class LwrMoveToPose implements ILwrState {
     private boolean endOfPathFlag = false;
     /** Flag indicating if the robots pose data is represented in imagespace. */
     private boolean imageSpace = false;
-    //TODO @Sebastian add javadoc
+    /**Lambda which fulfills the equation: x_end = u*lambdaEnd + currentPointLine .*/
     private double lambdaEnd = 0.0;
-    //TODO @Sebastian add javadoc
+    /**Lambda which fulfills the equation: x_end = u*lambdaNull + startPointLine .*/
     private double lambdaNull = 0.0;
     
     /** Orientation of the target frame.*/
@@ -68,8 +70,8 @@ public class LwrMoveToPose implements ILwrState {
     /** Translation of the target frame.*/
     private Vector targetPos = null;
     
-    //TODO @Sebastian add javadoc and rename.
-    private Vector u = null;
+    /**Norm vector containing the direction of the linear path from strat point to End point*/
+    private Vector directionLine = null;
 
     /**
      * In this function control mode parameters are set and the command pose are
@@ -101,12 +103,12 @@ public class LwrMoveToPose implements ILwrState {
 		    CART_TRANSL_STIFFNESS, CART_TRANSL_STIFFNESS, CART_TRANSL_STIFFNESS, 
 		    CART_ROT_STIFFNESS, CART_ROT_STIFFNESS, CART_ROT_STIFFNESS };
 	    lwrStatemachine.curCartStiffness = newStiffness;
-	    ap = Vector.of(lwrStatemachine.curPose.getTranslation().getX(),
+	    currentPointLine = Vector.of(lwrStatemachine.curPose.getTranslation().getX(),
 		    lwrStatemachine.curPose.getTranslation().getY(),
 		    lwrStatemachine.curPose.getTranslation().getZ());
-	    apNull = ap;
-	    u = targetPos.subtract(ap).normalize();
-	    lambdaEnd = targetPos.subtract(ap).length();
+	    startPointLine = currentPointLine;
+	    directionLine = targetPos.subtract(currentPointLine).normalize();
+	    lambdaEnd = targetPos.subtract(currentPointLine).length();
 	    lwrStatemachine.InitFlag = false;
 	}
 	curPosition = lwrStatemachine.curPose.getTranslation();
@@ -117,17 +119,16 @@ public class LwrMoveToPose implements ILwrState {
 		endOfPathFlag = true;
 	    } else {
 
-		d = curPosition.dotProduct(u);
-		lambda = d - u.dotProduct(ap);
-		lambdaNull = d - u.dotProduct(apNull);
-		aim = u.multiply(1); //TODO @Sebastian Comment.
+		d = curPosition.dotProduct(directionLine);
+		lambda = d - directionLine.dotProduct(currentPointLine);
+		lambdaNull = d - directionLine.dotProduct(startPointLine);
 		if (lambdaNull >= 0 && lambdaNull <= lambdaEnd) {
-		    ap = ap.add(u.multiply(lambda));
+		    currentPointLine = currentPointLine.add(directionLine.multiply(lambda));
 
 		}
-		aim = u.multiply(10); //TODO @Sebastian Comment.
+		aim = directionLine.multiply(LENGTH_OF_SINGLE_STEP);
 
-		lwrStatemachine.cmdPose = MatrixTransformation.of(ap.add(aim),
+		lwrStatemachine.cmdPose = MatrixTransformation.of(currentPointLine.add(aim),
 			targetOri.getRotationMatrix());
 	    }
 	} else {

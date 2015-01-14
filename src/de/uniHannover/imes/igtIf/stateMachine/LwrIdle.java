@@ -38,11 +38,11 @@ class LwrIdle implements ILwrState {
     /** Flag for increasing the stiffness params of the robot.*/
     private boolean incStiffness = false;
     
-    //TODO @Sebastian add javadoc
-    private static final int MAX_DELTA_STIFFNESS_PARAMS = 100;
+    /**Maximum allowed change in translational stiffness value per cycle in N/m.*/
+    private static final int MAX_DELTA_STIFFNESS_TRANS = 100;
     
-    //TODO @Sebastian add javadoc
-    private static final int MIN_DELTA_STIFFNESS_PARAMS = 30;
+    /**Maximum allowed change in rotational stiffness value per cycle in rad/m.*/
+    private static final int MAX_DELTA_STIFFNESS_ROT = 30;
     
     
     /**
@@ -50,7 +50,7 @@ class LwrIdle implements ILwrState {
      */
     private static final int MAX_CART_STIFFNESS = 4950;
     /**
-     * Increment of cartesian stiffness parameter in n/m.
+     * Increment of cartesian stiffness parameter in N/m.
      */
     private static final int CART_STIFFNESS_INCREMENT = 50;
 
@@ -90,8 +90,8 @@ class LwrIdle implements ILwrState {
 
 	if (lwrStatemachine.InitFlag) {
 
-	    if (deltaStiffnessTrans.length() <= MAX_DELTA_STIFFNESS_PARAMS
-		    && deltaStiffnessRot.length() <= MIN_DELTA_STIFFNESS_PARAMS) {
+	    if (deltaStiffnessTrans.length() <=  MAX_DELTA_STIFFNESS_TRANS
+		    && deltaStiffnessRot.length() <= MAX_DELTA_STIFFNESS_ROT) {
 		cartImp.parametrize(CartDOF.TRANSL)
 			.setStiffness(aTransStiffVal);
 		cartImp.parametrize(CartDOF.ROT).setStiffness(aRotStiffVal);
@@ -109,7 +109,7 @@ class LwrIdle implements ILwrState {
 	if (incStiffness) {
 	    boolean increaseTrans = true;
 	    boolean increaseRot = true;
-	    if (deltaStiffnessTrans.length() > MAX_DELTA_STIFFNESS_PARAMS) {
+	    if (deltaStiffnessTrans.length() >  MAX_DELTA_STIFFNESS_TRANS) {
 		for (int k = 0; k < 3; k++) {
 		    if (lwrStatemachine.curCartStiffness[k] <= MAX_CART_STIFFNESS) {
 			newStiffness[k] = 
@@ -128,7 +128,7 @@ class LwrIdle implements ILwrState {
 			.setStiffness(aTransStiffVal);
 		increaseTrans = false;
 	    }
-	    if (deltaStiffnessRot.length() > 30) {
+	    if (deltaStiffnessRot.length() > MAX_DELTA_STIFFNESS_ROT) {
 		for (int k = 3; k < 6; k++) {
 		    if (lwrStatemachine.curCartStiffness[k] <= 300 - 15) {
 			newStiffness[k] = lwrStatemachine.curCartStiffness[k] + 15;
