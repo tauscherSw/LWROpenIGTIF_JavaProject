@@ -48,74 +48,93 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCo
 
 public class LwrVirtualFixtures implements ILwrState {
 
-	 /**
-    * Enum for the virtual fixtures type {Cone, plane }
-    */
-   private static enum VirtualFixtureType {
-   /** The virtual fixture has a plane geometry. */
-   Plane,
-	/** The virtual fixture has a cone geometry */
-	Cone,	
-   }
-   /** Distance-parameter in millimeters for fixture calculation. */
-   private double awaredist = 20; //TODO initialize in init() method or as constants.
-   /** Flag indicates if the robot is near the tip of the cone. Due to this variable
-    *  the half sphere used as virtual fixture instead of the cone tip is used to 
-    *  avoid stability issues. */
-   boolean coneTip = false;
+    /**
+     * Enum for the virtual fixtures type {Cone, plane }.
+     */
+    private static enum VirtualFixtureType {
+	/** The virtual fixture has a plane geometry. */
+	Plane,
+	/** The virtual fixture has a cone geometry. */
+	Cone,
+    }
+    
+    //TODO @Sebastian further use?
+    private static final int CONE_TOLERANCE_ENDPOINT = 10;
 
-   /** Represents the distance to a virtual fixture in millimeters. */
-   private double distance;
-   /** Flag indicating if the end point was reached. */
-   private boolean endPoint = false;
-   /** Flag indicating if robot position data is recommended in imagespace. */
-   private boolean imageSpace = false;
-   /**
-    * Distance to a virtual fixture in millimeters from the calculation before.
-    */
-   private double last_distance = 0.0; //TODO initialize in init() method or as constants.
-   
-   /**
-    * Maximum cartesian-translational stiffness of the lwr in N/m.
-    */
-   private static final double CART_TRANSL_STIFFNESS_MAX = 5000;
-   
-   private static final int NUM_FORCE_NORM_VECTORS = 5;
-   
-   /** Field containing the last NUM_FORCE_NORM_VECTORS norm vectors of the direction of force. 
-    * This field is used to average the force direction for the cone to avoid fast changes in 
-    * direction of introduced force. */
-   private Vector [] lastNormVectorsForce = new Vector [NUM_FORCE_NORM_VECTORS];
-  
-   
-   /**Transformation matrix containing the transformation from robot base coordinate frame to the cone coordinate frame.*/
-   private MatrixTransformation TransformationBaseToCone;
-   
-   /**   Geometric type of active virtual fixture   */
-   private VirtualFixtureType activeVirtualFixture = VirtualFixtureType.Plane;
-   /** Position of the virtual fixture in cartesian space. If the activ evirtaul fixture is a cone  it is equal to the position of the cone tip */
-   private Vector virtualFixturePosition; 
-   
-   /** Norm vector of the active Virtual fixtures. For a plane this is the norm vector of the plane and for cone it is the symmetry axis of the cone.*/
-   private Vector VirtualFixtureNormVector;
-   /** Opening angle of the cone.*/
-   private double VirtualFixturePhi; 
-   /** Current */
-   private Vector normVector = Vector.of(0, 0, 1);
-   /**
-    * In this Function control Mode Parameters are set and the commanded pose
-    * are calculated due the current LWR State. During the VirtualFixtures
-    * State the Cartesian Stiffness is set according to the distance towards
-    * the Fixtures and the movement (approaching, removing), the
-    * NullSpaceStiffness is set to zero and the Pose is set to the measured
-    * pose.
-    * 
-    * @param lwrStatemachine
-    *            The operated state machine
-    * @see ILwrState
-    */
-   @Override
-   public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
+    /** Distance-parameter in millimeters for fixture calculation. */
+    private double awaredist = 20; // TODO initialize in init() method or as
+				   // constants.
+    /**
+     * Flag indicates if the robot is near the tip of the cone. Due to this
+     * variable the half sphere used as virtual fixture instead of the cone tip
+     * is used to avoid stability issues.
+     */
+    private boolean coneTip = false;
+
+    /** Represents the distance to a virtual fixture in millimeters. */
+    private double distance;
+    /** Flag indicating if the end point was reached. */
+    private boolean endPoint = false;
+    /** Flag indicating if robot position data is recommended in imagespace. */
+    private boolean imageSpace = false;
+    /**
+     * Distance to a virtual fixture in millimeters from the calculation before.
+     */
+    private double lastDistance = 0.0; 
+
+    /**
+     * Maximum cartesian-translational stiffness of the lwr in N/m.
+     */
+    private static final double CART_TRANSL_STIFFNESS_MAX = 5000;
+
+    /** Number of vectors for mean calculation of force vector. */
+    private static final int NUM_FORCE_NORM_VECTORS = 5;
+
+    /**
+     * Field containing the last NUM_FORCE_NORM_VECTORS norm vectors of the
+     * direction of force. This field is used to average the force direction for
+     * the cone to avoid fast changes in direction of introduced force.
+     */
+    private Vector[] lastNormVectorsForce = new Vector[NUM_FORCE_NORM_VECTORS];
+
+    /**
+     * Transformation matrix containing the transformation from robot base
+     * coordinate frame to the cone coordinate frame.
+     */
+    private MatrixTransformation transformationBaseToCone;
+
+    /** Geometric type of active virtual fixture. */
+    private VirtualFixtureType activeVirtualFixture = VirtualFixtureType.Plane;
+    /**
+     * Position of the virtual fixture in cartesian space. If the activ evirtaul
+     * fixture is a cone it is equal to the position of the cone tip
+     */
+    private Vector virtualFixturePosition;
+
+    /**
+     * Norm vector of the active Virtual fixtures. For a plane this is the norm
+     * vector of the plane and for cone it is the symmetry axis of the cone.
+     */
+    private Vector virtualFixtureNormVector;
+    /** Opening angle of the cone. */
+    private double virtualFixturePhi;
+    /** Current //TODO @Sebastian comment on. */
+    private Vector normVector = Vector.of(0, 0, 1);
+
+    /**
+     * In this Function control Mode Parameters are set and the commanded pose
+     * are calculated due the current LWR State. During the VirtualFixtures
+     * State the Cartesian Stiffness is set according to the distance towards
+     * the Fixtures and the movement (approaching, removing), the
+     * NullSpaceStiffness is set to zero and the Pose is set to the measured
+     * pose.
+     * 
+     * @param lwrStatemachine
+     *            The operated state machine
+     * @see ILwrState
+     */
+    @Override
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
 	int[] newStiffness = { 0, 0, 0, 0, 0, 0 };
 	double aDampVal = 0.0, stiffVal = 0.0;
 	if (lwrStatemachine.InitFlag) {
@@ -133,56 +152,57 @@ public class LwrVirtualFixtures implements ILwrState {
 	}
 	if (this.activeVirtualFixture == VirtualFixtureType.Plane) {
 	    Vector dv = lwrStatemachine.curPose.getTranslation().subtract(
-	    		virtualFixturePosition);
-	    distance = VirtualFixtureNormVector.dotProduct(dv);
-	    normVector = VirtualFixtureNormVector;
+		    virtualFixturePosition);
+	    distance = virtualFixtureNormVector.dotProduct(dv);
+	    normVector = virtualFixtureNormVector;
 
 	} else if (this.activeVirtualFixture == VirtualFixtureType.Cone) {
 
 	    Vector xAxis;
 	    Vector yAxis;
 	    double n;
-	    if (VirtualFixtureNormVector.getX() != 0) {
-		n = -(VirtualFixtureNormVector.getY() + VirtualFixtureNormVector.getZ())
-			/ VirtualFixtureNormVector.getX();
+	    if (virtualFixtureNormVector.getX() != 0) {
+		n = -(virtualFixtureNormVector.getY() + virtualFixtureNormVector
+			.getZ()) / virtualFixtureNormVector.getX();
 		xAxis = Vector.of(n, 1, 1).normalize();
-		yAxis = VirtualFixtureNormVector.crossProduct(xAxis);
-	    } else if (VirtualFixtureNormVector.getY() != 0) {
-		n = -(VirtualFixtureNormVector.getX() + VirtualFixtureNormVector.getZ())
-			/ VirtualFixtureNormVector.getY();
+		yAxis = virtualFixtureNormVector.crossProduct(xAxis);
+	    } else if (virtualFixtureNormVector.getY() != 0) {
+		n = -(virtualFixtureNormVector.getX() + virtualFixtureNormVector
+			.getZ()) / virtualFixtureNormVector.getY();
 		yAxis = Vector.of(1, n, 1).normalize();
-		xAxis = yAxis.crossProduct(VirtualFixtureNormVector);
+		xAxis = yAxis.crossProduct(virtualFixtureNormVector);
 	    } else {
 		xAxis = Vector.of(1, 0, 0);
 		yAxis = Vector.of(0, 1, 0);
 	    }
 
-	    TransformationBaseToCone = MatrixTransformation.of(virtualFixturePosition,
+	    transformationBaseToCone = MatrixTransformation.of(
+		    virtualFixturePosition,
 		    Matrix.ofRowFirst(1, 0, 0, 0, 1, 0, 0, 0, 1));
 
-	    Vector curCartPoseCOcone = TransformationBaseToCone.getRotationMatrix()
-		    .multiply(
+	    Vector curCartPoseCOcone = transformationBaseToCone
+		    .getRotationMatrix().multiply(
 			    lwrStatemachine.curPose.getTranslation().subtract(
-			    		virtualFixturePosition));
+				    virtualFixturePosition));
 
 	    double diagonale = Math.sqrt(Math.pow(curCartPoseCOcone.getX(), 2)
 		    + Math.pow(curCartPoseCOcone.getY(), 2));
 
-	    distance = ((Math.sin((VirtualFixturePhi) / 2)
+	    distance = ((Math.sin((virtualFixturePhi) / 2)
 		    * curCartPoseCOcone.getZ() - diagonale) * Math
-		    .cos(VirtualFixturePhi / 2));
+		    .cos(virtualFixturePhi / 2));
 	    double sign = Math.signum(distance);
 	    Vector vTemp = curCartPoseCOcone.withZ(0);
 
-	    double z = Math.abs(distance) * Math.sin(VirtualFixturePhi / 2);
+	    double z = Math.abs(distance) * Math.sin(virtualFixturePhi / 2);
 
 	    if (curCartPoseCOcone.length() < (awaredist / 2)
-		    && curCartPoseCOcone.length() > 10) {
+		    && curCartPoseCOcone.length() > CONE_TOLERANCE_ENDPOINT) {
 
 		coneTip = true;
 		normVector = curCartPoseCOcone.invert().normalize();
 		distance = curCartPoseCOcone.length();
-	    } else if (curCartPoseCOcone.length() <= 10) {
+	    } else if (curCartPoseCOcone.length() <= CONE_TOLERANCE_ENDPOINT) {
 		endPoint = true;
 		normVector = curCartPoseCOcone.invert().normalize();
 	    } else {
@@ -192,45 +212,48 @@ public class LwrVirtualFixtures implements ILwrState {
 		    vTemp = vTemp.multiply(distance / diagonale);
 		}
 		vTemp = vTemp.withZ(Math.abs(z));
-		MatrixTransformation TransformationConeToBase = TransformationBaseToCone.invert();
+		MatrixTransformation TransformationConeToBase = transformationBaseToCone
+			.invert();
 		normVector = TransformationConeToBase.getRotation()
 			.applyTo(vTemp.normalize()).normalize();
 	    }
 	    if (lwrStatemachine.InitFlag) {
-	    	for(int i = 0; i<NUM_FORCE_NORM_VECTORS; i++){
-	    		lastNormVectorsForce[i] = normVector;
-	    	}
+
+		for (int i = 0; i < NUM_FORCE_NORM_VECTORS; i++) {
+		    lastNormVectorsForce[i] = normVector;
+		}
 	    }
-	    	for(int i = 1; i<NUM_FORCE_NORM_VECTORS; i++){
-	    			normVector = lastNormVectorsForce[i-1].add(lastNormVectorsForce[i]);
-	    	}
-	    	normVector = normVector.normalize();
-	    	for(int i = NUM_FORCE_NORM_VECTORS -1; i>= 0; i--){
-	    		if(i == 0){
-	    			lastNormVectorsForce[i] = normVector;
-	    		}else{
-	    			lastNormVectorsForce[i]= lastNormVectorsForce[i-1];
-	    		}
-    			
-	    	}
+	    for (int i = 1; i < NUM_FORCE_NORM_VECTORS; i++) {
+		normVector = lastNormVectorsForce[i - 1]
+			.add(lastNormVectorsForce[i]);
+	    }
+	    normVector = normVector.normalize();
+	    for (int i = NUM_FORCE_NORM_VECTORS - 1; i >= 0; i--) {
+		if (i == 0) {
+		    lastNormVectorsForce[i] = normVector;
+		} else {
+		    lastNormVectorsForce[i] = lastNormVectorsForce[i - 1];
+		}
+
+	    }
 
 	}
 	if (distance < awaredist) {
 	    aDampVal = 0.7;
 
 	    if (coneTip) {
-			if (endPoint) {
-			    stiffVal = CART_TRANSL_STIFFNESS_MAX;
-			} else {
-			    stiffVal = getStiffnessValueConeTip(distance, awaredist);
-			}
-			lwrStatemachine.cmdPose = MatrixTransformation.of(
+		if (endPoint) {
+		    stiffVal = CART_TRANSL_STIFFNESS_MAX;
+		} else {
+		    stiffVal = getStiffnessValueConeTip(distance, awaredist);
+		}
+		lwrStatemachine.cmdPose = MatrixTransformation.of(
 			virtualFixturePosition,
 			lwrStatemachine.curPose.getRotation());
 
 	    } else if (distance >= 0) {
 
-		if (distance - last_distance <= 0) {
+		if (distance - lastDistance <= 0) {
 		    stiffVal = getStiffnessValueApproach(distance, awaredist);
 
 		} else {
@@ -264,15 +287,14 @@ public class LwrVirtualFixtures implements ILwrState {
 	double aRotStiffVal = stiffVal * 150 / 5000;
 	double aNullStiffVal = 0;
 
-	last_distance = distance;
+	lastDistance = distance;
 
 	// We are in CartImp Mode,
 	// Modify the settings:
 	// NOTE: YOU HAVE TO REMAIN POSITIVE SEMI-DEFINITE !!
 	// NOTE: DONT CHANGE TOO FAST THE SETTINGS, ELSE YOU
 	// WILL DESTABILIZE THE CONTROLLER
-	CartesianImpedanceControlMode cartImp 
-	    = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 
 	cartImp.parametrize(CartDOF.X).setStiffness(aTransStiffVal.getX());
 	cartImp.parametrize(CartDOF.Y).setStiffness(aTransStiffVal.getY());
@@ -290,20 +312,20 @@ public class LwrVirtualFixtures implements ILwrState {
 	// controller
 	lwrStatemachine.controlMode = cartImp;
 	lwrStatemachine.curCartStiffness = newStiffness;
-   }
+    }
 
-   /**
-    * In this Function the Stiffness value for the case that the robot is
-    * getting closer to a virtual fixture is calculated.
-    * 
-    * @param dist
-    *            the minimum distance to the Virtual Fixture
-    * @param awareDistance
-    *            the minimum distance from where on the stiffness is changed
-    * @return the calculated stiffness value.
-    */
+    /**
+     * In this Function the Stiffness value for the case that the robot is
+     * getting closer to a virtual fixture is calculated.
+     * 
+     * @param dist
+     *            the minimum distance to the Virtual Fixture
+     * @param awareDistance
+     *            the minimum distance from where on the stiffness is changed
+     * @return the calculated stiffness value.
+     */
 
-   public final double getStiffnessValueApproach(final double dist,
+    public final double getStiffnessValueApproach(final double dist,
 	    final double awareDistance) {
 	/*
 	 * Calculation of the damping parameter when approaching the boundary.
@@ -319,43 +341,44 @@ public class LwrVirtualFixtures implements ILwrState {
 	} else {
 	    return CART_TRANSL_STIFFNESS_MAX;
 	}
-   }
+    }
 
-   /**
-    * In this Function the Stiffness value for the case that the robot is
-    * getting further away from a virtual fixture is calculated.
-    * 
-    * @param dist
-    *            the minimum distance to the Virtual Fixture
-    * @param awareDistance
-    *            the minimum distance from where on the stiffness is changed
-    * @return the calculated stiffness value.
-    */
-   public final double getStiffnessValueConeTip(final double dist,
+    /**
+     * In this Function the Stiffness value for the case that the robot is
+     * getting further away from a virtual fixture is calculated.
+     * 
+     * @param dist
+     *            the minimum distance to the Virtual Fixture
+     * @param awareDistance
+     *            the minimum distance from where on the stiffness is changed
+     * @return the calculated stiffness value.
+     */
+    public final double getStiffnessValueConeTip(final double dist,
 	    final double awareDistance) {
 
 	double max = CART_TRANSL_STIFFNESS_MAX / 2;
 	if (dist < awareDistance && dist > 0) {
 	    double y;
 	    double m = max / Math.pow(awareDistance, 3);
-	    y = CART_TRANSL_STIFFNESS_MAX - m * Math.pow(awareDistance - dist, 3);
+	    y = CART_TRANSL_STIFFNESS_MAX - m
+		    * Math.pow(awareDistance - dist, 3);
 	    return y;
 	} else {
 	    return max;
 	}
-   }
+    }
 
-   /**
-    * In this Function the Stiffness value for the case that the robot is
-    * getting further away from a virtual fixture is calculated.
-    * 
-    * @param dist
-    *            the minimum distance to the Virtual Fixture
-    * @param awareDistance
-    *            the minimum distance from where on the stiffness is changed
-    * @return the calculated stiffness value.
-    */
-   public final double getStiffnessValueRemoved(final double dist,
+    /**
+     * In this Function the Stiffness value for the case that the robot is
+     * getting further away from a virtual fixture is calculated.
+     * 
+     * @param dist
+     *            the minimum distance to the Virtual Fixture
+     * @param awareDistance
+     *            the minimum distance from where on the stiffness is changed
+     * @return the calculated stiffness value.
+     */
+    public final double getStiffnessValueRemoved(final double dist,
 	    final double awareDistance) {
 
 	double zeroPoint = awareDistance / 2;
@@ -369,31 +392,31 @@ public class LwrVirtualFixtures implements ILwrState {
 	} else {
 	    return CART_TRANSL_STIFFNESS_MAX;
 	}
-   }
+    }
 
-   /**
-    * In this Function the CommandIGTmessage which is received from the State
-    * Control is read and interpreted due to the Current State and if requested
-    * and allowed the State is Changed. Furthermore the parameter of the state
-    * are set and the class of the LWRState Object is changed according to the
-    * state change In The VirtualFixtures State the allowed state transitions
-    * are:<br>
-    * - IDLE (transition condition: none)<br>
-    * - GravComp (transition condition: none)<br>
-    * - PathImp (transition condition: RegistrationFinished AND DataSend AND
-    * TransformRecieved)<br>
-    * - MoveToPose (transition condition: RegistrationFinished AND DataSend AND
-    * TransformRecieved)<br>
-    * If a transition request to another State is requested or the number of
-    * Parameters is incorrect, the state is set to LWRError and the Error code
-    * is set to 2= Transition not allowed.
-    * 
-    * @param lwrStatemachine
-    *            - The operated state machine
-    * @see ILwrState
-    */
-   @Override
-   public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
+    /**
+     * In this Function the CommandIGTmessage which is received from the State
+     * Control is read and interpreted due to the Current State and if requested
+     * and allowed the State is Changed. Furthermore the parameter of the state
+     * are set and the class of the LWRState Object is changed according to the
+     * state change In The VirtualFixtures State the allowed state transitions
+     * are:<br>
+     * - IDLE (transition condition: none)<br>
+     * - GravComp (transition condition: none)<br>
+     * - PathImp (transition condition: RegistrationFinished AND DataSend AND
+     * TransformRecieved)<br>
+     * - MoveToPose (transition condition: RegistrationFinished AND DataSend AND
+     * TransformRecieved)<br>
+     * If a transition request to another State is requested or the number of
+     * Parameters is incorrect, the state is set to LWRError and the Error code
+     * is set to 2= Transition not allowed.
+     * 
+     * @param lwrStatemachine
+     *            - The operated state machine
+     * @see ILwrState
+     */
+    @Override
+    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
 
 	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
 	    String cmdString;
@@ -414,56 +437,59 @@ public class LwrVirtualFixtures implements ILwrState {
 		lwrStatemachine.ErrorFlag = true;
 	    }
 	    if (cmdArray[2].contentEquals("plane")) {
-	    	this.activeVirtualFixture = VirtualFixtureType.Plane;
+		this.activeVirtualFixture = VirtualFixtureType.Plane;
 	    } else if (cmdArray[2].contentEquals("cone")) {
-	    	this.activeVirtualFixture = VirtualFixtureType.Cone;
+		this.activeVirtualFixture = VirtualFixtureType.Cone;
 	    } else {
 		lwrStatemachine.ErrorMessage = ("Unexpected "
 			+ "VF type (supported are plane or cone)");
 		lwrStatemachine.ErrorFlag = true;
 	    }
 
-	    this.virtualFixturePosition = Vector.of(Double.parseDouble(cmdArray[3]),
+	    this.virtualFixturePosition = Vector.of(
+		    Double.parseDouble(cmdArray[3]),
 		    Double.parseDouble(cmdArray[4]),
 		    Double.parseDouble(cmdArray[5]));
-	    this.VirtualFixtureNormVector = Vector.of(Double.parseDouble(cmdArray[6]),
+	    this.virtualFixtureNormVector = Vector.of(
+		    Double.parseDouble(cmdArray[6]),
 		    Double.parseDouble(cmdArray[7]),
 		    Double.parseDouble(cmdArray[8]));
 
 	    if (this.imageSpace && lwrStatemachine.transformReceivedFlag) {
 		this.virtualFixturePosition = lwrStatemachine.transfRobotImg
 			.applyTo(this.virtualFixturePosition);
-		this.VirtualFixtureNormVector = lwrStatemachine.transfRobotImg
-			.applyTo(this.VirtualFixtureNormVector);
+		this.virtualFixtureNormVector = lwrStatemachine.transfRobotImg
+			.applyTo(this.virtualFixtureNormVector);
 
 	    }
 	    if (this.activeVirtualFixture == VirtualFixtureType.Cone) {
 
-	    	this.VirtualFixturePhi = Math.toRadians(135.0); //TODO Constant?
+		this.virtualFixturePhi = Math.toRadians(135.0); // TODO
+								// Constant?
 	    }
 	    System.out.println("Virtaul Fixture ( ap ="
-		    + this.virtualFixturePosition + ", n " + this.VirtualFixtureNormVector
-		    + ", type " + cmdArray[2] + ") is now active!");
+		    + this.virtualFixturePosition + ", n "
+		    + this.virtualFixtureNormVector + ", type " + cmdArray[2]
+		    + ") is now active!");
 
 	} else {
 	    lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction;
-	    lwrStatemachine.ErrorMessage = 
-		    "Unexpected Messagetype recieved! Expected STRING";
+	    lwrStatemachine.ErrorMessage = "Unexpected Messagetype recieved! Expected STRING";
 	}
-   }
+    }
 
-   /**
-    * In this Function the Acknowledge IGTMessage which is send to the State
-    * Control is defined due the current LWR State. In the Virtual Fixtures
-    * State IGTString is Set to
-    * "VirtualFixtures;plane;"/"VirtualFixtures;cone;" or
-    * "VirtualFixtures;none;" dependent on the selected Virtual Fixtures type.
-    * 
-    * @param lwrStatemachine
-    *            The operated Statemachine
-    */
-   @Override
-   public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
+    /**
+     * In this Function the Acknowledge IGTMessage which is send to the State
+     * Control is defined due the current LWR State. In the Virtual Fixtures
+     * State IGTString is Set to
+     * "VirtualFixtures;plane;"/"VirtualFixtures;cone;" or
+     * "VirtualFixtures;none;" dependent on the selected Virtual Fixtures type.
+     * 
+     * @param lwrStatemachine
+     *            The operated Statemachine
+     */
+    @Override
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
 	String ack;
 	if (this.activeVirtualFixture == VirtualFixtureType.Plane) {
 	    if (distance >= awaredist) {
@@ -485,6 +511,6 @@ public class LwrVirtualFixtures implements ILwrState {
 	    ack = "VirtualFixtures;none;";
 	}
 	lwrStatemachine.ackIgtMsg = ack;
-   }
+    }
 
 }

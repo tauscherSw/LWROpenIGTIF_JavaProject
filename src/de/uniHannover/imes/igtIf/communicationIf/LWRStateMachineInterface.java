@@ -348,7 +348,7 @@ public class LWRStateMachineInterface extends Thread {
      * member variable CMDmessage. If the data type is neither Transform nor
      * String an ErrorMessage is created. (Error Message not used yet...)
      * 
-     * @throws IOException
+     * @throws IOException when the received data has the wrong datatype or is incomplete.
      */
     public void receiveMessage() throws IOException {
 	int retRead = 0;

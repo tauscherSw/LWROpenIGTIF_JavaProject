@@ -673,6 +673,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		     * send to the visualization.
 		     */
 		    slicerVisualIf.visualActive = false;
+		    
 
 		}
 
