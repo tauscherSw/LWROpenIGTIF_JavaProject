@@ -85,9 +85,8 @@ public class LWRVisualizationInterface extends Thread {
      * representation. It is the distance between on the perpendicular line of
      * two joints in millimeters.
      */
-    private static final double[] DH_D_PARAMETER_LWRIIWA7 = new double []{
-	160, 180, 180, 220, 180, 220, 80, 50
-    };
+    private static final double[] DH_D_PARAMETER_LWRIIWA7 = new double[] { 160,
+	    180, 180, 220, 180, 220, 80, 50 };
 
     /**
      * The maximum number of allowed connection errors via openIGTlink.
@@ -137,7 +136,7 @@ public class LWRVisualizationInterface extends Thread {
      * cycle time of the visualization interface thread. Default value is 25 ms.
      */
     public int cycleTime = 25; // TODO design failure other threads access this
-			       // field.; 
+			       // field.;
 
     /**
      * Current selected data type to be send to the robot. Initialized as
@@ -157,16 +156,16 @@ public class LWRVisualizationInterface extends Thread {
      */
     public boolean debugInfoFlag = false; // TODO design failure other threads
 					  // access this field.
-					 /**
+    /**
      * Error Message Handler which takes care of the time consuming Error output
      * in a separate thread.
      */
     private IGTMessageHandler errHandler;
-				      /**
+    /**
      * Flag to indicate if an Error occurred during the last cycle.
      */
     private boolean errorFlag = false; // TODO unused field
-							/**
+    /**
      * Working copy of the Current Joint6 position of the robot.
      */
     private JointPosition jntPose = null;
@@ -255,7 +254,7 @@ public class LWRVisualizationInterface extends Thread {
 									  // field.
 
     // other threads access
-							// this field.
+    // this field.
     /**
      * Transformation from robot base coordinate system to image space
      * coordinate system.
@@ -280,15 +279,15 @@ public class LWRVisualizationInterface extends Thread {
      * Flag to indicate if the Visualization interface is running or if the
      * thread is stopped.
      */
-    public boolean visualRun = false; // TODO design failure other threads
-    
+    private boolean visualRun = false;
+
     /**
      * Semaphore for secure access to the shared variables.
      */
     public Semaphore visualSema = new Semaphore(1, true); // TODO design failure
 							  // other threads
 							  // access this field.
-    
+
     /**
      * Statistic Timer for the Visualization Interface Thread.
      */
@@ -296,7 +295,6 @@ public class LWRVisualizationInterface extends Thread {
 							       // failure other
 							       // threads access
 							       // this field.
-    
 
     /**
      * Constructor, which initializes this thread as a deamon.
@@ -308,7 +306,9 @@ public class LWRVisualizationInterface extends Thread {
     /**
      * In this function the homogeneous Matrix-Transformation for each Joint is
      * calculated from the set of denavit hartenberg parameter.
-     * @param q The joint position for calculation.
+     * 
+     * @param q
+     *            The joint position for calculation.
      */
     private void calcDirectKinematic(final JointPosition q) {
 	MatrixTransformation trafoBaseToJoint1 = MatrixTransformation.of(Vector
@@ -400,7 +400,7 @@ public class LWRVisualizationInterface extends Thread {
 		System.out.println("Visualization interface server stopped");
 	    } catch (IOException e) {
 		e.printStackTrace();
-		//TODO exception concept.
+		// TODO exception concept.
 	    }
 	}
 
@@ -416,17 +416,16 @@ public class LWRVisualizationInterface extends Thread {
 	errorFlag = true;
 	try {
 	    errHandler.messageSemaphore.tryAcquire(2, TimeUnit.MILLISECONDS);
-	    errHandler.errorMessage = 
-		    "StateMachineIF: Lost Connection to Client. Try to reconnect...";
+	    errHandler.errorMessage = "StateMachineIF: Lost Connection to Client. Try to reconnect...";
 	    errHandler.messageSemaphore.release();
 	} catch (InterruptedException e) {
-	    //TODO exception concept.
+	    // TODO exception concept.
 	}
 	stopServer();
 	try {
 	    // Set up server
 	    connectServer();
-	    visualRun = true;
+	    enableCyclicCommunication();
 	    openIGTClient = openIGTServer.accept();
 	    openIGTClient.setTcpNoDelay(true);
 	    openIGTClient.setSoTimeout(1 * cycleTime);
@@ -438,11 +437,42 @@ public class LWRVisualizationInterface extends Thread {
 	    connectionErr = 0;
 
 	} catch (Exception e) {
-	    errHandler.errorMessage = 
-		    "Couldn't connect to visualisation interface server!";
+	    errHandler.errorMessage = "Couldn't connect to visualisation interface server!";
 
 	}
 
+    }
+
+    public void updateData() {
+	/*
+	 * This section updates the data, which is send to slicer by this
+	 * thread.
+	 */
+
+    }
+
+    /**
+     * This method evaluates if this thread is enabled to run cyclic.
+     * 
+     * @return true if enabled otherwise false.
+     */
+    public final boolean isEnabled() {
+	return visualRun;
+    }
+
+    /**
+     * This prevents the main loop, from being executed another time.
+     */
+    public final void quitCommunication() {
+	visualRun = false;
+    }
+
+    /**
+     * This method enables the main loop to run, and thus activates this
+     * communication thread.
+     */
+    public final void enableCyclicCommunication() {
+	visualRun = true;
     }
 
     /**
@@ -463,11 +493,12 @@ public class LWRVisualizationInterface extends Thread {
 	try {
 	    // Set up server
 	    connectServer();
-	    visualRun = true;
+	    enableCyclicCommunication();
 	    visualActive = true;
 	    openIGTClient = openIGTServer.accept();
 	    openIGTClient.setTcpNoDelay(true);
-	    openIGTClient.setSoTimeout(10 * cycleTime); //TODO @Sebastian unknown value.
+	    openIGTClient.setSoTimeout(10 * cycleTime); // TODO @Sebastian
+							// unknown value.
 	    this.outstr = openIGTClient.getOutputStream();
 	    this.currentStatus = ClientStatus.CONNECTED;
 	    System.out.println("Visualization interface client connected ( "
@@ -477,11 +508,10 @@ public class LWRVisualizationInterface extends Thread {
 	} catch (Exception e) {
 	    // TODO exception concept.
 	    errorFlag = true;
-	    errHandler.errorMessage = 
-		    "Couldn't connect to Visualization interface server!";
+	    errHandler.errorMessage = "Couldn't connect to Visualization interface server!";
 	}
 
-	while (visualRun) {
+	while (isAlive()) {
 	    long startTimeStamp = (long) (System.nanoTime());
 	    aStep = visualTiming.newTimeStep();
 	    if (visualActive) {
@@ -502,7 +532,7 @@ public class LWRVisualizationInterface extends Thread {
 		    errHandler.errorMessage = "Unable to Acquire Visual Semaphore";
 		}
 
-		if (!openIGTClient.isClosed() 
+		if (!openIGTClient.isClosed()
 			&& connectionErr < MAX_ALLOWED_CONNECTION_ERROR) {
 		    sendTransformation(cartPose, jntPose);
 		} else {
@@ -512,43 +542,42 @@ public class LWRVisualizationInterface extends Thread {
 	    }
 	    if (poseUidTmp == poseUidTmpOld) {
 		errorFlag = true;
-		errHandler.errorMessage = 
-			"Visual IF: Getting Old Data from State Machine Thread";
+		errHandler.errorMessage = "Visual IF: Getting Old Data from State Machine Thread";
 		poseUidOldCount++;
 	    }
 	    poseUidTmpOld = poseUidTmp;
 
 	    // Set the Module in Sleep mode for stability enhancement
 	    try {
-		    StateMachineApplication.cyclicSleep(startTimeStamp, 2, cycleTime);
-		} catch (InterruptedException e) {
-		    errorFlag = true;
-		    errHandler.errorMessage = "Visual Thread Sleep failed!!";
-		    //TODO exception concept.
-		}
-	    }
-	    aStep.end();
-	    //TODO define following used constants as class constants.
-	    if (visualTiming.getMaxTimeMillis() > (double) 3 * cycleTime
-		    || visualTiming.getMeanTimeMillis() > (double) 2
-			    * cycleTime) {
+		StateMachineApplication.cyclicSleep(startTimeStamp, 2,
+			cycleTime);
+	    } catch (InterruptedException e) {
 		errorFlag = true;
-		errHandler.errorMessage = 
-			"VisualIF: Warning bad communication quality!";
-
+		errHandler.errorMessage = "Visual Thread Sleep failed!!";
+		// TODO exception concept.
 	    }
 	}
+	aStep.end();
+	// TODO define following used constants as class constants.
+	if (visualTiming.getMaxTimeMillis() > (double) 3 * cycleTime
+		|| visualTiming.getMeanTimeMillis() > (double) 2 * cycleTime) {
+	    errorFlag = true;
+	    errHandler.errorMessage = "VisualIF: Warning bad communication quality!";
 
-    
+	}
+    }
 
-
-    //TODO duplicate code, same method in stateMachineInterface class.
+    // TODO duplicate code, same method in stateMachineInterface class.
     /**
      * Sends bytes.
-     * @param bytes the bytes to be send.
-     * @throws IOException when sending fails.
+     * 
+     * @param bytes
+     *            the bytes to be send.
+     * @throws IOException
+     *             when sending fails.
      */
-    public final synchronized void sendBytes(final byte[] bytes) throws IOException {
+    public final synchronized void sendBytes(final byte[] bytes)
+	    throws IOException {
 	outstr.write(bytes);
 	outstr.flush();
     }
@@ -579,7 +608,8 @@ public class LWRVisualizationInterface extends Thread {
 	// BodyBuffer = ByteBuffer.wrap(BodyByte);
 	ByteBuffer bodyBuffer = ByteBuffer
 		.allocate(IGTLtransform.IGTL_TRANSFORM_SIZE);
-	final int size = 12; //TODO define all communication constants in seperate class.
+	final int size = 12; // TODO define all communication constants in
+			     // seperate class.
 	for (int i = 0; i < size; i++) {
 	    bodyBuffer.putFloat(transform[i]);
 	}
@@ -607,13 +637,14 @@ public class LWRVisualizationInterface extends Thread {
 
     }
 
-    //TODO method's calculations should be moved to utility class.
+    // TODO method's calculations should be moved to utility class.
     /**
      * Sending the Cartesian or Joint position of the robot.
      * 
      * @param transformCurrentPose
      *            the current position of the robot
-     * @param curJntPose the current joint position.
+     * @param curJntPose
+     *            the current joint position.
      */
     private void sendTransformation(
 	    final MatrixTransformation transformCurrentPose,
@@ -625,9 +656,12 @@ public class LWRVisualizationInterface extends Thread {
 	transformTmp[11] = (float) transformCurrentPose.getTranslation().getZ();
 
 	if (sendTcpForce) {
-	    transformTmp[9] = (float) transformCurrentPose.getTranslation().getX();
-	    transformTmp[10] = (float) transformCurrentPose.getTranslation().getY();
-	    transformTmp[11] = (float) transformCurrentPose.getTranslation().getZ();
+	    transformTmp[9] = (float) transformCurrentPose.getTranslation()
+		    .getX();
+	    transformTmp[10] = (float) transformCurrentPose.getTranslation()
+		    .getY();
+	    transformTmp[11] = (float) transformCurrentPose.getTranslation()
+		    .getZ();
 	    double theta = 0;
 	    double phi = 0;
 	    theta = -Math.asin(TCPForce.normalize().getX());
@@ -668,9 +702,12 @@ public class LWRVisualizationInterface extends Thread {
 	    calcDirectKinematic(jntPose);
 	    for (int njoint = 0; njoint < 9; njoint++) {
 		if (njoint == 8) {
-		    transformTmp[9] = (float) transformCurrentPose.getTranslation().getX();
-		    transformTmp[10] = (float) transformCurrentPose.getTranslation().getY();
-		    transformTmp[11] = (float) transformCurrentPose.getTranslation().getZ();
+		    transformTmp[9] = (float) transformCurrentPose
+			    .getTranslation().getX();
+		    transformTmp[10] = (float) transformCurrentPose
+			    .getTranslation().getY();
+		    transformTmp[11] = (float) transformCurrentPose
+			    .getTranslation().getZ();
 		    for (int i = 0; i < 3; i++) {
 			for (int j = 0; j < 3; j++) {
 			    transformTmp[i + 3 * j] = (float) transformCurrentPose
@@ -710,17 +747,18 @@ public class LWRVisualizationInterface extends Thread {
 	    transformTmp[11] = (float) T.getTranslation().getZ();
 	    for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-		    transformTmp[i + 3 * j] = (float) T.getRotationMatrix().get(i, j);
+		    transformTmp[i + 3 * j] = (float) T.getRotationMatrix()
+			    .get(i, j);
 		}
 	    }
 	    SendIGTLTransform("T_EE", transformTmp);
 
 	} else { // if the robot base pose was requested the current position in
-		// robot space is send
+		 // robot space is send
 	    for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-		    transformTmp[i + 3 * j] = (float) transformCurrentPose.getRotationMatrix()
-			    .get(i, j);
+		    transformTmp[i + 3 * j] = (float) transformCurrentPose
+			    .getRotationMatrix().get(i, j);
 		}
 	    }
 	    SendIGTLTransform("T_EE", transformTmp);

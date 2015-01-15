@@ -330,7 +330,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * 
      * @see LWRVisualizationInterface
      */
-    private LWRVisualizationInterface slicerVisualIf;
+    public LWRVisualizationInterface slicerVisualIf;
 
     /** Sunrise specific interface to control the robot's movements. */
     private ISmartServoRuntime smartServoRuntime;
@@ -347,7 +347,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     public final void dispose() {
 
 	slicerControlIf.ControlRun = false;
-	slicerVisualIf.visualRun = false;
+	slicerVisualIf.quitCommunication();
 
 	// Stop the motion
 	final boolean motionStopped = smartServoRuntime.stopMotion();
@@ -621,7 +621,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    // TODO exception concept.
 		}
 
-		if (slicerVisualIf.visualRun) {
+		if (slicerVisualIf.isEnabled()) {
 
 		    try {
 			final boolean semaReqResult = slicerVisualIf.visualSema
@@ -794,7 +794,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		System.out.println(e);
 		e.printStackTrace();
 		slicerControlIf.ControlRun = false;
-		slicerVisualIf.visualRun = false;
+		slicerVisualIf.quitCommunication();
 	    }
 
 	} // end while
