@@ -74,18 +74,18 @@ public class LWRStateMachineInterface extends Thread {
 	DISCONNECTED
     }
 
+    /** Default String encoding for the OpenIGTLink String data type */
+    private static final int DEFAULT_STRING_ENCODING = 3;
+
     /**
      * The maximum allowed connection error for udp / tcp communication.
      */
     private static final int MAX_ALLOWED_CONNECTION_ERR = 100;
-
+    
     /**
      * Maximum allowed number of repitive received equal uids.
      */
     private static final int MAX_EQUAL_UIDS = 4;
-    
-    /** Default String encoding for the OpenIGTLink String data type */
-    private static final int DEFAULT_STRING_ENCODING = 3;
     
     /** Number of elements of a rotational matrix*/
     private static final int SIZE_OF_ROTATION = 9;
@@ -103,16 +103,16 @@ public class LWRStateMachineInterface extends Thread {
     }
 
     /**
+     * Acknowledgement OpenIGTLink Message working copy.
+     */
+    private String ackMsg;
+
+    /**
      * Acknowledgement OpenIGTLink Message used for data transfer to the state
      * machine default message is "IDLE;".
      */
     public String ackStateM = "IDLE;"; // TODO design failure other threads
 					// access this field.
-
-    /**
-     * Acknowledgement OpenIGTLink Message working copy.
-     */
-    private String ackMsg;
 
     /**
      * Time step for statistic timing of the State Machine Interface thread.

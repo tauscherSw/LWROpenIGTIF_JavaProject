@@ -30,5 +30,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/LWROpenIGTIF/Libs/KUKA/common.utilities-javadoc.zip!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="Libs/SWIG/SWIG_Communication.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
