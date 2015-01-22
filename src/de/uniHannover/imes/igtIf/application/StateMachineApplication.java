@@ -213,11 +213,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     private static final double ROT_STIFF = 300;
 
     /**
-     * The port for the slicer-control-thread.
-     */
-    public static final int SLICER_CONTROL_COM_PORT = 49001;
-
-    /**
      * The cycle time of the slicer-control-thread in milliseconds.
      */
     private static final int SLICER_CONTROL_CYLCETIME_MS = 20;
@@ -225,10 +220,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * The priority for the slicer-control-thread.
      */
     private static final int SLICER_CONTROL_PRIO = 6;
-    /**
-     * The port for the slicer-visualization-thread.
-     */
-    public static final int SLICER_VISUAL_COM_PORT = 49002;
+
 
     /**
      * The cycle time of the slicer-visualization-thread in milliseconds.
@@ -252,6 +244,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * Velocity of robot movements during state-machine execution. Value in %.
      */
     private static final double VEL = 1;
+
     /**
      * Sleeps for a specified period of time. It should be called every
      * iteration in the main loop. The time to sleep is calculated according to
@@ -346,7 +339,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     public final void dispose() {
 
-	slicerControlIf.ControlRun = false;
+	slicerControlIf.comRunning = false;
 	slicerVisualIf.quitCommunication();
 
 	// Stop the motion
@@ -452,20 +445,13 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	slicerControlIf = new LWRStateMachineInterface();
 	slicerControlIf.setPriority(SLICER_CONTROL_PRIO);
 	slicerControlIf.debugInfos = true;
-	slicerControlIf.port = SLICER_CONTROL_COM_PORT;
 	slicerControlIf.millisectoSleep = SLICER_CONTROL_CYLCETIME_MS;
 
-	slicerVisualIf = new LWRVisualizationInterface();
+	slicerVisualIf = new LWRVisualizationInterface(imesLBR,
+		SLICER_VISUAL_CYLCETIME_MS, getLogger());
 	slicerVisualIf.setPriority(SLICER_VISUAL_PRIO);
-	slicerVisualIf.datatype = LWRVisualizationInterface.VisualIFDatatypes.JOINTSPACE;
-
-	slicerVisualIf.debugInfoFlag = true;
-	slicerVisualIf.port = SLICER_VISUAL_COM_PORT;
-	slicerVisualIf.cycleTime = SLICER_VISUAL_CYLCETIME_MS;
-
-	slicerVisualIf.jntPoseStateM = smartServoRuntime
-		.getAxisQMsrOnController();
-	slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
+	slicerVisualIf.setSenderConfiguration(VisualIFDatatypes.JOINTSPACE, false);
+	slicerVisualIf.updateData();
 
     }
 
@@ -623,62 +609,64 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		if (slicerVisualIf.isEnabled()) {
 
-		    try {
-			final boolean semaReqResult = slicerVisualIf.visualSema
-				.tryAcquire(1, TimeUnit.MILLISECONDS);
-			if (semaReqResult) {
-			    slicerVisualIf.poseUid = imesStatemachine.poseUid;
-			    slicerVisualIf.TCPForce = imesStatemachine.tcpForce;
-			    slicerVisualIf.sendTcpForce = true;
-			    updatePose();
-			    slicerVisualIf.visualSema.release();
-			}
-
-			else {
-			    errMsg = "Error: Couldn't acquire VisualIF Semaphore!!";
-			    // TODO exception concept.
-			}
-		    } catch (InterruptedException e) {
-			e.printStackTrace();
-			// TODO exception concept.
-		    }
+//		    try {
+//			
+//			    slicerVisualIf.poseUid = imesStatemachine.poseUid;
+//			    slicerVisualIf.TCPForce = imesStatemachine.tcpForce;
+//			    slicerVisualIf.sendTcpForce = true;
+//			    updatePose();
+//			    slicerVisualIf.visualSema.release();
+//			}
+//
+//			else {
+//			    errMsg = "Error: Couldn't acquire VisualIF Semaphore!!";
+//			    // TODO exception concept.
+//			}
+//		    } catch (InterruptedException e) {
+//			e.printStackTrace();
+//			// TODO exception concept.
+//		    }
+		    slicerVisualIf.setSenderConfiguration(null, true);
+		    slicerVisualIf.updateData();
 		}
 
 		if (!(imesStatemachine.StartVisual && visualOnFlag)) {
 
-		    updatePose();
-		    slicerVisualIf.jntPoseStateM = initialPosition;
-		    slicerVisualIf.visualActive = true;
-		    // Start the Visualization thread
-		    slicerVisualIf.start();
-		    visualOnFlag = true;
+//		    updatePose();
+//		    slicerVisualIf.jntPoseStateM = initialPosition;
+//		    slicerVisualIf.visualActive = true;
+//		    // Start the Visualization thread
+//		    slicerVisualIf.start();
+//		    visualOnFlag = true;
+		    slicerVisualIf.updateData();
+		    slicerVisualIf.setCyclicCommunication(true);
+		    
 
 		}
 
 		else if (imesStatemachine.StartVisual && visualOnFlag
-			&& !slicerVisualIf.visualActive) {
+			&& !slicerVisualIf.isDataTransmissionEnable()
+			) {
 		    /*
 		     * if Visualization interface is started, not active but is
 		     * set active Change VisualActive to true. Thereby, the pose
 		     * is send to the visualization.
 		     */
-		    slicerVisualIf.visualActive = true;
+		    slicerVisualIf.setCyclicCommunication(true);
 
 		} else if (!imesStatemachine.StartVisual
-			&& slicerVisualIf.visualActive) {
+			&& slicerVisualIf.isDataTransmissionEnable()) {
 		    /*
 		     * if the visualization is running and the the Start Visual
 		     * flag is false and the interface is still active Set the
 		     * VisualACtive flag to false - thereby, no more data is
 		     * send to the visualization.
 		     */
-		    slicerVisualIf.visualActive = false;
-		    
-
+		    slicerVisualIf.setDataTransmission(false);
 		}
 
 		// If SlicerControl Interface Thread is running...
-		if (slicerControlIf.ControlRun) {
+		if (slicerControlIf.comRunning) {
 
 		    i = 0;
 		    // Try to read new command String from SlicerControl (Alive)
@@ -732,8 +720,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		// Check on Communication Quality
-		if (slicerControlIf.ErrorCode == OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
-		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
+		if (slicerControlIf.ErrorCode 
+			== OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
 		    imesStatemachine.ErrorMessage = "ERROR: State Control Interface "
 			    + "Bad Communication quality setting robot State to IDLE";
 		    imesStatemachine.ErrorFlag = true;
@@ -762,7 +750,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		// Defining the Acknowledgement String for Control Interface
 		imesStatemachine.setAckPacket();
 
-		if (slicerControlIf.ControlRun) {
+		if (slicerControlIf.comRunning) {
 		    try {
 			slicerControlIf.controlSemaphore.tryAcquire(1,
 				TimeUnit.MILLISECONDS);
@@ -793,7 +781,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		System.out.println(e);
 		e.printStackTrace();
-		slicerControlIf.ControlRun = false;
+		slicerControlIf.comRunning = false;
 		slicerVisualIf.quitCommunication();
 	    }
 
@@ -802,27 +790,5 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	printFinalInfos(timing);
 
     }
-
-    /**
-     * Updates several fields of the slicer-visualization thread, which
-     * correspond to the current pose of the robot. Furthermore the data, set
-     * before, can be send to slicer for visualization purposes.
-     */
-    private void updatePose() {
-
-	slicerVisualIf.cartPose_StateM = imesStatemachine.curPose;
-	slicerVisualIf.datatype = imesStatemachine.currentVisualIFDatatype;
-	switch (imesStatemachine.currentVisualIFDatatype) {
-	case IMAGESPACE:
-	    if (imesStatemachine.transformReceivedFlag) {
-		slicerVisualIf.tImgBaseStateM = imesStatemachine.transfRobotImg;
-	    }
-	case JOINTSPACE:
-	    slicerVisualIf.jntPoseStateM = imesStatemachine.curJntPose;
-	default:
-	    break;
-
-	}
-
-    }
+    
 }
