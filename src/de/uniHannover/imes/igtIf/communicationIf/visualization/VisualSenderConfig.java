@@ -1,6 +1,6 @@
-package de.uniHannover.imes.igtIf.communicationIf;
+package de.uniHannover.imes.igtIf.communicationIf.visualization;
 
-import de.uniHannover.imes.igtIf.communicationIf.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtIf.communicationIf.visualization.LWRVisualizationInterface.VisualIFDatatypes;
 
 /**
  * This class represents the configuration for the visualization interface,

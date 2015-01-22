@@ -20,7 +20,7 @@
 	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	=========================================================================*/
-package de.uniHannover.imes.igtIf.communicationIf;
+package de.uniHannover.imes.igtIf.communicationIf.visualization;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -186,6 +186,12 @@ public class LWRVisualizationInterface extends Thread {
     }
 
     /**
+     * Semaphore for locking the access to the cyclic data and cyclic config
+     * object.
+     */
+    private Object cyclicDataLock;
+
+    /**
      * Time step for statistic timing of the Visualization Interface thread.
      */
     private OneTimeStep aStep;
@@ -311,6 +317,7 @@ public class LWRVisualizationInterface extends Thread {
 	cycleTime = CYCLE_TIME_DEFAULT;
 	setDaemon(true);
 	log = new DummyLogger();
+	cyclicDataLock = new Object();
 	port = SLICER_VISUAL_COM_PORT;
 
     }
@@ -524,7 +531,10 @@ public class LWRVisualizationInterface extends Thread {
 	    if (!openIGTClient.isClosed()
 		    && connectionErr < MAX_ALLOWED_CONNECTION_ERROR
 		    && isDataTransmissionEnable()) {
-		sendTransformation(currentDataSet, currentSenderConfig);
+		synchronized (cyclicDataLock) {
+			sendTransformation(currentDataSet, currentSenderConfig);
+		}
+
 	    } else {
 		restartIGTServer();
 	    }
@@ -779,23 +789,30 @@ public class LWRVisualizationInterface extends Thread {
 	 * thread.
 	 */
 
-	if (currentDataSet == null) {
-	    currentDataSet = new VisualSenderData();
-	}
-	MatrixTransformation trafoExternalBase = null; // TODO @Tobias get
-						       // transformation from
-						       // external base to robot
-						       // base.
-	currentDataSet.setData(robotDataSink.getCurrentJointPosition(),
-		robotDataSink.getExternalForceTorque(robotDataSink.getFlange())
-			.getForce(), MatrixTransformation.of(robotDataSink
-			.getCurrentCartesianPosition(robotDataSink.getFlange())
-			.transformationFromWorld()), trafoExternalBase
-			.compose(MatrixTransformation.of(robotDataSink
-				.getCurrentCartesianPosition(
-					robotDataSink.getFlange())
-				.transformationFromWorld())));
+	synchronized (cyclicDataLock) {
 
+	    if (currentDataSet == null) {
+		currentDataSet = new VisualSenderData();
+	    }
+	    MatrixTransformation trafoExternalBase = null; // TODO @Tobias get
+							   // transformation
+							   // from
+							   // external base to
+							   // robot
+							   // base.
+	    currentDataSet.setData(
+		    robotDataSink.getCurrentJointPosition(),
+		    robotDataSink.getExternalForceTorque(
+			    robotDataSink.getFlange()).getForce(),
+		    MatrixTransformation.of(robotDataSink
+			    .getCurrentCartesianPosition(
+				    robotDataSink.getFlange())
+			    .transformationFromWorld()), trafoExternalBase
+			    .compose(MatrixTransformation.of(robotDataSink
+				    .getCurrentCartesianPosition(
+					    robotDataSink.getFlange())
+				    .transformationFromWorld())));
+	}
     }
 
     /**
@@ -810,14 +827,18 @@ public class LWRVisualizationInterface extends Thread {
      */
     public final void setSenderConfiguration(VisualIFDatatypes datatype,
 	    final boolean sendTcpForce) {
-	if (currentSenderConfig == null) {
-	    currentSenderConfig = new VisualSenderConfig();
-	}
-	if (datatype == null) {
-	    datatype = currentSenderConfig.getRequestedDatatype();
 
+	synchronized (cyclicDataLock) {
+
+	    if (currentSenderConfig == null) {
+		currentSenderConfig = new VisualSenderConfig();
+	    }
+	    if (datatype == null) {
+		datatype = currentSenderConfig.getRequestedDatatype();
+
+	    }
+	    currentSenderConfig.setData(datatype, sendTcpForce);
 	}
-	currentSenderConfig.setData(datatype, sendTcpForce);
 
     }
 

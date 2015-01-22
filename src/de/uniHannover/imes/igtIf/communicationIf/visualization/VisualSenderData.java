@@ -1,4 +1,4 @@
-package de.uniHannover.imes.igtIf.communicationIf;
+package de.uniHannover.imes.igtIf.communicationIf.visualization;
 
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
