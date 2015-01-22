@@ -20,7 +20,7 @@
 	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	=========================================================================*/
-package de.uniHannover.imes.igtIf.SlicerCommunication.visualization;
+package de.uniHannover.imes.igtlf.slicerCommunication.visualization;
 
 import java.io.IOException;
 import java.io.OutputStream;

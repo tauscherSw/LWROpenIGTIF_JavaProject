@@ -1,6 +1,6 @@
-package de.uniHannover.imes.igtIf.SlicerCommunication.visualization;
+package de.uniHannover.imes.igtlf.slicerCommunication.visualization;
 
-import de.uniHannover.imes.igtIf.SlicerCommunication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtlf.slicerCommunication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
 
 /**
  * This class represents the configuration for the visualization interface,

@@ -21,7 +21,7 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	=========================================================================*/
 
-package de.uniHannover.imes.igtIf.SlicerCommunication.control;
+package de.uniHannover.imes.igtlf.slicerCommunication.control;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
