@@ -38,8 +38,8 @@ package de.uniHannover.imes.igtIf.application;
 import java.util.concurrent.TimeUnit;
 
 import de.uniHannover.imes.igtIf.SlicerCommunication.control.LWRStateMachineInterface;
-import de.uniHannover.imes.igtIf.communicationIf.visualization.LWRVisualizationInterface;
-import de.uniHannover.imes.igtIf.communicationIf.visualization.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtIf.SlicerCommunication.visualization.LWRVisualizationInterface;
+import de.uniHannover.imes.igtIf.SlicerCommunication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 
