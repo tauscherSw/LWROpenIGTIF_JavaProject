@@ -40,7 +40,7 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
 
-import de.uniHannover.imes.igtlf.slicerCommunication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
 
 /**
  * State machine class using the LWRState interface and its sub class/states.
