@@ -84,13 +84,21 @@ public final class IGTLCommunicator {
      *             when getter of output stream of the client fails.
      */
     private void setUpCommunication() throws IOException {
+	
+	//Set up server connection
 	openIGTServer = ServerSocketFactory.getDefault().createServerSocket(
 		serverPort);
 	openIGTServer.setReuseAddress(true);
+	
+	//Set up client connection
 	openIGTClient = openIGTServer.accept();
-	wasClosed = false;
+	
+	//Connect input and output stream, to send and receive messages
 	outStream = openIGTClient.getOutputStream();
 	inStream = openIGTClient.getInputStream();
+	
+	//Reset flag, which indicates if this connection has been closed.
+	wasClosed = false;
 
     }
 
