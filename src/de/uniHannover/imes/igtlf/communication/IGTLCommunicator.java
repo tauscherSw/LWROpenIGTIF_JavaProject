@@ -1,27 +1,14 @@
 package de.uniHannover.imes.igtlf.communication;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import javax.net.ServerSocketFactory;
 
 import openIGTLink.swig.IGTLheader;
-import openIGTLink.swig.IGTLstring;
-
-import com.kuka.roboticsAPI.geometricModel.math.Matrix;
-import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
-import com.kuka.roboticsAPI.geometricModel.math.Vector;
-
-import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 
 /**
  * This class provides basic methods for sending and receiving messages to and
@@ -90,7 +77,8 @@ public final class IGTLCommunicator {
     }
 
     /**
-     * Sets up all communication related objects.
+     * Sets up all communication related objects. This method blocks until a
+     * connection is set up to the igtserver
      * 
      * @throws IOException
      *             when getter of output stream of the client fails.
@@ -99,8 +87,10 @@ public final class IGTLCommunicator {
 	openIGTServer = ServerSocketFactory.getDefault().createServerSocket(
 		serverPort);
 	openIGTServer.setReuseAddress(true);
+	openIGTClient = openIGTServer.accept();
 	wasClosed = false;
 	outStream = openIGTClient.getOutputStream();
+	inStream = openIGTClient.getInputStream();
 
     }
 
@@ -160,7 +150,8 @@ public final class IGTLCommunicator {
      * @throws IOException
      *             when sending failed.
      */
-    public void sendSlicerMsg(final IGTLMsgInterface packet) throws IOException {
+    public void sendSlicerMsg(final IGTLMsgInterface packet) 
+	    throws IOException {
 	if (packet.getHeader() != null && packet.getBody() != null) {
 	    sendBytes(packet.getHeader());
 	    sendBytes(packet.getBody());
