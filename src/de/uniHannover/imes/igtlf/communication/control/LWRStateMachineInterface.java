@@ -62,18 +62,6 @@ import openIGTLink.swig.igtl_header;
 public class LWRStateMachineInterface extends Thread {
 
     /**
-     * Enum for the current client status {CONNECTED, DISCONNECTED }possible
-     * client states.
-     */
-    private static enum ClientStatus {
-
-	/** the client is connected. */
-	CONNECTED,
-	/** the client is disconnected. */
-	DISCONNECTED
-    }
-
-    /**
      * The port for the slicer-control-thread.
      */
     public static final int SLICER_CONTROL_COM_PORT = 49001;
@@ -164,16 +152,7 @@ public class LWRStateMachineInterface extends Thread {
 								// threads
 								// access this
 								// field.
-    /**
-     * current status of the client status. It is initialized as disconnected
-     * state.
-     */
-    private ClientStatus currentStatus = ClientStatus.DISCONNECTED; // TODO
 
-    /**
-     * Flag to indicate if the Debug Information should be printed or not.
-     */
-    public boolean debugInfos = false; // TODO design failure other threads
     /**
      * Error code.
      */
@@ -614,8 +593,6 @@ public class LWRStateMachineInterface extends Thread {
 	}
 
 	comRunning = true; // TODO Tobi
-
-	this.currentStatus = ClientStatus.CONNECTED; // TODO Tobi
 
 	// Sending first Acknowledgment String to start the cyclic
 	// communication

@@ -436,7 +436,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     private void initInterfaceThreads() {
 	slicerControlIf = new LWRStateMachineInterface();
 	slicerControlIf.setPriority(SLICER_CONTROL_PRIO);
-	slicerControlIf.debugInfos = true;
 	slicerControlIf.millisectoSleep = SLICER_CONTROL_CYLCETIME_MS;
 
 	slicerVisualIf = new LWRVisualizationInterface(imesLBR,
