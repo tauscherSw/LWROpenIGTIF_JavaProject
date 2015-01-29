@@ -248,7 +248,7 @@ public class LWRVisualizationInterface extends Thread {
      * The data sink for robot data like the current jnt position or an external
      * force vector.
      */
-    private final LBR robotDataSink;
+    private LBR robotDataSink;
 
     // access this field.
     /**
@@ -285,13 +285,8 @@ public class LWRVisualizationInterface extends Thread {
      *            used as sink for robot-data send to slicer.
      */
     public LWRVisualizationInterface(final LBR robotDataProvider) {
-	robotDataSink = robotDataProvider;
-	cycleTime = CYCLE_TIME_DEFAULT;
-	setDaemon(true);
-	log = new DummyLogger();
-	cyclicDataLock = new Object();
-	// port = SLICER_VISUAL_COM_PORT;
-	communicator = new IGTLCommunicator(SLICER_VISUAL_COM_PORT, cycleTime);
+
+	init(robotDataProvider, new DummyLogger(), CYCLE_TIME_DEFAULT);
 
     }
 
@@ -305,9 +300,7 @@ public class LWRVisualizationInterface extends Thread {
      */
     public LWRVisualizationInterface(final LBR robotDataProvider,
 	    final int cycleTimeMs) {
-	this(robotDataProvider);
-	cycleTime = cycleTimeMs;
-	communicator = new IGTLCommunicator(SLICER_VISUAL_COM_PORT, cycleTime);
+	init(robotDataProvider, new DummyLogger(), cycleTimeMs);
     }
 
     /**
@@ -322,8 +315,27 @@ public class LWRVisualizationInterface extends Thread {
      */
     public LWRVisualizationInterface(final LBR robotDataProvider,
 	    final int cycleTimeMs, final ITaskLogger logger) {
-	this(robotDataProvider, cycleTimeMs);
+	init(robotDataProvider, logger, cycleTimeMs);
+    }
+
+    /**
+     * Initializes this class according to the parameters which are set before
+     * in the different constructors.
+     * 
+     * @param datasink
+     *            the sink for robot data.
+     * @param logger
+     *            the task logger.
+     * @param cycletime
+     *            the desired cycle time in ms.
+     */
+    private void init(final LBR datasink, final ITaskLogger logger,
+	    final int cycletime) {
+	robotDataSink = datasink;
 	log = logger;
+	cycleTime = cycletime;
+	setDaemon(true);
+	communicator = new IGTLCommunicator(SLICER_VISUAL_COM_PORT, cycleTime);
     }
 
     // // TODO duplicate code same method can be found in
@@ -501,6 +513,10 @@ public class LWRVisualizationInterface extends Thread {
 	// }
 	try {
 	    communicator.setUpCommunication();
+	    log.info("Visualization interface client is connected ( "
+		    + communicator.getInetAddress() + ", "
+		    + communicator.getPort() + ")");
+
 	} catch (IOException e1) {
 	    log.error("Initial set up of communicator failed.", e1);
 	}
@@ -543,15 +559,24 @@ public class LWRVisualizationInterface extends Thread {
 		// TODO exception concept.
 	    }
 	    aStep.end();
+
+	    // TODO define following used constants as class constants.
+	    // TODO @Tobias getTimingStatistics() should replace the following
+	    // part.
+	    if (visualTiming.getMaxTimeMillis() > (double) 3 * cycleTime
+		    || visualTiming.getMeanTimeMillis() > (double) 2
+			    * cycleTime) {
+
+		log.error("VisualIF: Warning bad communication quality!");
+
+	    }
 	}
 
-	// TODO define following used constants as class constants.
-	// TODO @Tobias getTimingStatistics() should replace the following part.
-	if (visualTiming.getMaxTimeMillis() > (double) 3 * cycleTime
-		|| visualTiming.getMeanTimeMillis() > (double) 2 * cycleTime) {
-
-	    log.error("VisualIF: Warning bad communication quality!");
-
+	// End all communication, when run() ends.
+	try {
+	    communicator.dispose();
+	} catch (IOException e) {
+	    log.error("Closing of the IGTL connection failed", e);
 	}
     }
 

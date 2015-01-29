@@ -348,14 +348,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	    getLogger().error("Cannot stop motion of smartServoRuntime.");
 	}
 
-	if (slicerControlIf != null) {
-	    slicerControlIf.finalize();
-	}
-	if (slicerVisualIf != null) {
-	    slicerVisualIf.finalize();
-
-	}
-
     }
 
     /**

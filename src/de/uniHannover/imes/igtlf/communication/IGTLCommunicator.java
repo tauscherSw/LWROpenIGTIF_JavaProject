@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -158,6 +159,16 @@ public final class IGTLCommunicator {
     }
 
     /**
+     * Sets up the connections again.
+     * 
+     * @throws IOException
+     *             when opened connections cannot be closed.
+     */
+    public void restart() throws IOException {
+	restart(curSocketTimeout);
+    }
+
+    /**
      * Sends a message to an IGT client {@linkplain IGTLMsgInterface}.
      * 
      * @param packet
@@ -208,6 +219,24 @@ public final class IGTLCommunicator {
 	response.init(headerRead, bodyRead);
 	return response;
 
+    }
+
+    /**
+     * Reads the ip address of the client.
+     * 
+     * @return the ip address.
+     */
+    public InetAddress getInetAddress() {
+	return openIGTClient.getInetAddress();
+    }
+
+    /**
+     * Reads the port of the client.
+     * 
+     * @return the port.
+     */
+    public int getPort() {
+	return openIGTClient.getPort();
     }
 
     /**

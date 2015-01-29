@@ -26,12 +26,8 @@ package de.uniHannover.imes.igtlf.communication.control;
 import java.util.concurrent.Semaphore;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.math.BigInteger;
-import java.net.ServerSocket;
 import java.nio.ByteBuffer;
-
-import javax.net.ServerSocketFactory;
 
 import com.kuka.common.StatisticTimer;
 import com.kuka.common.StatisticTimer.OneTimeStep;
@@ -42,6 +38,8 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
+import de.uniHannover.imes.igtlf.communication.IGTLMessage;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
@@ -74,7 +72,7 @@ public class LWRStateMachineInterface extends Thread {
 	/** the client is disconnected. */
 	DISCONNECTED
     }
-    
+
     /**
      * The port for the slicer-control-thread.
      */
@@ -117,6 +115,12 @@ public class LWRStateMachineInterface extends Thread {
      * Acknowledgement OpenIGTLink Message working copy.
      */
     private String ackMsg;
+
+
+    /**
+     * Object handles IGTL communication.
+     */
+     private IGTLCommunicator communicator;
 
     /**
      * Acknowledgement OpenIGTLink Message used for data transfer to the state
@@ -205,27 +209,6 @@ public class LWRStateMachineInterface extends Thread {
 				     // this field.
 
     /**
-     * OpenIGTLink Client socket - socket of the connected Client.
-     */
-    private java.net.Socket openIGTClient = null;
-
-    /**
-     * Server socket for the communication with state control interface.
-     */
-    private ServerSocket openIGTServer;
-
-    /**
-     * output stream of the socket communication.
-     */
-    private OutputStream outstr;
-
-    /**
-     * port number for the communication with state control. Supported ports:
-     * 49001 - 49005.
-     */
-    private int port;
-
-    /**
      * Statistic Timer for the State Machine Interface Thread.
      */
     public StatisticTimer SMtiming = new StatisticTimer(); // TODO design
@@ -309,11 +292,7 @@ public class LWRStateMachineInterface extends Thread {
      * Constructor, which initializes this thread as a daemon.
      */
     public LWRStateMachineInterface() {
-	log = new DummyLogger();
-	cycleTime = CYCLE_TIME_DEFAULT;
-	setDaemon(true);
-	port = SLICER_CONTROL_COM_PORT;
-
+	init(new DummyLogger(), CYCLE_TIME_DEFAULT);
     }
 
     /**
@@ -323,9 +302,7 @@ public class LWRStateMachineInterface extends Thread {
      *            the desired cycle time for the main loop in milliseconds.
      */
     public LWRStateMachineInterface(final int cycleTimeMs) {
-	this();
-	cycleTime = cycleTimeMs;
-
+	init(new DummyLogger(), cycleTimeMs);
     }
 
     /**
@@ -339,53 +316,66 @@ public class LWRStateMachineInterface extends Thread {
      */
     public LWRStateMachineInterface(final int cycleTimeMs,
 	    final ITaskLogger logger) {
-
-	this(cycleTimeMs);
-	log = logger;
-
+	init(logger, cycleTimeMs);
     }
 
     /**
-     * Starts the listening server on the defined port.
+     * Initializes this class according to the parameters which are set before
+     * in the different constructors.
      * 
-     * @throws IOException
-     *             when connection to the port fails.
+     * @param logger
+     *            the task logger.
+     * @param cycletime
+     *            the desired cycle time in ms.
      */
-    private void connectServer() throws IOException {
-	stopServer();
-	try {
-	    ServerSocketFactory serverSocketFactory = ServerSocketFactory
-		    .getDefault();
-	    openIGTServer = serverSocketFactory.createServerSocket(this.port);
-	    openIGTServer.setReuseAddress(true);
-	    log.info("State machine interface server Socket succesfully "
-		    + "created (port " + this.port + ")");
-	} catch (IOException e) {
-	    log.error("Could not Connect to port :" + this.port + ")", e);
-	    throw e; // TODO exception concept.
-	}
+    private void init(final ITaskLogger logger, final int cycletime) {
+	log = logger;
+	cycleTime = cycletime;
+	setDaemon(true);
+	communicator = new IGTLCommunicator(SLICER_CONTROL_COM_PORT, cycleTime);
     }
 
-    /**
-     * Closes the connection to the server and the client.
-     */
-    public final void finalize() {
-	if (openIGTServer != null) {
-	    try {
-		openIGTServer.close();
-		openIGTServer = null;
-		openIGTClient.close();
-		openIGTClient = null;
-		log.info("State machine interface server stopped");
-	    } catch (IOException e) {
-		log.error(
-			"Could not disconnect from state machine interface server",
-			e);
-		e.printStackTrace(); // TODO exception concept.
-	    }
-	}
+    // /**
+    // * Starts the listening server on the defined port.
+    // *
+    // * @throws IOException
+    // * when connection to the port fails.
+    // */
+    // private void connectServer() throws IOException {
+    // stopServer();
+    // try {
+    // ServerSocketFactory serverSocketFactory = ServerSocketFactory
+    // .getDefault();
+    // openIGTServer = serverSocketFactory.createServerSocket(this.port);
+    // openIGTServer.setReuseAddress(true);
+    // log.info("State machine interface server Socket succesfully "
+    // + "created (port " + this.port + ")");
+    // } catch (IOException e) {
+    // log.error("Could not Connect to port :" + this.port + ")", e);
+    // throw e; // TODO exception concept.
+    // }
+    // }
 
-    };
+    // /**
+    // * Closes the connection to the server and the client.
+    // */
+    // public final void finalize() {
+    // if (openIGTServer != null) {
+    // try {
+    // openIGTServer.close();
+    // openIGTServer = null;
+    // openIGTClient.close();
+    // openIGTClient = null;
+    // log.info("State machine interface server stopped");
+    // } catch (IOException e) {
+    // log.error(
+    // "Could not disconnect from state machine interface server",
+    // e);
+    // e.printStackTrace(); // TODO exception concept.
+    // }
+    // }
+    //
+    // };
 
     /**
      * In this function a message from the Client Socket is received and
@@ -397,7 +387,7 @@ public class LWRStateMachineInterface extends Thread {
      *             when the received data has the wrong datatype or is
      *             incomplete.
      */
-    public void receiveMessage() throws IOException {
+    private void receiveMessage() throws IOException {
 	int retRead = 0;
 	byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
 	boolean receivedNewDataFlag = false;
@@ -573,36 +563,36 @@ public class LWRStateMachineInterface extends Thread {
 
     }
 
-    /**
-     * Function to restart the IGTLink Server and reinitialize the connection.
-     * This function is used if the connection to the state control client got
-     * lost.
-     */
-    private void restartIGTServer() {
-
-	log.error("StateMachineIF: Lost Connection to Client. Try to reconnect...");
-	stopServer();
-	try {
-	    // Set up server
-	    connectServer();
-	    comRunning = true;
-	    openIGTClient = openIGTServer.accept();
-	    openIGTClient.setTcpNoDelay(true);
-	    openIGTClient.setSoTimeout(millisectoSleep);
-	    this.outstr = openIGTClient.getOutputStream();
-	    this.instr = openIGTClient.getInputStream();
-	    this.currentStatus = ClientStatus.CONNECTED;
-	    log.error("State machine interface client connected ( "
-		    + openIGTClient.getInetAddress() + ", "
-		    + openIGTClient.getPort() + ")");
-	    connectionErr = 0;
-	    ErrorCode = OpenIGTLinkErrorCode.Ok;
-	} catch (Exception e) {
-	    log.error("Couldn't connect to state machine interface server!");
-	    ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
-	}
-
-    }
+    // /**
+    // * Function to restart the IGTLink Server and reinitialize the connection.
+    // * This function is used if the connection to the state control client got
+    // * lost.
+    // */
+    // private void restartIGTServer() {
+    //
+    // log.error("StateMachineIF: Lost Connection to Client. Try to reconnect...");
+    // stopServer();
+    // try {
+    // // Set up server
+    // connectServer();
+    // comRunning = true;
+    // openIGTClient = openIGTServer.accept();
+    // openIGTClient.setTcpNoDelay(true);
+    // openIGTClient.setSoTimeout(millisectoSleep);
+    // this.outstr = openIGTClient.getOutputStream();
+    // this.instr = openIGTClient.getInputStream();
+    // this.currentStatus = ClientStatus.CONNECTED;
+    // log.error("State machine interface client connected ( "
+    // + openIGTClient.getInetAddress() + ", "
+    // + openIGTClient.getPort() + ")");
+    // connectionErr = 0;
+    // ErrorCode = OpenIGTLinkErrorCode.Ok;
+    // } catch (Exception e) {
+    // log.error("Couldn't connect to state machine interface server!");
+    // ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
+    // }
+    //
+    // }
 
     /**
      * main/run method function of the State control Interface. In this function
@@ -610,46 +600,41 @@ public class LWRStateMachineInterface extends Thread {
      * a cycle time of 20 ms the new Command String is received and the
      * Acknowledgment String send to the state control (e.g. 3d Slicer).
      **/
-    public void run() {
+    public final void run() {
 
-	// Initializing the Communication with the Visualization Software
+	// Initializing the Communication with Slicer
 	try {
-	    // Set up server
-	    connectServer();
-	    comRunning = true;
-	    openIGTClient = openIGTServer.accept();
-	    openIGTClient.setTcpNoDelay(true);
-	    openIGTClient.setSoTimeout(millisectoSleep);
-	    this.outstr = openIGTClient.getOutputStream();
-	    this.instr = openIGTClient.getInputStream();
-	    this.currentStatus = ClientStatus.CONNECTED;
+	    communicator.setUpCommunication();
 	    log.info("State machine interface client connected ( "
-		    + openIGTClient.getInetAddress() + ", "
-		    + openIGTClient.getPort() + ")");
+		    + communicator.getInetAddress() + ", "
+		    + communicator.getPort() + ")");
 
-	    // Sending first Acknowledgment String to start the cyclic
-	    // communication
-	    try {
+	} catch (IOException e1) {
+	    log.error("Initial set up of communicator failed.", e1);
+	}
 
-		controlSemaphore.acquire();
-		ackMsg = ackStateM;
-		controlSemaphore.release();
-	    } catch (InterruptedException e) {
-		ErrorFlag = true;
-		log.error(
-			"StateMachineIF: Unable to Acquire Control Semaphore",
-			e);
+	comRunning = true; // TODO Tobi
+
+	this.currentStatus = ClientStatus.CONNECTED; // TODO Tobi
+
+	// Sending first Acknowledgment String to start the cyclic
+	// communication
+	try {
+
+	    controlSemaphore.acquire();
+	    ackMsg = ackStateM;
+	    controlSemaphore.release();
+	} catch (InterruptedException e) {
+	    ErrorFlag = true;
+	    log.error("StateMachineIF: Unable to Acquire Control Semaphore", e);
+	}
+	try {
+	    if (!communicator.isClosed()) {
+		sendIGTStringMessage(ackMsg + UID_local + ";");
 	    }
-	    try {
-		if (!openIGTClient.isClosed()) {
-		    sendIGTStringMessage(ackMsg + UID_local + ";");
-		}
-	    } catch (Exception e1) {
-		ErrorFlag = true;
-		log.error("StateMachineIF: Couldn't Send ACk data");
-	    }
-	} catch (Exception e) {
-	    log.error("Couldn't connect to state machine interface server!", e);
+	} catch (Exception e1) {
+	    ErrorFlag = true;
+	    log.error("StateMachineIF: Couldn't Send ACk data");
 	}
 
 	// Entering Loop for Communication - the loop is stopped if ControlRun
@@ -660,7 +645,7 @@ public class LWRStateMachineInterface extends Thread {
 
 	    aStep = SMtiming.newTimeStep();
 
-	    if (!openIGTClient.isClosed()
+	    if (!communicator.isClosed()
 		    && connectionErr < MAX_ALLOWED_CONNECTION_ERR) {
 		ErrorFlag = false;
 		try {
@@ -688,7 +673,12 @@ public class LWRStateMachineInterface extends Thread {
 		}
 	    } else { // If there is an connection error stop listening server
 		     // and restart the server
-		restartIGTServer();
+		try {
+		    communicator.restart();
+		} catch (IOException e) {
+		    log.error("Could not establish IGTL connection", e);
+
+		}
 	    }
 
 	    try {
@@ -710,7 +700,7 @@ public class LWRStateMachineInterface extends Thread {
 			"StateMachineIF: Unable to Acquire Control Semaphore",
 			e);
 	    }
-	    if (!openIGTClient.isClosed()
+	    if (!communicator.isClosed()
 		    && connectionErr < MAX_ALLOWED_CONNECTION_ERR) {
 		try {
 		    sendIGTStringMessage(ackMsg + UID_local + ";");
@@ -721,7 +711,11 @@ public class LWRStateMachineInterface extends Thread {
 		    log.error("StateMachineIF: Couldn't Send ACk data");
 		}
 	    } else {
-		restartIGTServer();
+		try {
+		    communicator.restart();
+		} catch (IOException e) {
+		    log.error("Cannot restart IGTL communicator", e);
+		}
 	    }
 
 	    // Set the Module in Sleep mode for stability enhancement
@@ -752,20 +746,28 @@ public class LWRStateMachineInterface extends Thread {
 		log.error("StateMachineIF: Warning bad communication quality!");
 	    }
 	} // end while
+
+	// End all communication, when run() ends.
+	try {
+	    communicator.dispose();
+	} catch (IOException e) {
+	    log.error("Closing of the IGTL connection failed", e);
+	}
+
     }
 
-    /**
-     * Sends bytes.
-     * 
-     * @param bytes
-     *            the array to be send.
-     * @throws IOException
-     *             when sending fails.
-     */
-    final public synchronized void sendBytes(byte[] bytes) throws IOException {
-	outstr.write(bytes);
-	outstr.flush();
-    }
+    // /**
+    // * Sends bytes.
+    // *
+    // * @param bytes
+    // * the array to be send.
+    // * @throws IOException
+    // * when sending fails.
+    // */
+    // private synchronized void sendBytes(byte[] bytes) throws IOException {
+    // outstr.write(bytes);
+    // outstr.flush();
+    // }
 
     /**
      * Sends an OpenIGTlink String message.
@@ -775,7 +777,9 @@ public class LWRStateMachineInterface extends Thread {
      * @throws Exception
      *             TODO @Sebastian define more precise exception.
      */
-    public void sendIGTStringMessage(String message) throws Exception {
+    private void sendIGTStringMessage(String message) throws Exception {
+
+	IGTLMessage currentMsg;
 
 	byte[] bodyByte = new byte[message.length()
 		+ IGTLstring.IGTL_STRING_HEADER_SIZE];
@@ -807,8 +811,9 @@ public class LWRStateMachineInterface extends Thread {
 	}
 
 	try {
-	    sendBytes(headerByte);
-	    sendBytes(bodyByte);
+	    currentMsg = new IGTLMessage();
+	    currentMsg.init(headerByte, bodyByte);
+	    communicator.sendMsg(currentMsg);
 	} catch (IOException e) {
 	    log.error("Sending of bytes failed.", e);
 	    // TODO exception concept.
@@ -816,24 +821,24 @@ public class LWRStateMachineInterface extends Thread {
 
     }
 
-    /**
-     * Closes the IGT server and client connection.
-     * 
-     */
-    private void stopServer() {
-
-	if (openIGTServer != null) {
-	    try {
-		openIGTServer.close();
-		openIGTServer = null; // TODO besser reset function
-		openIGTClient.close();
-		openIGTClient = null; // TODO besser reset function
-		System.out.println("State machine interface server stopped");
-	    } catch (IOException e) {
-		log.error("Cannot close server or client connection", e);
-		//TODO exception concept.
-	    }
-	}
-    }
+    // /**
+    // * Closes the IGT server and client connection.
+    // *
+    // */
+    // private void stopServer() {
+    //
+    // if (openIGTServer != null) {
+    // try {
+    // openIGTServer.close();
+    // openIGTServer = null; // TODO besser reset function
+    // openIGTClient.close();
+    // openIGTClient = null; // TODO besser reset function
+    // System.out.println("State machine interface server stopped");
+    // } catch (IOException e) {
+    // log.error("Cannot close server or client connection", e);
+    // // TODO exception concept.
+    // }
+    // }
+    // }
 
 }
