@@ -512,7 +512,7 @@ public class LWRVisualizationInterface extends Thread {
 	// log.error("Couldn't connect to Visualization interface server!");
 	// }
 	try {
-	    communicator.setUpCommunication();
+	    communicator.setup();
 	    log.info("Visualization interface client is connected ( "
 		    + communicator.getInetAddress() + ", "
 		    + communicator.getPort() + ")");

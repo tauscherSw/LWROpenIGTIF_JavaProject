@@ -604,7 +604,7 @@ public class LWRStateMachineInterface extends Thread {
 
 	// Initializing the Communication with Slicer
 	try {
-	    communicator.setUpCommunication();
+	    communicator.setup();
 	    log.info("State machine interface client connected ( "
 		    + communicator.getInetAddress() + ", "
 		    + communicator.getPort() + ")");

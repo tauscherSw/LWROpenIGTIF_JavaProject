@@ -81,13 +81,14 @@ public final class IGTLCommunicator {
     }
 
     /**
-     * Sets up all communication related objects. This method blocks until a
-     * connection is set up to the igtserver.
+     * Setups all communication related objects. This method blocks until a
+     * connection is set up to the igtserver. Input and output streams will be
+     * connected immediately and messages can be sent and received.
      * 
      * @throws IOException
      *             when getter of output stream of the client fails.
      */
-    public void setUpCommunication() throws IOException {
+    public void setup() throws IOException {
 
 	// Set up server connection
 	openIGTServer = ServerSocketFactory.getDefault().createServerSocket(
@@ -153,7 +154,7 @@ public final class IGTLCommunicator {
 		    + "ms is not allowed to be set as socket timeout.");
 	}
 	curSocketTimeout = newSocketTimeout;
-	setUpCommunication();
+	setup();
 	wasClosed = false;
 
     }
