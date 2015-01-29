@@ -23,15 +23,8 @@
 package de.uniHannover.imes.igtlf.communication.visualization;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
-import java.net.ServerSocket;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import javax.net.ServerSocketFactory;
-
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
 import openIGTLink.swig.IGTLtransform;
@@ -42,18 +35,14 @@ import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
 import com.kuka.roboticsAPI.deviceModel.LBR;
-import com.kuka.roboticsAPI.geometricModel.AbstractFrame;
-import com.kuka.roboticsAPI.geometricModel.math.AbstractTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
-import com.kuka.roboticsAPI.geometricModel.math.Transformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
-import com.kuka.roboticsAPI.motionModel.ISmartServoRuntime;
-
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
+import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
+import de.uniHannover.imes.igtlf.communication.IGTLMessage;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
-import de.uniHannover.imes.igtlf.logging.StdOutLogger;
 
 /**
  * This Class for the Communication with a Visualization system using the
@@ -186,6 +175,11 @@ public class LWRVisualizationInterface extends Thread {
     }
 
     /**
+     * Object handles IGTL communication.
+     */
+    private IGTLCommunicator communicator;
+
+    /**
      * Semaphore for locking the access to the cyclic data and cyclic config
      * object.
      */
@@ -227,28 +221,6 @@ public class LWRVisualizationInterface extends Thread {
      * Logger for all logging outputs of this class.
      */
     private ITaskLogger log;
-
-    /**
-     * OpenIGTLink Client socket - socket of the connected Client.
-     */
-    private java.net.Socket openIGTClient = null;
-
-    /**
-     * openIGTLink visualization server socket.
-     */
-    private ServerSocket openIGTServer;
-
-    /**
-     * Output stream for sending the currant transformation or joint angles to
-     * visualization software.
-     */
-    private OutputStream outstr;
-
-    /**
-     * Port number for the communication with visualization software e.g. 3D
-     * Slicer. Possible ports 49001 - 49005
-     */
-    private int port;
 
     /**
      * UID of the current pose sent to the visualization software.
@@ -318,7 +290,8 @@ public class LWRVisualizationInterface extends Thread {
 	setDaemon(true);
 	log = new DummyLogger();
 	cyclicDataLock = new Object();
-	port = SLICER_VISUAL_COM_PORT;
+	// port = SLICER_VISUAL_COM_PORT;
+	communicator = new IGTLCommunicator(SLICER_VISUAL_COM_PORT, cycleTime);
 
     }
 
@@ -334,6 +307,7 @@ public class LWRVisualizationInterface extends Thread {
 	    final int cycleTimeMs) {
 	this(robotDataProvider);
 	cycleTime = cycleTimeMs;
+	communicator = new IGTLCommunicator(SLICER_VISUAL_COM_PORT, cycleTime);
     }
 
     /**
@@ -352,28 +326,29 @@ public class LWRVisualizationInterface extends Thread {
 	log = logger;
     }
 
-    // TODO duplicate code same method can be found in LWRStateMachineInterface
-    /**
-     * Starts the listening server on the defined port.
-     * 
-     * @throws IOException
-     *             when connection to openIGT server fails.
-     */
-    private void connectServer() throws IOException {
-	stopServer();
-	try {
-	    ServerSocketFactory serverSocketFactory = ServerSocketFactory
-		    .getDefault();
-	    openIGTServer = serverSocketFactory.createServerSocket(this.port);
-	    openIGTServer.setReuseAddress(true);
-	    log.info("Visualization interface server socket "
-		    + "succesfully created (port " + this.port + ")");
-
-	} catch (IOException e) {
-	    log.error("Could not Connect to Visualization interface server", e);
-	    throw e; // TODO exception concept.
-	}
-    }
+    // // TODO duplicate code same method can be found in
+    // LWRStateMachineInterface
+    // /**
+    // * Starts the listening server on the defined port.
+    // *
+    // * @throws IOException
+    // * when connection to openIGT server fails.
+    // */
+    // private void connectServer() throws IOException {
+    // stopServer();
+    // try {
+    // ServerSocketFactory serverSocketFactory = ServerSocketFactory
+    // .getDefault();
+    // openIGTServer = serverSocketFactory.createServerSocket(this.port);
+    // openIGTServer.setReuseAddress(true);
+    // log.info("Visualization interface server socket "
+    // + "succesfully created (port " + this.port + ")");
+    //
+    // } catch (IOException e) {
+    // log.error("Could not Connect to Visualization interface server", e);
+    // throw e; // TODO exception concept.
+    // }
+    // }
 
     /**
      * This method enables the main loop to run, and thus activates this
@@ -417,27 +392,28 @@ public class LWRVisualizationInterface extends Thread {
 	return transmitDataFlag;
     }
 
-    /**
-     * Disposes the openIGT connection by closing the connection and setting the
-     * corresponding objects to null.
-     */
-    public final void finalize() {
-	if (openIGTServer != null) {
-	    try {
-		openIGTServer.close();
-		openIGTServer = null;
-		openIGTClient.close();
-		openIGTClient = null;
-		log.info("Visualization interface server stopped");
-	    } catch (IOException e) {
-		log.error(
-			"Could not disconnect from visualization interface server",
-			e);
-		e.printStackTrace(); // TODO exception concept.
-	    }
-	}
-
-    }
+    // /**
+    // * Disposes the openIGT connection by closing the connection and setting
+    // the
+    // * corresponding objects to null.
+    // */
+    // public final void finalize() {
+    // if (openIGTServer != null) {
+    // try {
+    // openIGTServer.close();
+    // openIGTServer = null;
+    // openIGTClient.close();
+    // openIGTClient = null;
+    // log.info("Visualization interface server stopped");
+    // } catch (IOException e) {
+    // log.error(
+    // "Could not disconnect from visualization interface server",
+    // e);
+    // e.printStackTrace(); // TODO exception concept.
+    // }
+    // }
+    //
+    // }
 
     /**
      * Getter for the current connection state of this igtl-communicator.
@@ -464,36 +440,36 @@ public class LWRVisualizationInterface extends Thread {
 	visualRun = false;
     }
 
-    // TODO duplicate code. This method already exists in
-    // state-machine-interface.
-    /**
-     * Function to restart the IGTLink Server and reinitialize the connection.
-     */
-    private void restartIGTServer() {
-
-	log.error("StateMachineIF: Lost Connection to Client. Try to reconnect...");
-
-	stopServer();
-	try {
-	    // Set up server
-	    connectServer();
-	    setCyclicCommunication(true);
-	    openIGTClient = openIGTServer.accept();
-	    openIGTClient.setTcpNoDelay(true);
-	    openIGTClient.setSoTimeout(1 * cycleTime);
-	    this.outstr = openIGTClient.getOutputStream();
-	    this.currentStatus = ClientStatus.CONNECTED;
-	    log.error("Visual interface client connected ( "
-		    + openIGTClient.getInetAddress() + ", "
-		    + openIGTClient.getPort() + ")");
-	    connectionErr = 0;
-
-	} catch (Exception e) {
-	    log.error("Couldn't connect to visualisation interface server!");
-
-	}
-
-    }
+    // // TODO duplicate code. This method already exists in
+    // // state-machine-interface.
+    // /**
+    // * Function to restart the IGTLink Server and reinitialize the connection.
+    // */
+    // private void restartIGTServer() {
+    //
+    // log.error("StateMachineIF: Lost Connection to Client. Try to reconnect...");
+    //
+    // stopServer();
+    // try {
+    // // Set up server
+    // connectServer();
+    // setCyclicCommunication(true);
+    // openIGTClient = openIGTServer.accept();
+    // openIGTClient.setTcpNoDelay(true);
+    // openIGTClient.setSoTimeout(1 * cycleTime);
+    // this.outstr = openIGTClient.getOutputStream();
+    // this.currentStatus = ClientStatus.CONNECTED;
+    // log.error("Visual interface client connected ( "
+    // + openIGTClient.getInetAddress() + ", "
+    // + openIGTClient.getPort() + ")");
+    // connectionErr = 0;
+    //
+    // } catch (Exception e) {
+    // log.error("Couldn't connect to visualisation interface server!");
+    //
+    // }
+    //
+    // }
 
     /**
      * Main function of the Visualization Interface. In this function the server
@@ -503,40 +479,50 @@ public class LWRVisualizationInterface extends Thread {
      **/
     public final void run() {
 
-	// Initializing the Communication with the Visualization Software
+	// // Initializing the Communication with the Visualization Software
+	// try {
+	// // Set up server
+	// connectServer();
+	// setCyclicCommunication(true);
+	// openIGTClient = openIGTServer.accept();
+	// openIGTClient.setTcpNoDelay(true);
+	// openIGTClient.setSoTimeout(10 * cycleTime); // TODO @Sebastian
+	// // unknown value.
+	// this.outstr = openIGTClient.getOutputStream();
+	// this.currentStatus = ClientStatus.CONNECTED;
+	// log.info("Visualization interface client connected ( "
+	// + openIGTClient.getInetAddress() + ", "
+	// + openIGTClient.getPort() + ")");
+	//
+	// } catch (Exception e) {
+	// // TODO exception concept.
+	//
+	// log.error("Couldn't connect to Visualization interface server!");
+	// }
 	try {
-	    // Set up server
-	    connectServer();
-	    setCyclicCommunication(true);
-	    openIGTClient = openIGTServer.accept();
-	    openIGTClient.setTcpNoDelay(true);
-	    openIGTClient.setSoTimeout(10 * cycleTime); // TODO @Sebastian
-							// unknown value.
-	    this.outstr = openIGTClient.getOutputStream();
-	    this.currentStatus = ClientStatus.CONNECTED;
-	    log.info("Visualization interface client connected ( "
-		    + openIGTClient.getInetAddress() + ", "
-		    + openIGTClient.getPort() + ")");
-
-	} catch (Exception e) {
-	    // TODO exception concept.
-
-	    log.error("Couldn't connect to Visualization interface server!");
+	    communicator.setUpCommunication();
+	} catch (IOException e1) {
+	    log.error("Initial set up of communicator failed.", e1);
 	}
 
 	while (isEnabled()) {
 	    long startTimeStamp = (long) (System.nanoTime());
 	    aStep = visualTiming.newTimeStep();
 
-	    if (!openIGTClient.isClosed()
+	    if (!communicator.isClosed()
 		    && connectionErr < MAX_ALLOWED_CONNECTION_ERROR
 		    && isDataTransmissionEnable()) {
 		synchronized (cyclicDataLock) {
-			sendTransformation(currentDataSet, currentSenderConfig);
+		    sendTransformation(currentDataSet, currentSenderConfig);
 		}
 
 	    } else {
-		restartIGTServer();
+		try {
+		    communicator.restart(10 * cycleTime);
+		} catch (IOException e) {
+		    log.error("Could not establish IGTL connection", e);
+
+		}
 	    }
 
 	    // TODO @Tobias uids
@@ -569,20 +555,20 @@ public class LWRVisualizationInterface extends Thread {
 	}
     }
 
-    // TODO duplicate code, same method in stateMachineInterface class.
-    /**
-     * Sends bytes.
-     * 
-     * @param bytes
-     *            the bytes to be send.
-     * @throws IOException
-     *             when sending fails.
-     */
-    public final synchronized void sendBytes(final byte[] bytes)
-	    throws IOException {
-	outstr.write(bytes);
-	outstr.flush();
-    }
+    // // TODO duplicate code, same method in stateMachineInterface class.
+    // /**
+    // * Sends bytes.
+    // *
+    // * @param bytes
+    // * the bytes to be send.
+    // * @throws IOException
+    // * when sending fails.
+    // */
+    // public final synchronized void sendBytes(final byte[] bytes)
+    // throws IOException {
+    // outstr.write(bytes);
+    // outstr.flush();
+    // }
 
     /**
      * In this function the transform message is packed using the SWIGGED
@@ -598,6 +584,7 @@ public class LWRVisualizationInterface extends Thread {
      */
     public final boolean sendIGTLTransform(final String deviceName,
 	    final float[] transform) {
+	IGTLMessage currentMessage = new IGTLMessage();
 	byte[] bodyByte = new byte[IGTLtransform.IGTL_TRANSFORM_SIZE];
 	byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
 	igtl_header header = new igtl_header();
@@ -630,8 +617,8 @@ public class LWRVisualizationInterface extends Thread {
 	}
 
 	try {
-	    sendBytes(headerByte);
-	    sendBytes(bodyByte);
+	    currentMessage.init(headerByte, bodyByte);
+	    communicator.sendMsg(currentMessage);
 	    check = true;
 	} catch (IOException e) {
 	    check = false;
@@ -761,23 +748,23 @@ public class LWRVisualizationInterface extends Thread {
 	log = externalLogger;
     }
 
-    /**
-     * Stops the listening OpenIGTLink server.
-     */
-    private void stopServer() {
-	if (openIGTServer != null) {
-	    try {
-		openIGTServer.close();
-		openIGTServer = null;
-		openIGTClient.close();
-		openIGTClient = null;
-		log.info("Visualization interface server stopped");
-	    } catch (IOException e) {
-		e.printStackTrace();
-		// TODO exception concept.
-	    }
-	}
-    }
+    // /**
+    // * Stops the listening OpenIGTLink server.
+    // */
+    // private void stopServer() {
+    // if (openIGTServer != null) {
+    // try {
+    // openIGTServer.close();
+    // openIGTServer = null;
+    // openIGTClient.close();
+    // openIGTClient = null;
+    // log.info("Visualization interface server stopped");
+    // } catch (IOException e) {
+    // e.printStackTrace();
+    // // TODO exception concept.
+    // }
+    // }
+    // }
 
     /**
      * Updates the data send to slicer.

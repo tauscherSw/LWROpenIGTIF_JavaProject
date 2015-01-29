@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.ServerSocket;
 import java.net.Socket;
+
 import javax.net.ServerSocketFactory;
 
 import openIGTLink.swig.IGTLheader;
@@ -31,6 +32,9 @@ public final class IGTLCommunicator {
      * bytes.
      */
     private static final int BEGIN_POS_BODYSIZE_FIELD = 42;
+
+    /** The current socket timeout in milliseconds . */
+    private int curSocketTimeout;
 
     /** OpenIGTLink Client socket - socket of the connected Client. */
     private Socket openIGTClient;
@@ -62,42 +66,43 @@ public final class IGTLCommunicator {
      * @param port
      *            the port for the communication socket. Supported ports: 49001
      *            - 49005.
-     * @throws IOException
-     *             when set up of the sockets fails.
+     * @param socketTimeout
+     *            the initial socket timeout in milliseconds.
      */
-    private IGTLCommunicator(final int port) throws IOException {
+    public IGTLCommunicator(final int port, final int socketTimeout) {
 	if (port <= MAXIMUM_PORT_NUMBER && port >= MINIMUM_PORT_NUMBER) {
 	    serverPort = port;
 	} else {
 	    throw new IllegalArgumentException("Supported ports are "
 		    + MINIMUM_PORT_NUMBER + " to " + MAXIMUM_PORT_NUMBER);
 	}
-	setUpCommunication();
 
     }
 
     /**
      * Sets up all communication related objects. This method blocks until a
-     * connection is set up to the igtserver
+     * connection is set up to the igtserver.
      * 
      * @throws IOException
      *             when getter of output stream of the client fails.
      */
-    private void setUpCommunication() throws IOException {
-	
-	//Set up server connection
+    public void setUpCommunication() throws IOException {
+
+	// Set up server connection
 	openIGTServer = ServerSocketFactory.getDefault().createServerSocket(
 		serverPort);
 	openIGTServer.setReuseAddress(true);
-	
-	//Set up client connection
+
+	// Set up client connection
 	openIGTClient = openIGTServer.accept();
-	
-	//Connect input and output stream, to send and receive messages
+	openIGTClient.setSoTimeout(curSocketTimeout);
+	openIGTClient.setTcpNoDelay(true);
+
+	// Connect input and output stream, to send and receive messages
 	outStream = openIGTClient.getOutputStream();
 	inStream = openIGTClient.getInputStream();
-	
-	//Reset flag, which indicates if this connection has been closed.
+
+	// Reset flag, which indicates if this connection has been closed.
 	wasClosed = false;
 
     }
@@ -105,9 +110,9 @@ public final class IGTLCommunicator {
     /**
      * Getter for the connection state.
      * 
-     * @return true if connected, otherwise false.
+     * @return true if not connected otherwise false;
      */
-    public boolean isConncted() {
+    public boolean isClosed() {
 	if (openIGTServer != null) {
 	    return openIGTServer.isClosed();
 	} else {
@@ -141,11 +146,13 @@ public final class IGTLCommunicator {
 	if (!wasClosed) {
 	    dispose();
 	}
+	if (newSocketTimeout < 0) {
+	    throw new IllegalArgumentException("The negative timeout "
+		    + newSocketTimeout
+		    + "ms is not allowed to be set as socket timeout.");
+	}
+	curSocketTimeout = newSocketTimeout;
 	setUpCommunication();
-	openIGTClient = openIGTServer.accept();
-	openIGTClient.setTcpNoDelay(true);
-	openIGTClient.setSoTimeout(newSocketTimeout);
-
 	wasClosed = false;
 
     }
@@ -158,8 +165,7 @@ public final class IGTLCommunicator {
      * @throws IOException
      *             when sending failed.
      */
-    public void sendSlicerMsg(final IGTLMsgInterface packet) 
-	    throws IOException {
+    public void sendMsg(final IGTLMsgInterface packet) throws IOException {
 	if (packet.getHeader() != null && packet.getBody() != null) {
 	    sendBytes(packet.getHeader());
 	    sendBytes(packet.getBody());
