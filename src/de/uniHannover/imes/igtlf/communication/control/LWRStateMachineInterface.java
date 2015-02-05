@@ -104,11 +104,10 @@ public class LWRStateMachineInterface extends Thread {
      */
     private String ackMsg;
 
-
     /**
      * Object handles IGTL communication.
      */
-     private IGTLCommunicator communicator;
+    private IGTLCommunicator communicator;
 
     /**
      * Acknowledgement OpenIGTLink Message used for data transfer to the state
@@ -381,7 +380,13 @@ public class LWRStateMachineInterface extends Thread {
 	}
 	UID_old = UID_local;
 
+	/*
+	 * Read instream until a new message is detected (by uid).
+	 */
 	while (!receivedNewDataFlag /* && instr.available()>0 */) {
+	    /*
+	     * Read header bytes.
+	     */
 	    retRead = instr.read(headerByte);
 	    int enddata = 0;
 	    byte[] tmpName = new byte[IGTLheader.IGTL_HEADER_TYPE_SIZE];
@@ -394,8 +399,16 @@ public class LWRStateMachineInterface extends Thread {
 		}
 		k++;
 	    }
+	    
+	    /*
+	     * Extract message type from header.
+	     */
 	    messageType = new String(tmpName).substring(0, enddata);
 	    IGTLdatatype = messageType;
+	    
+	    /*
+	     * Extract device-name.
+	     */
 	    byte[] tmpDeviceName = new byte[IGTLheader.IGTL_HEADER_DEVSIZE];
 	    int l = 0;
 	    enddata = 0;
@@ -411,6 +424,9 @@ public class LWRStateMachineInterface extends Thread {
 	    }
 	    deviceName = new String(tmpDeviceName).substring(0, enddata);
 
+	    /*
+	     * Extract size of body.
+	     */
 	    final int bodySizeTmp = 8; // TODO define as class constant.
 	    byte[] tmpBodySize = new byte[bodySizeTmp];
 	    int m = 0;
@@ -428,6 +444,9 @@ public class LWRStateMachineInterface extends Thread {
 							 // rename variable.
 	    bodySize = bi.intValue();
 
+	    /*
+	     * Now read whole body bytes.
+	     */
 	    if (retRead > 0) {
 
 		bodyBytes = new byte[bodySize];
@@ -442,26 +461,40 @@ public class LWRStateMachineInterface extends Thread {
 			// ErrorManager.SERVERTHREAD_ABNORMAL_ANSWER);
 		    }
 		}
+		
+		/*
+		 * Extract uid from deviceName if message type is STRING.
+		 */
 		if (messageType.equalsIgnoreCase("STRING")
 			&& deviceName.split("_").length >= 2) {
 		    uidString = deviceName.split("_")[1];
 		    UID_local = Integer.parseInt(uidString);
 
-		} else if (messageType.equals("TRANSFORM")) {
+		} else if (messageType.equals("TRANSFORM")) { //Set flag if message type is Transform
 		    receivedNewDataFlag = true;
-		} else {
+		} else { //Show error if message type is unknown
 		    log.error("State machine interface: Unexpected command name "
 			    + "structure - expected is CMD_UID!!");
 		    ErrorFlag = true;
 
 		}
+		
+		/*
+		 * Check if current processed message is a new one, by uid check. 
+		 */
 		if (UID_local > UID_old) {
 		    receivedNewDataFlag = true;
 		}
 	    }
-	}
+	} //end while(!receivedNewDataFlag)
+	
 
+	/*
+	 * Extract information (cmdString) from bodyBytes if message type is string.
+	 */
 	if (messageType.equalsIgnoreCase("STRING")) {
+	    
+	    //Statistics for uid calculation
 	    uidDelay = UID_local - UID_old;
 	    if (uidDelay == 0) {
 		if (uidRepeat == 0) {
@@ -487,6 +520,9 @@ public class LWRStateMachineInterface extends Thread {
 		uidRepeat = 0;
 	    }
 
+	    /*
+	     * Extract the command string.
+	     */
 	    byte[] tmpString = new byte[bodySize
 		    - IGTLstring.IGTL_STRING_HEADER_SIZE];
 	    int p = 0;
@@ -506,6 +542,10 @@ public class LWRStateMachineInterface extends Thread {
 	    }
 
 	} else if (messageType.equalsIgnoreCase("TRANSFORM")) {
+	    
+	    /*
+	     * Extract information (externalTransformation) from bodyBytes if messageType was transform.
+	     */
 	    try {
 		ByteBuffer bodyBuff = ByteBuffer.wrap(bodyBytes);
 		double[] R_tmp = new double[SIZE_OF_ROTATION];
@@ -524,7 +564,7 @@ public class LWRStateMachineInterface extends Thread {
 			R_tmp[0], R_tmp[1], R_tmp[2], R_tmp[3], R_tmp[4],
 			R_tmp[5], R_tmp[6], R_tmp[7], R_tmp[8]));
 		IGTLdatatype = "TRANSFORM";
-		log.error("Transform to Image space succesfully received:"
+		log.fine("Transform to Image space succesfully received:"
 			+ transformImageRobot);
 		transformReceived = true;
 

@@ -25,6 +25,7 @@ package de.uniHannover.imes.igtlf.communication.visualization;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
 import openIGTLink.swig.IGTLtransform;
@@ -39,9 +40,11 @@ import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
+
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
 import de.uniHannover.imes.igtlf.communication.IGTLMessage;
+import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
 /**
@@ -250,7 +253,11 @@ public class LWRVisualizationInterface extends Thread {
      */
     private LBR robotDataSink;
 
-    // access this field.
+    /**
+     * Provider for command data received via another IGTL channel.
+     */
+    private CommunicationDataProvider comDataSink;
+
     /**
      * Flag to indicate if the Visualization interface is running or if the
      * thread is stopped.
@@ -283,10 +290,14 @@ public class LWRVisualizationInterface extends Thread {
      * 
      * @param robotDataProvider
      *            used as sink for robot-data send to slicer.
+     * @param comDataProvider
+     *            provider for command data received via another IGTL channel.
      */
-    public LWRVisualizationInterface(final LBR robotDataProvider) {
+    public LWRVisualizationInterface(final LBR robotDataProvider,
+	    final CommunicationDataProvider comDataProvider) {
 
-	init(robotDataProvider, new DummyLogger(), CYCLE_TIME_DEFAULT);
+	init(robotDataProvider, comDataProvider, new DummyLogger(),
+		CYCLE_TIME_DEFAULT);
 
     }
 
@@ -297,10 +308,13 @@ public class LWRVisualizationInterface extends Thread {
      *            used as sink for robot-data send to slicer.
      * @param cycleTimeMs
      *            the desired cycle time for the main loop in ms.
+     * @param comDataProvider
+     *            provider for command data received via another IGTL channel.
      */
     public LWRVisualizationInterface(final LBR robotDataProvider,
-	    final int cycleTimeMs) {
-	init(robotDataProvider, new DummyLogger(), cycleTimeMs);
+	    final int cycleTimeMs,
+	    final CommunicationDataProvider comDataProvider) {
+	init(robotDataProvider, comDataProvider, new DummyLogger(), cycleTimeMs);
     }
 
     /**
@@ -312,10 +326,13 @@ public class LWRVisualizationInterface extends Thread {
      *            the desired cycle time for the main loop in ms.
      * @param logger
      *            an external logger for this class.
+     * @param comDataProvider
+     *            provider for command data received via another IGTL channel.
      */
     public LWRVisualizationInterface(final LBR robotDataProvider,
+	    final CommunicationDataProvider comDataProvider,
 	    final int cycleTimeMs, final ITaskLogger logger) {
-	init(robotDataProvider, logger, cycleTimeMs);
+	init(robotDataProvider, comDataProvider, logger, cycleTimeMs);
     }
 
     /**
@@ -324,14 +341,18 @@ public class LWRVisualizationInterface extends Thread {
      * 
      * @param datasink
      *            the sink for robot data.
+     * @param comDataProvider
+     *            provider for command data received via another IGTL channel.
      * @param logger
      *            the task logger.
      * @param cycletime
      *            the desired cycle time in ms.
      */
-    private void init(final LBR datasink, final ITaskLogger logger,
-	    final int cycletime) {
+    private void init(final LBR datasink,
+	    final CommunicationDataProvider comDataProvider,
+	    final ITaskLogger logger, final int cycletime) {
 	robotDataSink = datasink;
+	comDataSink = comDataProvider;
 	log = logger;
 	cycleTime = cycletime;
 	setDaemon(true);
@@ -803,15 +824,17 @@ public class LWRVisualizationInterface extends Thread {
 
 	synchronized (cyclicDataLock) {
 
+	    // Check if current data set was generated yet.
 	    if (currentDataSet == null) {
 		currentDataSet = new VisualSenderData();
 	    }
-	    MatrixTransformation trafoExternalBase = null; // TODO @Tobias get
-							   // transformation
-							   // from
-							   // external base to
-							   // robot
-							   // base.
+
+	    // read external transformation (for example transformation to an
+	    // image base coordinate system.
+	    final MatrixTransformation trafoExternalBase = comDataSink
+		    .getCurrentExtTransform();
+
+	    // Construct current data set.
 	    currentDataSet.setData(
 		    robotDataSink.getCurrentJointPosition(),
 		    robotDataSink.getExternalForceTorque(

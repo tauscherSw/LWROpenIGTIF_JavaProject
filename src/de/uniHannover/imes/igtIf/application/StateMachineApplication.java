@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.control.LWRStateMachineInterface;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
@@ -221,7 +222,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     private static final int SLICER_CONTROL_PRIO = 6;
 
-
     /**
      * The cycle time of the slicer-visualization-thread in milliseconds.
      */
@@ -316,6 +316,13 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * @see LWRStateMachineInterface
      */
     private LWRStateMachineInterface slicerControlIf;
+
+    /**
+     * The provider for the communication data, exchanged with OpenIGTLink. This
+     * class provides access to all the commands, uids and so on received from
+     * an external OpenIGTLink client.
+     */
+    private CommunicationDataProvider comDataProvider;
 
     /**
      * Object of the visualization interface class for the communication with a
@@ -434,14 +441,16 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * visualization interface thread.
      */
     private void initInterfaceThreads() {
+	comDataProvider = new CommunicationDataProvider();
 	slicerControlIf = new LWRStateMachineInterface();
 	slicerControlIf.setPriority(SLICER_CONTROL_PRIO);
 	slicerControlIf.millisectoSleep = SLICER_CONTROL_CYLCETIME_MS;
 
 	slicerVisualIf = new LWRVisualizationInterface(imesLBR,
-		SLICER_VISUAL_CYLCETIME_MS, getLogger());
+		comDataProvider, SLICER_VISUAL_CYLCETIME_MS, getLogger());
 	slicerVisualIf.setPriority(SLICER_VISUAL_PRIO);
-	slicerVisualIf.setSenderConfiguration(VisualIFDatatypes.JOINTSPACE, false);
+	slicerVisualIf.setSenderConfiguration(VisualIFDatatypes.JOINTSPACE,
+		false);
 	slicerVisualIf.updateData();
 
     }
@@ -600,44 +609,42 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		if (slicerVisualIf.isEnabled()) {
 
-//		    try {
-//			
-//			    slicerVisualIf.poseUid = imesStatemachine.poseUid;
-//			    slicerVisualIf.TCPForce = imesStatemachine.tcpForce;
-//			    slicerVisualIf.sendTcpForce = true;
-//			    updatePose();
-//			    slicerVisualIf.visualSema.release();
-//			}
-//
-//			else {
-//			    errMsg = "Error: Couldn't acquire VisualIF Semaphore!!";
-//			    // TODO exception concept.
-//			}
-//		    } catch (InterruptedException e) {
-//			e.printStackTrace();
-//			// TODO exception concept.
-//		    }
+		    // try {
+		    //
+		    // slicerVisualIf.poseUid = imesStatemachine.poseUid;
+		    // slicerVisualIf.TCPForce = imesStatemachine.tcpForce;
+		    // slicerVisualIf.sendTcpForce = true;
+		    // updatePose();
+		    // slicerVisualIf.visualSema.release();
+		    // }
+		    //
+		    // else {
+		    // errMsg = "Error: Couldn't acquire VisualIF Semaphore!!";
+		    // // TODO exception concept.
+		    // }
+		    // } catch (InterruptedException e) {
+		    // e.printStackTrace();
+		    // // TODO exception concept.
+		    // }
 		    slicerVisualIf.setSenderConfiguration(null, true);
 		    slicerVisualIf.updateData();
 		}
 
 		if (!(imesStatemachine.StartVisual && visualOnFlag)) {
 
-//		    updatePose();
-//		    slicerVisualIf.jntPoseStateM = initialPosition;
-//		    slicerVisualIf.visualActive = true;
-//		    // Start the Visualization thread
-//		    slicerVisualIf.start();
-//		    visualOnFlag = true;
+		    // updatePose();
+		    // slicerVisualIf.jntPoseStateM = initialPosition;
+		    // slicerVisualIf.visualActive = true;
+		    // // Start the Visualization thread
+		    // slicerVisualIf.start();
+		    // visualOnFlag = true;
 		    slicerVisualIf.updateData();
 		    slicerVisualIf.setCyclicCommunication(true);
-		    
 
 		}
 
 		else if (imesStatemachine.StartVisual && visualOnFlag
-			&& !slicerVisualIf.isDataTransmissionEnable()
-			) {
+			&& !slicerVisualIf.isDataTransmissionEnable()) {
 		    /*
 		     * if Visualization interface is started, not active but is
 		     * set active Change VisualActive to true. Thereby, the pose
@@ -711,8 +718,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		// Check on Communication Quality
-		if (slicerControlIf.ErrorCode 
-			== OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
+		if (slicerControlIf.ErrorCode == OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
 		    imesStatemachine.ErrorMessage = "ERROR: State Control Interface "
 			    + "Bad Communication quality setting robot State to IDLE";
 		    imesStatemachine.ErrorFlag = true;
@@ -781,5 +787,5 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	printFinalInfos(timing);
 
     }
-    
+
 }

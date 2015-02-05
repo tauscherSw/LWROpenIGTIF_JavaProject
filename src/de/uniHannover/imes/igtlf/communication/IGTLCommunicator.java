@@ -36,7 +36,6 @@ public final class IGTLCommunicator {
 
     /** The current socket timeout in milliseconds . */
     private int curSocketTimeout;
-
     /** OpenIGTLink Client socket - socket of the connected Client. */
     private Socket openIGTClient;
 
@@ -195,7 +194,7 @@ public final class IGTLCommunicator {
      * @throws IOException
      *             reading of input stream fails.
      */
-    public IGTLMsgInterface receiveMsg() throws IOException {
+    public synchronized IGTLMsgInterface receiveMsg() throws IOException {
 	// Header bytes
 	byte[] headerRead = new byte[IGTLheader.IGTL_HEADER_SIZE];
 	// Body bytes
@@ -247,7 +246,7 @@ public final class IGTLCommunicator {
      *            the whole read header.
      * @return the size of the body in bytes.
      */
-    private int extractBodySize(final byte[] header) {
+    public static int extractBodySize(final byte[] header) {
 	// Field in the header which tells how big body is.
 	byte[] bodySizeField = new byte[SIZE_OF_BODYSIZE_FIELD];
 	/*
