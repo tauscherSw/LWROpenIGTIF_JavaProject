@@ -254,7 +254,7 @@ public class LWRVisualizationInterface extends Thread {
     private LBR robotDataSink;
 
     /**
-     * Provider for command data received via another IGTL channel.
+     * Provider for command data received via another openIGTL channel.
      */
     private CommunicationDataProvider comDataSink;
 
