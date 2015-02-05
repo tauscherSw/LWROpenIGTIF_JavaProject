@@ -39,7 +39,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
-import de.uniHannover.imes.igtlf.communication.IGTLMessage;
+import de.uniHannover.imes.igtlf.communication.OpenIGTLMessage;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
@@ -796,7 +796,7 @@ public class LWRStateMachineInterface extends Thread {
      */
     private void sendIGTStringMessage(String message) throws Exception {
 
-	IGTLMessage currentMsg;
+	OpenIGTLMessage currentMsg;
 
 	byte[] bodyByte = new byte[message.length()
 		+ IGTLstring.IGTL_STRING_HEADER_SIZE];
@@ -828,7 +828,7 @@ public class LWRStateMachineInterface extends Thread {
 	}
 
 	try {
-	    currentMsg = new IGTLMessage();
+	    currentMsg = new OpenIGTLMessage();
 	    currentMsg.init(headerByte, bodyByte);
 	    communicator.sendMsg(currentMsg);
 	} catch (IOException e) {

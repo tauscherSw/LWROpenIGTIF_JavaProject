@@ -215,7 +215,7 @@ public final class IGTLCommunicator {
 	/*
 	 * Construct the returned object as a IGTL response.
 	 */
-	IGTLMsgInterface response = new IGTLMessage();
+	IGTLMsgInterface response = new OpenIGTLMessage();
 	response.init(headerRead, bodyRead);
 	return response;
 
