@@ -16,8 +16,8 @@ import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
 
 /**
  * This class represents the communication data, which is exchanged via the
- * OpenIGTLink protocol. It consists basically of command-object (sent by IGTL
- * Client) and an ack-object (sent by IGTL server as response).
+ * OpenIGTLink protocol. It consists basically of command-object (sent by
+ * openIGTL Client) and an ack-object (sent by openIGTL server as response).
  *
  */
 public class CommunicationDataProvider {
@@ -48,10 +48,11 @@ public class CommunicationDataProvider {
     /** Logging object. */
     private ITaskLogger logger;
 
-    /** the current and newest command received via IGTL. */
+    /** the current and newest command received via openIGTL. */
     private Command currentCommand = null;
     /**
-     * The current and newest external transformation matrix received via IGTL.
+     * The current and newest external transformation matrix received via
+     * openIGTL.
      */
     private MatrixTransformation currentExternalTrafo = null;
 
@@ -296,7 +297,7 @@ public class CommunicationDataProvider {
     }
 
     /**
-     * Thread safe getter for the current command received via IGTL.
+     * Thread safe getter for the current command received via openIGTL.
      * 
      * @return the current command object.
      */
@@ -306,7 +307,7 @@ public class CommunicationDataProvider {
 
     /**
      * Thread safe getter for the current external transformation received via
-     * IGTL.
+     * openIGTL.
      * 
      * @return the transformation object.
      */
