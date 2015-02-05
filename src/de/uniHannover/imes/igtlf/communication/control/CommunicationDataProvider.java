@@ -1,6 +1,7 @@
 package de.uniHannover.imes.igtlf.communication.control;
 
 import java.nio.ByteBuffer;
+import java.util.Observable;
 
 import openIGTLink.swig.IGTLheader;
 import openIGTLink.swig.IGTLstring;
@@ -20,7 +21,7 @@ import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
  * openIGTL Client) and an ack-object (sent by openIGTL server as response).
  *
  */
-public class CommunicationDataProvider {
+public class CommunicationDataProvider extends Observable {
 
     /**
      * The string which represents, that a message has to be interpreted as a
@@ -133,9 +134,13 @@ public class CommunicationDataProvider {
 	    if (messageType.equalsIgnoreCase(MESSAGE_TYPE_COMMAND)) {
 		final String cmdString = getCommandString(message.getBody());
 		currentCommand = new Command(uid, cmdString);
+		setChanged();
+		notifyObservers(MESSAGE_TYPE_COMMAND);
 
 	    } else if (messageType.equalsIgnoreCase(MESSAGE_TYPE_TRANSFORM)) {
 		currentExternalTrafo = getTrafo(message.getBody());
+		setChanged();
+		notifyObservers(MESSAGE_TYPE_TRANSFORM);
 
 	    } else {
 		throw new UnknownCommandException("Message type: "

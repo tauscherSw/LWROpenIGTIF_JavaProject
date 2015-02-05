@@ -41,6 +41,7 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.control.LWRStateMachineInterface;
+import de.uniHannover.imes.igtlf.communication.messages.Command;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
 
@@ -669,34 +670,26 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    i = 0;
 		    // Try to read new command String from SlicerControl (Alive)
 		    // Thread
-		    try {
-			boolean semaAcquired = slicerControlIf.controlSemaphore
-				.tryAcquire(1, TimeUnit.MILLISECONDS);
-			if (semaAcquired) {
-			    imesStatemachine.cmdIgtMsg = slicerControlIf.CMD_StateM;
-			    imesStatemachine.IGTLdatatype = slicerControlIf.IGTLdatatype;
-			    imesStatemachine.UID = slicerControlIf.UID;
+
+			    Command curCommand = comDataProvider
+				    .getCurrentCommand();
+			    imesStatemachine.cmdIgtMsg = curCommand
+				    .getCmdString();
+			    imesStatemachine.IGTLdatatype = slicerControlIf.IGTLdatatype; //TODO Datatype correct extraction
+			    imesStatemachine.UID = curCommand.getUid();
 			    if (slicerControlIf.transformReceived
 				    && !imesStatemachine.transformReceivedFlag) {
 				imesStatemachine.transfRobotImg = slicerControlIf.transformImageRobot;
 				imesStatemachine.transformReceivedFlag = true;
 			    }
-			    slicerControlIf.controlSemaphore.release();
 			} else {
 			    getLogger()
 				    .fine("Acquiring of semaphore for "
 					    + "setting state machine parameters failed!");
 			}
 
-		    } catch (InterruptedException e) {
-			errMsg = "Couldn't acquire Semaphore!!";
-			getLogger().error(
-				"Interrupted during waiting on semaphore", e);
-
-		    }
-		}
-
-		else { // if it is not to Error handling
+		    
+		}else { // if it is not to Error handling
 		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
 		    errMsg = "Slicer Control Interface not Alive...";
 		    getLogger().error("Slicer control interface isn't running");
@@ -748,15 +741,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		imesStatemachine.setAckPacket();
 
 		if (slicerControlIf.comRunning) {
-		    try {
-			slicerControlIf.controlSemaphore.tryAcquire(1,
-				TimeUnit.MILLISECONDS);
-			// try to update the ACK String for the ControlIF Thread
-			slicerControlIf.ackStateM = imesStatemachine.ackIgtMsg;
-			slicerControlIf.controlSemaphore.release();
-		    } catch (InterruptedException e) {
-			errMsg = "Error: Couldn't Acquire ControlIF Semaphore!!";
-		    }
+		    // try to update the ACK String for the ControlIF Thread
+		    slicerControlIf.setAckMsg(imesStatemachine.ackIgtMsg);
 		}
 
 		if (!errMsg.equals(lastPrintedError)) {
