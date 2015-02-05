@@ -442,7 +442,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     private void initInterfaceThreads() {
 	comDataProvider = new CommunicationDataProvider();
-	slicerControlIf = new LWRStateMachineInterface();
+	slicerControlIf = new LWRStateMachineInterface(comDataProvider);
 	slicerControlIf.setPriority(SLICER_CONTROL_PRIO);
 	slicerControlIf.millisectoSleep = SLICER_CONTROL_CYLCETIME_MS;
 

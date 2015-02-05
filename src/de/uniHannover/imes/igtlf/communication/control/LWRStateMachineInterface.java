@@ -41,6 +41,7 @@ import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
 import de.uniHannover.imes.igtlf.communication.OpenIGTLMessage;
+import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
@@ -397,290 +398,37 @@ public class LWRStateMachineInterface extends Thread {
 	do {
 	    // Init header frame copy field.
 	    headerBytes = new byte[IGTLheader.IGTL_HEADER_SIZE];
-	    
+
 	    // Read header frame.
 	    numOfHeaderBytesRead = instr.read(headerBytes);
-	    
+	    if (numOfHeaderBytesRead < headerBytes.length) {
+		throw new UnknownCommandException(
+			"Unsufficent number of header bytes read");
+	    }
+
 	    // Extract size of body frame.
 	    bodySize = IGTLCommunicator.extractBodySize(headerBytes);
-	    
+
 	    // Init body frame copy field.
 	    bodyBytes = new byte[bodySize];
-	    
+
 	    // Read body bytes
 	    numOfBodyBytesRead = instr.read(bodyBytes);
+	    if (numOfBodyBytesRead < bodyBytes.length) {
+		throw new UnknownCommandException(
+			"Unsufficent number of body bytes read");
+	    }
 
 	    // Construct a openIGTL message from header and body.
 	    receivedMsg = new OpenIGTLMessage();
 	    receivedMsg.init(headerBytes, bodyBytes);
-	    
+
 	} while (!comDataSink.setNewCmdMessage(receivedMsg)); // checks the new
 							      // message and
 							      // saves it if it
 							      // has new
 							      // content.
     }
-
-    // /**
-    // * In this function a message from the Client Socket is received and
-    // * according to the OpenIGTLink datatype the recieved data is saved in the
-    // * member variable CMDmessage. If the data type is neither Transform nor
-    // * String an ErrorMessage is created. (Error Message not used yet...)
-    // *
-    // * @throws IOException
-    // * when the received data has the wrong datatype or is
-    // * incomplete.
-    // */
-    // private void receiveMessage() throws IOException {
-    // int retRead = 0;
-    // byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
-    // boolean receivedNewDataFlag = false;
-    // String messageType = null;
-    // String uidString = "";
-    // final long uidMax = Long.MAX_VALUE;
-    // int bodySize = 0;
-    // String deviceName = null;
-    // byte[] bodyBytes = null;
-    // if (UID_old == uidMax) {
-    // UID_old = -1;
-    // }
-    // UID_old = UID_local;
-    //
-    // /*
-    // * Read instream until a new message is detected (by uid).
-    // */
-    // while (!receivedNewDataFlag /* && instr.available()>0 */) {
-    // /*
-    // * Read header bytes.
-    // */
-    // retRead = instr.read(headerByte);
-    // int enddata = 0;
-    // byte[] tmpName = new byte[IGTLheader.IGTL_HEADER_TYPE_SIZE];
-    // int k = 0;
-    // for (int i = 2; i < 2 + IGTLheader.IGTL_HEADER_TYPE_SIZE
-    // && enddata == 0; i++) {
-    // tmpName[k] = headerByte[i];
-    // if (headerByte[i] == 0) {
-    // enddata = k;
-    // }
-    // k++;
-    // }
-    //
-    // /*
-    // * Extract message type from header.
-    // */
-    // messageType = new String(tmpName).substring(0, enddata);
-    // IGTLdatatype = messageType;
-    //
-    // /*
-    // * Extract device-name.
-    // */
-    // byte[] tmpDeviceName = new byte[IGTLheader.IGTL_HEADER_DEVSIZE];
-    // int l = 0;
-    // enddata = 0;
-    // final int readBeginPos = 14;
-    // for (int j = readBeginPos; j < readBeginPos
-    // + IGTLheader.IGTL_HEADER_DEVSIZE
-    // && enddata == 0; j++) {
-    // tmpDeviceName[l] = headerByte[j];
-    // if (headerByte[j] == 0) {
-    // enddata = l;
-    // }
-    // l++;
-    // }
-    // deviceName = new String(tmpDeviceName).substring(0, enddata);
-    //
-    // /*
-    // * Extract size of body.
-    // */
-    // final int bodySizeTmp = 8; // TODO define as class constant.
-    // byte[] tmpBodySize = new byte[bodySizeTmp];
-    // int m = 0;
-    // final int readBeginTmpBody = 42; // TODO define as class constant.
-    // for (int h = readBeginTmpBody; h < readBeginTmpBody + bodySizeTmp/*
-    // * IGTLheader
-    // * .
-    // * IGTL_HEADER_NAME_SIZE
-    // */; h++) {
-    // tmpBodySize[m] = headerByte[h];
-    // m++;
-    // }
-    //
-    // BigInteger bi = new BigInteger(tmpBodySize); // TODO @Sebastian
-    // // rename variable.
-    // bodySize = bi.intValue();
-    //
-    // /*
-    // * Now read whole body bytes.
-    // */
-    // if (retRead > 0) {
-    //
-    // bodyBytes = new byte[bodySize];
-    //
-    // if (bodySize > 0) {
-    // retRead = instr.read(bodyBytes);
-    // if (retRead != bodySize) {
-    // // TODO @Sebastian unused code.
-    // // errorManager.error("ServerThread bodyBuf in ServerThread ret_read = "
-    // // + ret_read, new
-    // // Exception("Abnormal return from reading"),
-    // // ErrorManager.SERVERTHREAD_ABNORMAL_ANSWER);
-    // }
-    // }
-    //
-    // /*
-    // * Extract uid from deviceName if message type is STRING.
-    // */
-    // if (messageType.equalsIgnoreCase("STRING")
-    // && deviceName.split("_").length >= 2) {
-    // uidString = deviceName.split("_")[1];
-    // UID_local = Integer.parseInt(uidString);
-    //
-    // } else if (messageType.equals("TRANSFORM")) { //Set flag if message type
-    // is Transform
-    // receivedNewDataFlag = true;
-    // } else { //Show error if message type is unknown
-    // log.error("State machine interface: Unexpected command name "
-    // + "structure - expected is CMD_UID!!");
-    // ErrorFlag = true;
-    //
-    // }
-    //
-    // /*
-    // * Check if current processed message is a new one, by uid check.
-    // */
-    // if (UID_local > UID_old) {
-    // receivedNewDataFlag = true;
-    // }
-    // }
-    // } //end while(!receivedNewDataFlag)
-    //
-    //
-    // /*
-    // * Extract information (cmdString) from bodyBytes if message type is
-    // string.
-    // */
-    // if (messageType.equalsIgnoreCase("STRING")) {
-    //
-    // //Statistics for uid calculation
-    // uidDelay = UID_local - UID_old;
-    // if (uidDelay == 0) {
-    // if (uidRepeat == 0) {
-    // UIDrepeatNum++;
-    // }
-    // uidRepeat++;
-    // if (UIDrepeat_max < uidRepeat) {
-    // UIDrepeat_max = uidRepeat;
-    // }
-    // if (uidRepeat >= MAX_EQUAL_UIDS) {
-    // log.error("State machine interface: UID has not changed for the "
-    // + uidRepeat + ". time!! Check state control!");
-    // ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
-    // ErrorFlag = true;
-    // }
-    // } else if (uidDelay > 1) {
-    // UIDmiss = UIDmiss + uidDelay - 1;
-    // log.error("State machine interface: missed UID!!(miss count: "
-    // + UIDmiss + ")");
-    // ErrorFlag = true;
-    //
-    // } else if (uidDelay == 1) {
-    // uidRepeat = 0;
-    // }
-    //
-    // /*
-    // * Extract the command string.
-    // */
-    // byte[] tmpString = new byte[bodySize
-    // - IGTLstring.IGTL_STRING_HEADER_SIZE];
-    // int p = 0;
-    // final int readBeginPos = IGTLstring.IGTL_STRING_HEADER_SIZE;
-    // for (int z = readBeginPos; z < bodySize; z++) {
-    // tmpString[p] = bodyBytes[z];
-    // p++;
-    // }
-    // try {
-    // String cmdString = new String(tmpString);
-    // cmdMsg = cmdString;
-    // } catch (Exception e) {
-    //
-    // // TODO exception handling
-    // log.error("Couldn't generate new OpenIGTLink String Message!!");
-    // ErrorFlag = true;
-    // }
-    //
-    // } else if (messageType.equalsIgnoreCase("TRANSFORM")) {
-    //
-    // /*
-    // * Extract information (externalTransformation) from bodyBytes if
-    // messageType was transform.
-    // */
-    // try {
-    // ByteBuffer bodyBuff = ByteBuffer.wrap(bodyBytes);
-    // double[] R_tmp = new double[SIZE_OF_ROTATION];
-    // double[] t_tmp = new double[SIZE_OF_TRANS];
-    // for (int i = 0; i < SIZE_OF_ROTATION + SIZE_OF_TRANS; i++) {
-    // if (i < SIZE_OF_TRANS) {
-    // R_tmp[i] = bodyBuff.getDouble(i * Double.SIZE);
-    // } else if (i >= SIZE_OF_TRANS
-    // && i < SIZE_OF_ROTATION + SIZE_OF_TRANS) {
-    // t_tmp[i - SIZE_OF_ROTATION] = bodyBuff.getDouble(i
-    // * Double.SIZE);
-    // }
-    // }
-    // transformImageRobot = MatrixTransformation.of(Vector.of(
-    // t_tmp[0], t_tmp[1], t_tmp[2]), Matrix.ofRowFirst(
-    // R_tmp[0], R_tmp[1], R_tmp[2], R_tmp[3], R_tmp[4],
-    // R_tmp[5], R_tmp[6], R_tmp[7], R_tmp[8]));
-    // IGTLdatatype = "TRANSFORM";
-    // log.fine("Transform to Image space succesfully received:"
-    // + transformImageRobot);
-    // transformReceived = true;
-    //
-    // } catch (Exception e) {
-    // log.error("Couldn't generate new OpenIGTLink Transform Message!!");
-    // ErrorFlag = true;
-    // }
-    //
-    // } else {
-    // log.error("State machine interface: Unexpected Data type received!!");
-    // ErrorFlag = true;
-    // }
-    //
-    // UID_old = UID_local;
-    //
-    // }
-
-    // /**
-    // * Function to restart the IGTLink Server and reinitialize the connection.
-    // * This function is used if the connection to the state control client got
-    // * lost.
-    // */
-    // private void restartIGTServer() {
-    //
-    // log.error("StateMachineIF: Lost Connection to Client. Try to reconnect...");
-    // stopServer();
-    // try {
-    // // Set up server
-    // connectServer();
-    // comRunning = true;
-    // openIGTClient = openIGTServer.accept();
-    // openIGTClient.setTcpNoDelay(true);
-    // openIGTClient.setSoTimeout(millisectoSleep);
-    // this.outstr = openIGTClient.getOutputStream();
-    // this.instr = openIGTClient.getInputStream();
-    // this.currentStatus = ClientStatus.CONNECTED;
-    // log.error("State machine interface client connected ( "
-    // + openIGTClient.getInetAddress() + ", "
-    // + openIGTClient.getPort() + ")");
-    // connectionErr = 0;
-    // ErrorCode = OpenIGTLinkErrorCode.Ok;
-    // } catch (Exception e) {
-    // log.error("Couldn't connect to state machine interface server!");
-    // ErrorCode = OpenIGTLinkErrorCode.HardwareOrCommunicationFailure;
-    // }
-    //
-    // }
 
     /**
      * main/run method function of the State control Interface. In this function
@@ -737,7 +485,8 @@ public class LWRStateMachineInterface extends Thread {
 		try {
 
 		    // Receive Message from State Control
-		    receiveMessage();
+		    receiveMessage(); // TODO deal with Runtime exceptions
+				      // properly
 
 		    // Write data into the public String CMD_StateM
 		    try {
@@ -762,7 +511,7 @@ public class LWRStateMachineInterface extends Thread {
 		try {
 		    communicator.restart();
 		} catch (IOException e) {
-		    log.error("Could not establish IGTL connection", e);
+		    log.error("Could not establish openIGTL connection", e);
 
 		}
 	    }

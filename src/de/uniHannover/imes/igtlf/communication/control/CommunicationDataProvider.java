@@ -124,27 +124,28 @@ public class CommunicationDataProvider {
 	 * transform or the received uid is newer than the old go on, otherwise
 	 * return.
 	 */
-	if (!(messageType.equalsIgnoreCase(MESSAGE_TYPE_TRANSFORM) || currentCommand
-		.getUid() < uid)) {
+	if (messageType.equalsIgnoreCase(MESSAGE_TYPE_TRANSFORM)
+		|| currentCommand.getUid() < uid) {
+
+	    /*
+	     * Process body bytes and extract information.
+	     */
+	    if (messageType.equalsIgnoreCase(MESSAGE_TYPE_COMMAND)) {
+		final String cmdString = getCommandString(message.getBody());
+		currentCommand = new Command(uid, cmdString);
+
+	    } else if (messageType.equalsIgnoreCase(MESSAGE_TYPE_TRANSFORM)) {
+		currentExternalTrafo = getTrafo(message.getBody());
+
+	    } else {
+		throw new UnknownCommandException("Message type: "
+			+ messageType + " is unknown.");
+	    }
+
+	    return true;
+	} else {
 	    return false;
 	}
-
-	/*
-	 * Process body bytes and extract information.
-	 */
-	if (messageType.equalsIgnoreCase(MESSAGE_TYPE_COMMAND)) {
-	    final String cmdString = getCommandString(message.getBody());
-	    currentCommand = new Command(uid, cmdString);
-
-	} else if (messageType.equalsIgnoreCase(MESSAGE_TYPE_TRANSFORM)) {
-	    currentExternalTrafo = getTrafo(message.getBody());
-
-	} else {
-	    throw new UnknownCommandException("Message type: " + messageType
-		    + " is unknown.");
-	}
-
-	return true;
 
     }
 
