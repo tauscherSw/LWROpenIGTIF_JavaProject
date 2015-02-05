@@ -211,7 +211,12 @@ public class CommunicationDataProvider {
     private long getUid(final String deviceName) {
 	if (deviceName.split("_").length >= 2) {
 	    final String uidString = deviceName.split("_")[1];
-	    return Integer.parseInt(uidString);
+	    long uid = Long.parseLong(uidString);
+	    if (Long.MAX_VALUE == uid) {
+		throw new ArithmeticException(
+			"Unified Id is close to number overflow for datatype long.");
+	    }
+	    return uid;
 	} else {
 	    throw new UnknownCommandException(
 		    "Illegal length of the splitted device name ("
