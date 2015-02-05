@@ -10,6 +10,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
+import de.uniHannover.imes.igtlf.communication.OpenIGTLMessage;
 import de.uniHannover.imes.igtlf.communication.messages.Command;
 import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
 
@@ -82,15 +83,13 @@ public class CommunicationDataProvider {
 
     /**
      * 
-     * @param headerByte
-     *            the bytes of the header of the IGTL message.
-     * @param bodyByte
-     *            the bytes of the body of the IGTL message.
+     * @param message
+     *            the message received from another OpenIGTL client as a
+     *            command.
      * @return false if "new message" has not been processed, cause it either
      *         hasn't had any data or had no new data.
      */
-    public boolean setNewCmdMessage(final byte[] headerByte,
-	    final byte[] bodyByte) {
+    public final boolean setNewCmdMessage(final OpenIGTLMessage message) {
 
 	/*
 	 * Preliminary checks of the arguments.
@@ -110,8 +109,8 @@ public class CommunicationDataProvider {
 	/*
 	 * Process header bytes and extract information.
 	 */
-	final String messageType = getMessageType(headerByte);
-	final String deviceName = getDeviceName(headerByte);
+	final String messageType = getMessageType(message.getHeader());
+	final String deviceName = getDeviceName(message.getHeader());
 	long uid = 0;
 	// Read uid only if message type was a command.
 	if (messageType.equalsIgnoreCase(MESSAGE_TYPE_COMMAND)) {
@@ -133,11 +132,11 @@ public class CommunicationDataProvider {
 	 * Process body bytes and extract information.
 	 */
 	if (messageType.equalsIgnoreCase(MESSAGE_TYPE_COMMAND)) {
-	    final String cmdString = getCommandString(bodyByte);
+	    final String cmdString = getCommandString(message.getBody());
 	    currentCommand = new Command(uid, cmdString);
 
 	} else if (messageType.equalsIgnoreCase(MESSAGE_TYPE_TRANSFORM)) {
-	    currentExternalTrafo = getTrafo(bodyByte);
+	    currentExternalTrafo = getTrafo(message.getBody());
 
 	} else {
 	    throw new UnknownCommandException("Message type: " + messageType
