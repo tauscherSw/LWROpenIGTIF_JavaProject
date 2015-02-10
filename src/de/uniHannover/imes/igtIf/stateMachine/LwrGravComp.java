@@ -24,8 +24,9 @@
 package de.uniHannover.imes.igtIf.stateMachine;
 
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
-import com.kuka.roboticsAPI.motionModel.controlModeModel
-.CartesianImpedanceControlMode;
+import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
+
+import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 
 /**
  * In this state the LWR is set to gravitation Compensation mode so that robot
@@ -57,24 +58,22 @@ public class LwrGravComp implements ILwrState {
     @Override
     public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
 
-	if (lwrStatemachine.InitFlag) {
+	if (lwrStatemachine.stateChanged) {
 	    // We are in CartImp Mode,
 	    // Modify the settings:
 	    // NOTE: YOU HAVE TO REMAIN POSITIVE SEMI-DEFINITE !!
 	    // NOTE: DONT CHANGE TOO FAST THE SETTINGS, ELSE YOU
 	    // WILL DESTABILIZE THE CONTROLLER
 	    int[] newStiffnessParam = { 0, 0, 0, 0, 0, 0 };
-	    CartesianImpedanceControlMode cartImp = 
-		    (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	    CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 	    cartImp.parametrize(CartDOF.ALL).setStiffness(0.0);
 	    cartImp.setNullSpaceStiffness(0.);
 	    lwrStatemachine.curCartStiffness = newStiffnessParam;
 	    lwrStatemachine.controlMode = cartImp;
-	    lwrStatemachine.InitFlag = false;
+	    lwrStatemachine.stateChanged = false;
 	}
 	if (lwrStatemachine.cmdPose.getTranslation()
-		.subtract(lwrStatemachine.curPose.getTranslation()).length() 
-		> MAX_TRANSLATION) {
+		.subtract(lwrStatemachine.curPose.getTranslation()).length() > MAX_TRANSLATION) {
 
 	    System.out.println("Difference to big!");
 	}
@@ -91,17 +90,17 @@ public class LwrGravComp implements ILwrState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
+     * @param cmdPacket
+     *            the packet to be interpreted.
      * @see ILwrState
      */
 
     @Override
-    public final void interpretCmdPacket(final 
-	    LwrStatemachine lwrStatemachine) {
-	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
-	    String cmdString;
-	    cmdString = lwrStatemachine.cmdIgtMsg;
-	    lwrStatemachine.paramString = cmdString.substring(cmdString
-		    .indexOf(";"));
+    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine,
+	    final CommandPacket cmdPacket) {
+	if (!cmdPacket.isTransformReceived()) {
+	    lwrStatemachine.setParamString(cmdPacket.getCmdString().substring(
+		    cmdPacket.getCmdString().indexOf(";")));
 	}
     }
 

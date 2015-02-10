@@ -30,6 +30,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 
 /**
  * In this State two different kinds of Virtuall Fixtures, a plane and a cone
@@ -137,17 +138,17 @@ public class LwrVirtualFixtures implements ILwrState {
     public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
 	int[] newStiffness = { 0, 0, 0, 0, 0, 0 };
 	double aDampVal = 0.0, stiffVal = 0.0;
-	if (lwrStatemachine.InitFlag) {
+	if (lwrStatemachine.stateChanged) {
 
 	    coneTip = false;
 	    endPoint = false;
 	    if (this.activeVirtualFixture == VirtualFixtureType.Cone) {
 		awaredist = 10;
-		lwrStatemachine.InitFlag = false;
+		lwrStatemachine.stateChanged = false;
 
 	    } else {
 		awaredist = 20;
-		lwrStatemachine.InitFlag = false;
+		lwrStatemachine.stateChanged = false;
 	    }
 	}
 	if (this.activeVirtualFixture == VirtualFixtureType.Plane) {
@@ -217,7 +218,7 @@ public class LwrVirtualFixtures implements ILwrState {
 		normVector = TransformationConeToBase.getRotation()
 			.applyTo(vTemp.normalize()).normalize();
 	    }
-	    if (lwrStatemachine.InitFlag) {
+	    if (lwrStatemachine.stateChanged) {
 
 		for (int i = 0; i < NUM_FORCE_NORM_VECTORS; i++) {
 		    lastNormVectorsForce[i] = normVector;
@@ -413,20 +414,23 @@ public class LwrVirtualFixtures implements ILwrState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
+     * @param cmdPacket
+     *            the packet to be interpreted.
      * @see ILwrState
      */
     @Override
-    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
+    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine, 
+	    final CommandPacket cmdPacket) {
 
-	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
+	if (!cmdPacket.isTransformReceived()) {
 	    String cmdString;
 
-	    cmdString = lwrStatemachine.cmdIgtMsg;
-	    lwrStatemachine.paramString = cmdString.substring(cmdString
-		    .indexOf(";"));
+	    cmdString = cmdPacket.getCmdString();
+	    lwrStatemachine.setParamString(cmdString.substring(cmdString
+		    .indexOf(";")));
 	    String[] cmdArray = cmdString.split(";");
 
-	    lwrStatemachine.InitFlag = true;
+	    lwrStatemachine.stateChanged = true;
 	    if (cmdArray[1].contentEquals("img")) {
 		this.imageSpace = true;
 	    } else if (cmdArray[1].contentEquals("rob")) {
@@ -455,10 +459,10 @@ public class LwrVirtualFixtures implements ILwrState {
 		    Double.parseDouble(cmdArray[7]),
 		    Double.parseDouble(cmdArray[8]));
 
-	    if (this.imageSpace && lwrStatemachine.transformReceivedFlag) {
-		this.virtualFixturePosition = lwrStatemachine.transfRobotImg
+	    if (this.imageSpace && cmdPacket.isTransformReceived()) {
+		this.virtualFixturePosition = cmdPacket.getTrafo()
 			.applyTo(this.virtualFixturePosition);
-		this.virtualFixtureNormVector = lwrStatemachine.transfRobotImg
+		this.virtualFixtureNormVector = cmdPacket.getTrafo()
 			.applyTo(this.virtualFixtureNormVector);
 
 	    }

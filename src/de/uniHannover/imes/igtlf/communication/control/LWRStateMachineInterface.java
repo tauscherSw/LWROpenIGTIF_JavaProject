@@ -33,11 +33,11 @@ import com.kuka.common.StatisticTimer;
 import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
+
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
 import de.uniHannover.imes.igtlf.communication.IGTLMsg;
-import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
@@ -340,7 +340,7 @@ public class LWRStateMachineInterface extends Thread {
 	try {
 	    if (!communicator.isClosed()) {
 		sendIGTStringMessage(getAckMsg()
-			+ comDataSink.getCurrentCommand().getUid() + ";");
+			+ comDataSink.getCurrentCmdPacket().getUid() + ";");
 	    }
 	} catch (Exception e1) {
 	    log.error("StateMachineIF: Couldn't Send ACk data");
@@ -360,7 +360,7 @@ public class LWRStateMachineInterface extends Thread {
 		    receiveMessage(); // TODO deal with Runtime exceptions
 				      // properly
 		    sendIGTStringMessage(getAckMsg()
-			    + comDataSink.getCurrentCommand().getUid() + ";");
+			    + comDataSink.getCurrentCmdPacket().getUid() + ";");
 		} catch (IOException e) {
 		    connectionErrCounter++;
 		}

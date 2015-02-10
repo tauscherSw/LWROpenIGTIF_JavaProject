@@ -39,7 +39,10 @@ import com.kuka.roboticsAPI.deviceModel.JointPosition;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
+import com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer11_OmitComments;
 
+import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
 
 /**
@@ -64,15 +67,15 @@ public class LwrStatemachine {
      * VirtualFixtures, PathImp, MovetoPose, Error}possible client states.
      */
     public static enum LWRStatus {
-	/** LWR is in gravity compensation state.*/
-	GravComp, 
-	/** LWR is in idle state.*/
-	IDLE, 
-	/** LWR moves to a pose.*/
-	MovetoPose, 
-	/** LWR is in path impedance mode.*/
-	PathImp, 
-	/** LWR is in virtual-fixture mode.*/
+	/** LWR is in gravity compensation state. */
+	GravComp,
+	/** LWR is in idle state. */
+	IDLE,
+	/** LWR moves to a pose. */
+	MovetoPose,
+	/** LWR is in path impedance mode. */
+	PathImp,
+	/** LWR is in virtual-fixture mode. */
 	VirtualFixtures
     }
 
@@ -116,7 +119,7 @@ public class LwrStatemachine {
 	NotFound(4),
 	/** Ok (Default status. */
 	Ok(1),
-	/** Overflow / Can't be reached.*/
+	/** Overflow / Can't be reached. */
 	Overflow(8),
 	/** Panic mode. */
 	PanicMode(3),
@@ -155,13 +158,14 @@ public class LwrStatemachine {
 			+ " are supported.");
 	    }
 	}
-	
-	/** Method to access the error numbers.
+
+	/**
+	 * Method to access the error numbers.
 	 * 
 	 * @return the error number of the current error code.
 	 */
 	public int getErrorNumber() {
-	
+
 	    return (new Integer(errorNumber));
 	}
     }
@@ -169,72 +173,93 @@ public class LwrStatemachine {
     /**
      * ACknowledgement OpenIGTLink Message for the state machine Interface.
      */
-    public String ackIgtMsg = null;//TODO design failure field is accessed/written from the outside.
-
-    /**
-     * Command OpenIGTLink Message for the state machine interface.
-     */
-    public String cmdIgtMsg = null; //TODO design failure field is accessed/written from the outside.
+    public String ackIgtMsg = null;// TODO design failure field is
+				   // accessed/written from the outside.
 
     /**
      * The command pose in Cartesian space of the LWR in robot coordinates.
      */
-    public MatrixTransformation cmdPose; //TODO design failure field is accessed/written from the outside.
+    public MatrixTransformation cmdPose; // TODO design failure field is
+					 // accessed/written from the outside.
 
     /**
      * The control mode of the operated state machine.
      */
-    public IMotionControlMode controlMode; //TODO design failure field is accessed/written from the outside.
+    public IMotionControlMode controlMode; // TODO design failure field is
+					   // accessed/written from the outside.
     /**
-     * Current Stiffness of the LWR as a 1x6 
-     * stiffness vector (x, y, z, A, B, C).
+     * Current Stiffness of the LWR as a 1x6 stiffness vector (x, y, z, A, B,
+     * C).
      */
-    public int[] curCartStiffness = { 0, 0, 0, 0, 0, 0 }; //TODO design failure field is accessed/written from the outside.
+    public int[] curCartStiffness = { 0, 0, 0, 0, 0, 0 }; // TODO design failure
+							  // field is
+							  // accessed/written
+							  // from the outside.
 
     /**
      * Current Joint Position of the LWR received via SmartServo.
      */
-    public JointPosition curJntPose; //TODO design failure field is accessed/written from the outside.
+    public JointPosition curJntPose; // TODO design failure field is
+				     // accessed/written from the outside.
     /**
      * The current pose in Cartesian space of the LWR in robot coordinates.
      */
-    public MatrixTransformation curPose; //TODO design failure field is accessed/written from the outside.
+    public MatrixTransformation curPose; // TODO design failure field is
+					 // accessed/written from the outside.
 
     /**
      * Represents the current datatype of the visualization interface.
      */
-    public VisualIFDatatypes currentVisualIFDatatype = 
-	    VisualIFDatatypes.ROBOTBASE; //TODO design failure field is accessed/written from the outside.
+    public VisualIFDatatypes currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE; // TODO
+										    // design
+										    // failure
+										    // field
+										    // is
+										    // accessed/written
+										    // from
+										    // the
+										    // outside.
 
     /**
      * Flag to identify if the StateMachine should be Stopped.The robot state is
      * set to IDLE and the robot is holding the current position.
      */
-    public boolean End = false; //TODO design failure field is accessed/written from the outside.
+    public boolean End = false; // TODO design failure field is accessed/written
+				// from the outside.
 
     /** the current ErrorCode. */
-    public OpenIGTLinkErrorCode ErrorCode = OpenIGTLinkErrorCode.Ok; //TODO design failure field is accessed/written from the outside.
+    public OpenIGTLinkErrorCode ErrorCode = OpenIGTLinkErrorCode.Ok; // TODO
+								     // design
+								     // failure
+								     // field is
+								     // accessed/written
+								     // from the
+								     // outside.
 
     /**
      * Flag to identify if the LWR State was changed in the current cycle.
      */
-    public boolean ErrorFlag = false; //TODO design failure field is accessed/written from the outside.
+    public boolean ErrorFlag = false; // TODO design failure field is
+				      // accessed/written from the outside.
 
     /**
      * Error Message which is attached to the OpenIGT Status Message in cas e of
      * an error.
      */
-    public String ErrorMessage = ""; //TODO design failure field is accessed/written from the outside.
+    public String ErrorMessage = ""; // TODO design failure field is
+				     // accessed/written from the outside.
 
     /**
      * String containing the data type of the IGTLink Message which is received.
      */
-    public String IGTLdatatype = "STRING"; //TODO design failure field is accessed from the outside.
+    private String igtlDatatype = "STRING"; // TODO design failure field is
+					    // accessed from the outside.
 
     /**
      * Flag to identify if the LWR State was changed in the current cycle.
      */
-    public boolean InitFlag = true; //TODO design failure field is accessed/written from the outside.
+    public boolean stateChanged = true; // TODO design failure field is
+					// accessed/written from the outside.
 
     /**
      * String containing the last printed Error Message. This String is used to
@@ -246,60 +271,71 @@ public class LwrStatemachine {
      * The current State of the LWR state machine.
      */
     private ILwrState mCurrentState;
+    
+    /** the current newest command packet.*/
+    private CommandPacket currentPacket;
+
+    /**
+     * Gains access to the cyclically received data from the igtl client.
+     */
+    private final CommunicationDataProvider dataSink;
 
     /**
      * SubString containing the Parameters set of the received Command String,
      * e.g. the VirtualFixtures definition or the destination point for
      * MoveTo/Path.
      */
-    public String paramString = ""; //TODO design failure field is accessed/written from the outside.
+    private String paramString = "";
 
     /**
      * UID of the Pose gotten via SmartServo. The value is increased each time
      * new data is read from the robot.
      */
-    public int poseUid = 0; //TODO design failure field is accessed/written from the outside.
+    public long poseUid = 0; // TODO design failure field is accessed/written
+			     // from the outside.
 
     /**
      * visualInterfaceDatatype.Robotbase current status of the client status.
      */
-    public LWRStatus RobotState = LWRStatus.IDLE; //TODO design failure field is accessed/written from the outside.
+    public LWRStatus RobotState = LWRStatus.IDLE; // TODO design failure field
+						  // is accessed/written from
+						  // the outside.
 
     /**
      * Flag to identify if the Visualization should be started or not.
      */
-    public boolean StartVisual = false; //TODO design failure field is accessed/written from the outside.
+    public boolean StartVisual = false; // TODO design failure field is
+					// accessed/written from the outside.
     /**
      * Vector containing the force estimated at the tool center point by the
      * internal torque sensors.
      */
-    public Vector tcpForce;//TODO design failure field is accessed/written from the outside.
+    public Vector tcpForce;// TODO design failure field is accessed/written from
+			   // the outside.
     /**
      * Flag to identify if the Transform from image to robot space was
      * successfully .
      */
-    public boolean transformReceivedFlag = false; //TODO design failure field is accessed/written from the outside.
- 
-    /**
-     * The Transformation from the robot coordinate system or to the images
-     * space coordinate system.
-     */
-    public MatrixTransformation transfRobotImg; //TODO design failure field is accessed/written from the outside.
+    private boolean transformReceivedFlag = false;
 
-    /**
-     * Current State machine UID.
-     */
-    public long UID = 0; //TODO design failure field is accessed/written from the outside.
 
     /**
      * Constructor of LWRStatemachine. The Current state is set to the save
      * state Idle
+     * 
+     * @param dataProvider
+     *            the data provider for the cyclically sent data from the
+     *            openIGTL client.
      */
-    public LwrStatemachine() {
+    public LwrStatemachine(final CommunicationDataProvider dataProvider) {
+	if (null == dataProvider) {
+	    throw new NullPointerException(
+		    "Communication data provider argument is null");
+	}
+	dataSink = dataProvider;
 	mCurrentState = new LwrIdle();
 	ackIgtMsg = "IDLE;";
-	cmdIgtMsg = "IDLE;";
-	InitFlag = true;
+	stateChanged = true;
 	transformReceivedFlag = false;
 	ErrorCode = OpenIGTLinkErrorCode.Ok;
 
@@ -368,10 +404,10 @@ public class LwrStatemachine {
      */
     public void checkTransitionRequest() {
 	// First Check if the received OpenIGTLink was a String
-	if (this.IGTLdatatype.equals("STRING")) {
+	if (this.igtlDatatype.equals("STRING")) {
 	    // this.InitFlag = false;
 	    String cmdString;
-	    cmdString = cmdIgtMsg;
+	    cmdString = currentPacket.getCmdString();
 	    // Split String into a String array with ";" as a separator
 	    String[] cmdArray = cmdString.split(";");
 	    // Check if the recieved State is the current State
@@ -384,7 +420,7 @@ public class LwrStatemachine {
 			    .indexOf(";"));
 		    // If paramter Set changed then re-init the state
 		    if (!paramString.equals(newParamString)) {
-			this.InitFlag = true;
+			this.stateChanged = true;
 		    }
 		}
 	    } else { // If not check if the Transition is allowed
@@ -392,20 +428,20 @@ public class LwrStatemachine {
 		// Check if the Transition Request is allowed and change the
 		// State if it is allowed
 		if (cmdArray[0].contentEquals("IDLE")) { // Transition Request
-							  // equal "IDLE"
+							 // equal "IDLE"
 		    // ToDO: Add check if it is allowed e.g. if(flagX && flagY
 		    // &&flagZ || ...) what ever you want
 		    LwrIdle newState = new LwrIdle();
-		    this.InitFlag = true;
+		    this.stateChanged = true;
 		    this.changeLWRState(newState);
 		    this.ErrorFlag = false;
 		    RobotState = LWRStatus.IDLE;
 		    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 
 		} else if (cmdArray[0].contentEquals("GravComp")) { // Transition
-								     // Request
-								     // equal
-								     // "GravComp"
+								    // Request
+								    // equal
+								    // "GravComp"
 		    if (RobotState == LWRStatus.IDLE
 			    || RobotState == LWRStatus.VirtualFixtures
 			    || RobotState == LWRStatus.PathImp) {
@@ -415,7 +451,7 @@ public class LwrStatemachine {
 			this.changeLWRState(newState);
 			this.ErrorFlag = false;
 			// Set the init flag true
-			this.InitFlag = true;
+			this.stateChanged = true;
 			RobotState = LWRStatus.GravComp;
 			this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 		    } else {
@@ -423,7 +459,7 @@ public class LwrStatemachine {
 			ErrorFlag = true;
 			this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 		    }
-		} else if (cmdArray[0].contentEquals("VirtualFixtures")) { //Transition
+		} else if (cmdArray[0].contentEquals("VirtualFixtures")) { // Transition
 									   // Request
 									   // equal
 									   // "VirtualFixtures"
@@ -437,23 +473,22 @@ public class LwrStatemachine {
 
 			    this.changeLWRState(newState);
 			    // Set the init flag true
-			    this.InitFlag = true;
+			    this.stateChanged = true;
 			    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			    RobotState = LWRStatus.VirtualFixtures;
 
 			    // Check if the correct numbers of parameters was
 			    // received
 			} else {
-			    this.ErrorMessage = 
-				    ("Not enough Parameters recieved for the VirtualFixture"
-				    	+ " State (recieved : " + cmdArray.length + ", "
-				    		+ "expected : 9)");
+			    this.ErrorMessage = ("Not enough Parameters recieved for the VirtualFixture"
+				    + " State (recieved : "
+				    + cmdArray.length
+				    + ", " + "expected : 9)");
 			    ErrorFlag = true;
 			    this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 			}
 		    } else {
-			this.ErrorMessage = 
-				("Transition to State VirtualFixtures is not allowed!");
+			this.ErrorMessage = ("Transition to State VirtualFixtures is not allowed!");
 			ErrorFlag = true;
 			this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 		    }
@@ -467,7 +502,7 @@ public class LwrStatemachine {
 			    LwrPathImp newState = new LwrPathImp();
 			    this.changeLWRState(newState);
 			    // Set the init flag true
-			    this.InitFlag = true;
+			    this.stateChanged = true;
 			    this.ErrorFlag = false;
 			    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			    RobotState = LWRStatus.PathImp;
@@ -475,9 +510,8 @@ public class LwrStatemachine {
 			    // Check if the correct numbers of parameters was
 			    // received
 			} else {
-			    this.ErrorMessage = 
-				    ("Unexpected number of parameters recieved for the "
-				    	+ "PathImp State (recieved : "
+			    this.ErrorMessage = ("Unexpected number of parameters recieved for the "
+				    + "PathImp State (recieved : "
 				    + cmdArray.length + ", expected : 5)");
 			    this.ErrorFlag = true;
 			    this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
@@ -491,12 +525,14 @@ public class LwrStatemachine {
 		} else if (cmdArray[0].contentEquals("MoveToPose")) {
 		    // ToDO: Add check if it is allowed e.g. if(flagX && flagY
 		    // &&flagZ || ...) what ever you want
-		    if (RobotState == LWRStatus.IDLE && this.transformReceivedFlag) {
+		    if (RobotState == LWRStatus.IDLE
+			    && this.transformReceivedFlag) {
 			LwrMoveToPose newState = new LwrMoveToPose();
-			if (cmdArray.length != 8) { //TODO insert enum for different command array lengths.
-			    this.ErrorMessage = 
-				    ("Unexpected number of parameters recieved for "
-				    	+ "the MovetoPose State (recieved : "
+			if (cmdArray.length != 8) { // TODO insert enum for
+						    // different command array
+						    // lengths.
+			    this.ErrorMessage = ("Unexpected number of parameters recieved for "
+				    + "the MovetoPose State (recieved : "
 				    + cmdArray.length + ", expected : 8)");
 			    this.ErrorFlag = true;
 			    this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
@@ -504,14 +540,13 @@ public class LwrStatemachine {
 			} else {
 			    this.changeLWRState(newState);
 			    // Set the init flag true
-			    this.InitFlag = true;
+			    this.stateChanged = true;
 			    this.ErrorFlag = false;
 			    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			    RobotState = LWRStatus.MovetoPose;
 			}
 		    } else {
-			this.ErrorMessage = 
-				("Transition to State MoveToPose is not allowed!");
+			this.ErrorMessage = ("Transition to State MoveToPose is not allowed!");
 			ErrorFlag = true;
 			this.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction;
 		    }
@@ -548,13 +583,12 @@ public class LwrStatemachine {
 		    // ToDO: Add check if it is allowed e.g. if(flagX && flagY
 		    // &&flagZ || ...) what ever you want
 		    if (cmdArray.length != 3) {
-			this.ErrorMessage = 
-				("Unexpected number of parameters recieved "
-					+ "to Start the Visual interface (recieved : "
+			this.ErrorMessage = ("Unexpected number of parameters recieved "
+				+ "to Start the Visual interface (recieved : "
 				+ cmdArray.length + ", expected : 5)");
 			this.ErrorFlag = true;
 			this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
-			this.InitFlag = false;
+			this.stateChanged = false;
 		    } else {
 			if (cmdArray[1].contentEquals("true")
 				&& !this.StartVisual) {
@@ -577,7 +611,7 @@ public class LwrStatemachine {
 				    .println("StateMachine: Visual IF stopped!");
 			}
 			this.ErrorCode = OpenIGTLinkErrorCode.Ok;
-			this.InitFlag = false;
+			this.stateChanged = false;
 
 		    }
 		    // Now checking if the command to stop the State machine
@@ -586,40 +620,42 @@ public class LwrStatemachine {
 			|| cmdArray[0].contentEquals("End")
 			|| cmdArray[0].contentEquals("Quit")) {
 		    this.End = true;
-		    this.InitFlag = true;
+		    this.stateChanged = true;
 		    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 		    LwrIdle newState = new LwrIdle();
 		    this.changeLWRState(newState);
 		    RobotState = LWRStatus.IDLE;
 
 		} else {
-		    this.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction; 
-		    this.ErrorMessage = 
-			    "Unexpected COMMAND recieved! See the list of "
+		    this.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction;
+		    this.ErrorMessage = "Unexpected COMMAND recieved! See the list of "
 			    + "supported Commands (received: "
-			    + cmdArray[0] + ")";
+			    + cmdArray[0]
+			    + ")";
 		    this.ErrorFlag = true;
 
 		}
 		if (this.ErrorFlag) {
-		    this.InitFlag = false;
+		    this.stateChanged = false;
 		}
 
 	    }
 	    // If the State was Changed then interpret the CMD Packet according
 	    // to the Current stat
-	    if (this.InitFlag && !this.ErrorFlag) {
-		this.mCurrentState.interpretCmdPacket(this);
+	    if (this.stateChanged && !this.ErrorFlag) {
+		this.mCurrentState.interpretCmdPacket(this, null);
 	    }
 	} else {
-	    this.InitFlag = false;
+	    this.stateChanged = false;
 	}
 
     }
 
     /**
      * Prints the error messages from the state machine application.
-     * @param debugInfo flag, if set to true details will be printed out.
+     * 
+     * @param debugInfo
+     *            flag, if set to true details will be printed out.
      */
     public final void errHandler(final boolean debugInfo) {
 	if (this.ErrorFlag) {
@@ -634,14 +670,14 @@ public class LwrStatemachine {
 			    || RobotState == LWRStatus.GravComp) {
 			LwrIdle newState = new LwrIdle();
 			changeLWRState(newState);
-			this.InitFlag = true;
+			this.stateChanged = true;
 			RobotState = LWRStatus.IDLE;
 		    } else if (RobotState == LWRStatus.VirtualFixtures
 			    || RobotState == LWRStatus.PathImp
 			    || RobotState == LWRStatus.MovetoPose) {
 			LwrIdle newState = new LwrIdle();
 			changeLWRState(newState);
-			this.InitFlag = true;
+			this.stateChanged = true;
 			RobotState = LWRStatus.IDLE;
 		    }
 		}
@@ -664,7 +700,7 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public final void interpretCmdPacket() {
-	mCurrentState.interpretCmdPacket(this);
+	mCurrentState.interpretCmdPacket(this, currentPacket);
     }
 
     /**
@@ -679,6 +715,31 @@ public class LwrStatemachine {
      */
     public final void setAckPacket() {
 	mCurrentState.setAckPacket(this);
+    }
+
+    /**
+     * When called, then the statemachine will ask the communication data
+     * provider for a new cmd packet and therefore update its uid, cmd string,
+     * transform received flag and its igtldatatype.
+     */
+    public final void updateData() {
+	currentPacket = dataSink.getCurrentCmdPacket();
+	if (currentPacket.isTransformReceived()) {
+	    igtlDatatype = "TRANSFORM";
+	} else {
+	    igtlDatatype = "STRING";
+	}
+
+    }
+
+    /**
+     * Setter for the parameter string.
+     * 
+     * @param paramStr
+     *            the new parameter string.
+     */
+    public final void setParamString(final String paramStr) {
+	this.paramString = paramStr;
     }
 
 }

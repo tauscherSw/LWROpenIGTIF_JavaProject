@@ -1,4 +1,4 @@
-package de.uniHannover.imes.igtlf.communication.messages;
+package de.uniHannover.imes.igtlf.communication.control;
 
 /**
  * This class represents all runtime exception, which occur during processing

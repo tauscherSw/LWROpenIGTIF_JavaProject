@@ -41,7 +41,6 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.control.LWRStateMachineInterface;
-import de.uniHannover.imes.igtlf.communication.messages.Command;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
 
@@ -493,7 +492,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * Initializes the state machine.
      */
     private void initStateMachine() {
-	imesStatemachine = new LwrStatemachine();
+	imesStatemachine = new LwrStatemachine(comDataProvider);
 	imesStatemachine.StartVisual = true;
 
 	MatrixTransformation currentPose = MatrixTransformation
@@ -607,23 +606,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		if (slicerVisualIf.isEnabled()) {
 
-		    // try {
-		    //
-		    // slicerVisualIf.poseUid = imesStatemachine.poseUid;
-		    // slicerVisualIf.TCPForce = imesStatemachine.tcpForce;
-		    // slicerVisualIf.sendTcpForce = true;
-		    // updatePose();
-		    // slicerVisualIf.visualSema.release();
-		    // }
-		    //
-		    // else {
-		    // errMsg = "Error: Couldn't acquire VisualIF Semaphore!!";
-		    // // TODO exception concept.
-		    // }
-		    // } catch (InterruptedException e) {
-		    // e.printStackTrace();
-		    // // TODO exception concept.
-		    // }
 		    slicerVisualIf.setSenderConfiguration(null, true);
 		    slicerVisualIf.updateData();
 		}
@@ -664,22 +646,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		// If SlicerControl Interface Thread is running...
 		if (slicerControlIf.comRunning) {
 
+		    //update the data in the state machine and reset error counter.
 		    i = 0;
-		    // Try to read new command String from SlicerControl (Alive)
-		    // Thread
-
-		    Command curCommand = comDataProvider.getCurrentCommand();
-		    imesStatemachine.cmdIgtMsg = curCommand.getCmdString();
-		    imesStatemachine.IGTLdatatype = comDataProvider
-			    .getCurrentMsgType(); // TODO Datatype correct
-						  // extraction
-		    imesStatemachine.UID = curCommand.getUid();
-		    if (comDataProvider.transformReceived()
-			    && !imesStatemachine.transformReceivedFlag) {
-			imesStatemachine.transfRobotImg = comDataProvider
-				.getCurrentExtTransform();
-			imesStatemachine.transformReceivedFlag = true;
-		    }
+		    imesStatemachine.updateData();
+		    
 		} else { // if it is not to Error handling
 		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
 		    errMsg = "Slicer Control Interface not Alive...";
@@ -695,7 +665,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 							   // return a boolean
 
 		// If the State has changed print the new State
-		if (imesStatemachine.InitFlag) {
+		if (imesStatemachine.stateChanged) {
 		    System.out.println("Robot State has Changed to:"
 			    + imesStatemachine.RobotState.name());
 

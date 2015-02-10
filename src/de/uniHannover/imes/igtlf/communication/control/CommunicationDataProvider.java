@@ -12,8 +12,6 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
 import de.uniHannover.imes.igtlf.communication.IGTLMsg;
-import de.uniHannover.imes.igtlf.communication.messages.Command;
-import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
 
 /**
  * This class represents the communication data, which is exchanged via the
@@ -73,25 +71,11 @@ public class CommunicationDataProvider extends Observable {
      */
     private static final int MAX_EQUAL_UIDS = 4;
 
-    /** The message type of the current message. */
-    private IgtlMsgType curMsgType = null;
-
     /** Logging object. */
     private ITaskLogger logger;
 
     /** the current and newest command received via openIGTL. */
-    private Command curCommand = null;
-    /**
-     * The current and newest external transformation matrix received via
-     * openIGTL.
-     */
-    private MatrixTransformation curExtTrafo = null;
-
-    /**
-     * Flag, which indicates if the current received message contains a
-     * transform.
-     */
-    private boolean curMsgContainsTransform = false;
+    private CommandPacket curPacket = null;
 
     /**
      * delay loops between receiving and sending a packet with the same UID
@@ -140,8 +124,10 @@ public class CommunicationDataProvider extends Observable {
 	//
 	// If the current processed message is the first one, fields have to be
 	// initialized.
-	if (curCommand == null) {
-	    curCommand = new Command(0, "IDLE;");
+	if (curPacket == null) {
+	    // initialize the current command packet.
+	    curPacket = new CommandPacket("IDLE;", IgtlMsgType.Command, 0,
+		    null, false);
 	}
 
 	/*
@@ -149,13 +135,22 @@ public class CommunicationDataProvider extends Observable {
 	 */
 	final String messageType = getMessageType(message.getHeader());
 	final String deviceName = getDeviceName(message.getHeader());
-	long uid = 0;
+
+	/*
+	 * Define the data belonging to the current command packet.
+	 */
+	IgtlMsgType tmpMsgType = null;
+	boolean tmpTransformReceived = false;
+	long tmpUid = 0;
+	String tmpCmdString;
+	MatrixTransformation tmpExtTrafo;
+
 	// Read uid only if message type was a command.
 	if (messageType.equalsIgnoreCase(IgtlMsgType.Command.getTypeName())) {
-	    curMsgType = IgtlMsgType.Command;
-	    uid = getUid(deviceName);
-	    updateUIDStatistics(uid);
-	    curMsgContainsTransform = false;
+	    tmpMsgType = IgtlMsgType.Command;
+	    tmpUid = getUid(deviceName);
+	    updateUIDStatistics(tmpUid);
+	    tmpTransformReceived = false;
 	}
 
 	/*
@@ -164,34 +159,34 @@ public class CommunicationDataProvider extends Observable {
 	 * return.
 	 */
 	if (messageType.equalsIgnoreCase(IgtlMsgType.Transform.getTypeName())
-		|| curCommand.getUid() < uid) {
+		|| curPacket.getUid() < tmpUid) {
 
 	    /*
 	     * Process body bytes and extract information.
 	     */
 	    if (messageType.equalsIgnoreCase(IgtlMsgType.Command.getTypeName())) {
-		final String cmdString = getCommandString(message.getBody());
-		curMsgType = IgtlMsgType.Command;
-		curCommand = new Command(uid, cmdString);
-		// TODO @Tobi Observer
-		setChanged();
-		notifyObservers(curMsgType);
-		curMsgContainsTransform = false;
+		tmpCmdString = getCommandString(message.getBody());
+		tmpExtTrafo = curPacket.getTrafo();
 
 	    } else if (messageType.equalsIgnoreCase(IgtlMsgType.Transform
 		    .getTypeName())) {
-		curMsgType = IgtlMsgType.Transform;
-		curExtTrafo = getTrafo(message.getBody());
-		curMsgContainsTransform = true;
-		// TODO @Tobi Observer
-		setChanged();
-		notifyObservers(curMsgType);
+		tmpCmdString = curPacket.getCmdString(); // when transform
+							 // received cmd string
+							 // doesn't change
+		tmpMsgType = IgtlMsgType.Transform;
+		tmpUid = curPacket.getUid(); // ignore new uid when command is
+					     // transform
+		tmpExtTrafo = getTrafo(message.getBody());
+		tmpTransformReceived = true;
 
 	    } else {
 		throw new UnknownCommandException("Message type: "
 			+ messageType + " is unknown.");
 	    }
 
+	    // Set here new command packet.
+	    curPacket = new CommandPacket(tmpCmdString, tmpMsgType, tmpUid,
+		    tmpExtTrafo, tmpTransformReceived);
 	    return true;
 	} else {
 	    return false;
@@ -207,7 +202,7 @@ public class CommunicationDataProvider extends Observable {
      *            the uid of the current message.
      */
     private void updateUIDStatistics(final long uid) {
-	uidDelay = uid - curCommand.getUid();
+	uidDelay = uid - curPacket.getUid();
 	if (uidDelay == 0) {
 	    if (uidRepeat == 0) {
 		uidRepeatCount++;
@@ -353,25 +348,6 @@ public class CommunicationDataProvider extends Observable {
     }
 
     /**
-     * Thread safe getter for the current command received via openIGTL.
-     * 
-     * @return the current command object.
-     */
-    public final synchronized Command getCurrentCommand() {
-	return curCommand;
-    }
-
-    /**
-     * Thread safe getter for the current external transformation received via
-     * openIGTL.
-     * 
-     * @return the transformation object.
-     */
-    public final synchronized MatrixTransformation getCurrentExtTransform() {
-	return curExtTrafo;
-    }
-
-    /**
      * Gives statistics about uid misses.
      * 
      * @return a String containing the number of missed uids, the number of
@@ -383,24 +359,15 @@ public class CommunicationDataProvider extends Observable {
     }
 
     /**
-     * Getter for the flag, which indicates if the current (newest) received
-     * message has an external transform.
+     * Getter for the current and latest command packet received from the
+     * openIGTL client.
      * 
-     * @return true if the current (newest) received message has an external
-     *         transform otherwise false.
+     * @return the command packet.
      */
-    public final synchronized boolean transformReceived() {
-	return curMsgContainsTransform;
-
-    }
-
-    /**
-     * Return the type of the current (newest) message.
-     * 
-     * @return the type of the current message.
-     */
-    public final synchronized IgtlMsgType getCurrentMsgType() {
-	return curMsgType;
+    public final CommandPacket getCurrentCmdPacket() {
+	synchronized (curPacket) {
+	    return curPacket;
+	}
     }
 
 }

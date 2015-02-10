@@ -24,8 +24,9 @@ package de.uniHannover.imes.igtIf.stateMachine;
 
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
-import com.kuka.roboticsAPI.motionModel.controlModeModel
-.CartesianImpedanceControlMode;
+import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
+
+import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 
 /**
  * In this state the LWR is holding its position with a maximum stiffness. This
@@ -35,16 +36,17 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel
  * @version 0.1
  */
 class LwrIdle implements ILwrState {
-    /** Flag for increasing the stiffness params of the robot.*/
+    /** Flag for increasing the stiffness params of the robot. */
     private boolean incStiffness = false;
-    
-    /**Maximum allowed change in translational stiffness value per cycle in N/m.*/
+
+    /**
+     * Maximum allowed change in translational stiffness value per cycle in N/m.
+     */
     private static final int MAX_DELTA_STIFFNESS_TRANS = 100;
-    
-    /**Maximum allowed change in rotational stiffness value per cycle in rad/m.*/
+
+    /** Maximum allowed change in rotational stiffness value per cycle in rad/m. */
     private static final int MAX_DELTA_STIFFNESS_ROT = 30;
-    
-    
+
     /**
      * Maximum cartesian stiffness in N/m.
      */
@@ -73,8 +75,7 @@ class LwrIdle implements ILwrState {
 	final double aTransStiffVal = 5000;
 	final double aRotStiffVal = 300;
 	final int numOfDeltaStiffnessParam = 6;
-	CartesianImpedanceControlMode cartImp = 
-		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 	int[] deltaStiffness = new int[numOfDeltaStiffnessParam];
 	int[] newStiffness = { (int) aTransStiffVal, (int) aTransStiffVal,
 		(int) aTransStiffVal, (int) aRotStiffVal, (int) aRotStiffVal,
@@ -88,9 +89,9 @@ class LwrIdle implements ILwrState {
 	Vector deltaStiffnessRot = Vector.of(deltaStiffness[3],
 		deltaStiffness[4], deltaStiffness[5]);
 
-	if (lwrStatemachine.InitFlag) {
+	if (lwrStatemachine.stateChanged) {
 
-	    if (deltaStiffnessTrans.length() <=  MAX_DELTA_STIFFNESS_TRANS
+	    if (deltaStiffnessTrans.length() <= MAX_DELTA_STIFFNESS_TRANS
 		    && deltaStiffnessRot.length() <= MAX_DELTA_STIFFNESS_ROT) {
 		cartImp.parametrize(CartDOF.TRANSL)
 			.setStiffness(aTransStiffVal);
@@ -104,18 +105,19 @@ class LwrIdle implements ILwrState {
 		incStiffness = true;
 
 	    }
-	    lwrStatemachine.InitFlag = false;
+	    lwrStatemachine.stateChanged = false;
 	}
 	if (incStiffness) {
 	    boolean increaseTrans = true;
 	    boolean increaseRot = true;
-	    if (deltaStiffnessTrans.length() >  MAX_DELTA_STIFFNESS_TRANS) {
+	    if (deltaStiffnessTrans.length() > MAX_DELTA_STIFFNESS_TRANS) {
 		for (int k = 0; k < 3; k++) {
 		    if (lwrStatemachine.curCartStiffness[k] <= MAX_CART_STIFFNESS) {
-			newStiffness[k] = 
-				lwrStatemachine.curCartStiffness[k] + CART_STIFFNESS_INCREMENT;
+			newStiffness[k] = lwrStatemachine.curCartStiffness[k]
+				+ CART_STIFFNESS_INCREMENT;
 		    } else {
-			newStiffness[k] = MAX_CART_STIFFNESS + CART_STIFFNESS_INCREMENT;
+			newStiffness[k] = MAX_CART_STIFFNESS
+				+ CART_STIFFNESS_INCREMENT;
 		    }
 		    lwrStatemachine.curCartStiffness[k] = newStiffness[k];
 		}
@@ -163,18 +165,21 @@ class LwrIdle implements ILwrState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
+     * @param cmdPacket
+     *            the packet to be interpreted.
      * @see ILwrState
      */
 
     @Override
-    public void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
-	
-	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
+    public void interpretCmdPacket(final LwrStatemachine lwrStatemachine,
+	    final CommandPacket cmdPacket) {
+
+	if (!cmdPacket.isTransformReceived()) {
 	    String cmdString;
 
-	    cmdString = lwrStatemachine.cmdIgtMsg;
-	    lwrStatemachine.paramString = cmdString.substring(cmdString
-		    .indexOf(";"));
+	    cmdString = cmdPacket.getCmdString();
+	    lwrStatemachine.setParamString(cmdString.substring(cmdString
+		    .indexOf(";")));
 
 	}
     }
@@ -189,7 +194,7 @@ class LwrIdle implements ILwrState {
      */
     @Override
     public void setAckPacket(final LwrStatemachine lwrStatemachine) {
-	
+
 	String ack;
 	ack = "IDLE;";
 	// Send the string to StateControl

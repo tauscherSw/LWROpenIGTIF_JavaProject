@@ -22,6 +22,8 @@
 
 package de.uniHannover.imes.igtIf.stateMachine;
 
+import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
+
 
 /**
  * Interface for the LWR States defining the Functions void
@@ -72,6 +74,7 @@ interface ILwrState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
+     * @param cmdPacket the packet to be interpreted.
      * @throws UnsupportedEncodingException
      * @see LwrIdle
      * @see LwrGravComp
@@ -79,7 +82,8 @@ interface ILwrState {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    void interpretCmdPacket(LwrStatemachine lwrStatemachine);
+    void interpretCmdPacket(LwrStatemachine lwrStatemachine
+	    , CommandPacket cmdPacket);
 
     /**
      * In this Function the Acknowledge String which is send to the State

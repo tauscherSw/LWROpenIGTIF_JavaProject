@@ -30,6 +30,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 
 /**
  * In This State the LWR is moving to a specified position in Cartesian space.
@@ -39,38 +40,45 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCo
  * @version 0.1
  */
 public class LwrMoveToPose implements ILwrState {
-    /** Cartesian-rotational stiffness in Nm/rad.*/
+    /** Cartesian-rotational stiffness in Nm/rad. */
     private static final int CART_ROT_STIFFNESS = 300;
-    /** Cartesian-translational stiffness in N/m.*/
+    /** Cartesian-translational stiffness in N/m. */
     private static final int CART_TRANSL_STIFFNESS = 5000;
-    /** Distance in mm, when path is interpreted as end-reached.*/
+    /** Distance in mm, when path is interpreted as end-reached. */
     private static final double END_OF_PATH_DEVIATION = 10;
-    /** Step length of movement in a cycle in mm.*/
+    /** Step length of movement in a cycle in mm. */
     private static final double LENGTH_OF_SINGLE_STEP = 10;
-    
-    
-    /** Current point on the linear path which is closest to the robot position*/
+
+    /** Current point on the linear path which is closest to the robot position */
     private Vector currentPointLine = null;
-    /** start point of the linear path towards target position*/
+    /** start point of the linear path towards target position */
     private Vector startPointLine = null;
-    /** 
-     * Flag indicating if the robot has reached the end of 
-     * the commanded path. 
+    /**
+     * Flag indicating if the robot has reached the end of the commanded path.
      */
     private boolean endOfPathFlag = false;
     /** Flag indicating if the robots pose data is represented in imagespace. */
     private boolean imageSpace = false;
-    /**Lambda which fulfills the equation: x_end = u*lambdaEnd + currentPointLine .*/
+    /**
+     * Lambda which fulfills the equation: x_end = u*lambdaEnd +
+     * currentPointLine .
+     */
     private double lambdaEnd = 0.0;
-    /**Lambda which fulfills the equation: x_end = u*lambdaNull + startPointLine .*/
+    /**
+     * Lambda which fulfills the equation: x_end = u*lambdaNull + startPointLine
+     * .
+     */
     private double lambdaNull = 0.0;
-    
-    /** Orientation of the target frame.*/
+
+    /** Orientation of the target frame. */
     private MatrixTransformation targetOri = null;
-    /** Translation of the target frame.*/
+    /** Translation of the target frame. */
     private Vector targetPos = null;
-    
-    /**Norm vector containing the direction of the linear path from strat point to End point*/
+
+    /**
+     * Norm vector containing the direction of the linear path from strat point
+     * to End point
+     */
     private Vector directionLine = null;
 
     /**
@@ -92,30 +100,31 @@ public class LwrMoveToPose implements ILwrState {
 	double d = 0.0;
 	double lambda = 0.0;
 
-	CartesianImpedanceControlMode cartImp = 
-		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 
-	if (lwrStatemachine.InitFlag) {
-	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(CART_TRANSL_STIFFNESS);
+	if (lwrStatemachine.stateChanged) {
+	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(
+		    CART_TRANSL_STIFFNESS);
 	    cartImp.parametrize(CartDOF.ROT).setStiffness(CART_ROT_STIFFNESS);
 	    cartImp.setNullSpaceStiffness(0);
-	    int[] newStiffness = { 
-		    CART_TRANSL_STIFFNESS, CART_TRANSL_STIFFNESS, CART_TRANSL_STIFFNESS, 
+	    int[] newStiffness = { CART_TRANSL_STIFFNESS,
+		    CART_TRANSL_STIFFNESS, CART_TRANSL_STIFFNESS,
 		    CART_ROT_STIFFNESS, CART_ROT_STIFFNESS, CART_ROT_STIFFNESS };
 	    lwrStatemachine.curCartStiffness = newStiffness;
-	    currentPointLine = Vector.of(lwrStatemachine.curPose.getTranslation().getX(),
-		    lwrStatemachine.curPose.getTranslation().getY(),
-		    lwrStatemachine.curPose.getTranslation().getZ());
+	    currentPointLine = Vector.of(lwrStatemachine.curPose
+		    .getTranslation().getX(), lwrStatemachine.curPose
+		    .getTranslation().getY(), lwrStatemachine.curPose
+		    .getTranslation().getZ());
 	    startPointLine = currentPointLine;
 	    directionLine = targetPos.subtract(currentPointLine).normalize();
 	    lambdaEnd = targetPos.subtract(currentPointLine).length();
-	    lwrStatemachine.InitFlag = false;
+	    lwrStatemachine.stateChanged = false;
 	}
 	curPosition = lwrStatemachine.curPose.getTranslation();
 	if (!endOfPathFlag) {
 	    if (curPosition.subtract(targetPos).length() < END_OF_PATH_DEVIATION) {
-		lwrStatemachine.cmdPose = MatrixTransformation.of(
-			targetPos, targetOri.getRotationMatrix());
+		lwrStatemachine.cmdPose = MatrixTransformation.of(targetPos,
+			targetOri.getRotationMatrix());
 		endOfPathFlag = true;
 	    } else {
 
@@ -123,12 +132,14 @@ public class LwrMoveToPose implements ILwrState {
 		lambda = d - directionLine.dotProduct(currentPointLine);
 		lambdaNull = d - directionLine.dotProduct(startPointLine);
 		if (lambdaNull >= 0 && lambdaNull <= lambdaEnd) {
-		    currentPointLine = currentPointLine.add(directionLine.multiply(lambda));
+		    currentPointLine = currentPointLine.add(directionLine
+			    .multiply(lambda));
 
 		}
 		aim = directionLine.multiply(LENGTH_OF_SINGLE_STEP);
 
-		lwrStatemachine.cmdPose = MatrixTransformation.of(currentPointLine.add(aim),
+		lwrStatemachine.cmdPose = MatrixTransformation.of(
+			currentPointLine.add(aim),
 			targetOri.getRotationMatrix());
 	    }
 	} else {
@@ -159,15 +170,18 @@ public class LwrMoveToPose implements ILwrState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
+     * @param cmdPacket
+     *            the packet to be interpreted.
      * @see ILwrState
      */
     @Override
-    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
-	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
+    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine,
+	    final CommandPacket cmdPacket) {
+	if (!cmdPacket.isTransformReceived()) {
 	    String cmdString;
-	    cmdString = lwrStatemachine.cmdIgtMsg;
-	    lwrStatemachine.paramString = cmdString.substring(cmdString
-		    .indexOf(";"));
+	    cmdString = cmdPacket.getCmdString();
+	    lwrStatemachine.setParamString(cmdString.substring(cmdString
+		    .indexOf(";")));
 	    String[] cmdArray = cmdString.split(";");
 	    if (cmdArray[1].contentEquals("img")) {
 		this.imageSpace = true;
@@ -182,26 +196,23 @@ public class LwrMoveToPose implements ILwrState {
 	    this.targetPos = Vector.of(Double.parseDouble(cmdArray[2]),
 		    Double.parseDouble(cmdArray[3]),
 		    Double.parseDouble(cmdArray[4]));
-	    this.targetOri = MatrixTransformation.of(
-		    Vector.of(0, 0, 0), Rotation.ofRad(
+	    this.targetOri = MatrixTransformation.of(Vector.of(0, 0, 0),
+		    Rotation.ofRad(
 			    Math.toRadians(Double.parseDouble(cmdArray[5])),
 			    Math.toRadians(Double.parseDouble(cmdArray[6])),
 			    Math.toRadians(Double.parseDouble(cmdArray[7]))));
-	    if (this.imageSpace && lwrStatemachine.transformReceivedFlag) {
-		MatrixTransformation tmp = MatrixTransformation.of(
-			targetPos, targetOri.getRotationMatrix());
-		tmp = lwrStatemachine.transfRobotImg.invert().compose(tmp);
+	    if (this.imageSpace && cmdPacket.isTransformReceived()) {
+		MatrixTransformation tmp = MatrixTransformation.of(targetPos,
+			targetOri.getRotationMatrix());
+		tmp = cmdPacket.getTrafo().invert().compose(tmp);
 		this.targetPos = tmp.getTranslation();
-		this.targetOri = tmp
-			.withTranslation(Vector.of(0, 0, 0));
+		this.targetOri = tmp.withTranslation(Vector.of(0, 0, 0));
 
 	    }
 
 	} else {
-	    lwrStatemachine.ErrorCode = 
-		    OpenIGTLinkErrorCode.IllegalInstruction;
-	    lwrStatemachine.ErrorMessage = 
-		    "Unexpected Messagetype recieved! Expected STRING";
+	    lwrStatemachine.ErrorCode = OpenIGTLinkErrorCode.IllegalInstruction;
+	    lwrStatemachine.ErrorMessage = "Unexpected Messagetype recieved! Expected STRING";
 	}
 
     }

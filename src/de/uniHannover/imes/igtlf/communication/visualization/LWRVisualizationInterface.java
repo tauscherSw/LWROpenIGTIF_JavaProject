@@ -832,7 +832,7 @@ public class LWRVisualizationInterface extends Thread {
 	    // read external transformation (for example transformation to an
 	    // image base coordinate system.
 	    final MatrixTransformation trafoExternalBase = comDataSink
-		    .getCurrentExtTransform();
+		    .getCurrentCmdPacket().getTrafo();
 
 	    // Construct current data set.
 	    currentDataSet.setData(

@@ -28,6 +28,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 
 /**
  * In This State the LWR can be moved along a linear Path in one direction to a
@@ -120,7 +121,7 @@ public class LwrPathImp implements ILwrState {
 	Vector aTransStiffVal = null;
 	int[] newStiffness = { 0, 0, 0, 0, 0, 0 };
 
-	if (lwrStatemachine.InitFlag) {
+	if (lwrStatemachine.stateChanged) {
 	    aim = Vector.of(0, 0, 0);
 	    targetOrientation = MatrixTransformation.of(Vector.of(0, 0, 0),
 		    lwrStatemachine.curPose.getRotation());
@@ -129,7 +130,7 @@ public class LwrPathImp implements ILwrState {
 		    lwrStatemachine.curPose.getTranslation().getZ());
 	    lambdaEnd = targetPosition.subtract(ap).length();
 	    u = targetPosition.subtract(ap).normalize();
-	    lwrStatemachine.InitFlag = false;
+	    lwrStatemachine.stateChanged = false;
 	}
 	curPosition = lwrStatemachine.curPose.getTranslation();
 
@@ -249,17 +250,20 @@ public class LwrPathImp implements ILwrState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
+     * @param cmdPacket
+     *            the packet to be interpreted.
      * @see ILwrState
      */
     @Override
-    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine) {
+    public final void interpretCmdPacket(final LwrStatemachine lwrStatemachine, 
+	    final CommandPacket cmdPacket) {
 
 	boolean err = false;
-	if (lwrStatemachine.IGTLdatatype.equals("STRING")) {
+	if (!cmdPacket.isTransformReceived()) {
 	    String cmdString;
-	    cmdString = lwrStatemachine.cmdIgtMsg;
-	    lwrStatemachine.paramString = cmdString.substring(cmdString
-		    .indexOf(";"));
+	    cmdString = cmdPacket.getCmdString();
+	    lwrStatemachine.setParamString(cmdString.substring(cmdString
+		    .indexOf(";")));
 	    String[] cmdArray = cmdString.split(";");
 	    if (cmdArray[1].contentEquals("img")) {
 		this.imageSpace = true;
@@ -275,12 +279,12 @@ public class LwrPathImp implements ILwrState {
 		    Double.parseDouble(cmdArray[4]));
 	    System.out.println("Targetposition...: " + this.targetPosition);
 
-	    if (this.imageSpace && lwrStatemachine.transformReceivedFlag) {
+	    if (this.imageSpace && cmdPacket.isTransformReceived()) {
 		Vector tmp;
-		tmp = lwrStatemachine.transfRobotImg
+		tmp = cmdPacket.getTrafo()
 			.invert()
 			.applyTo(targetPosition)
-			.add(lwrStatemachine.transfRobotImg.invert()
+			.add(cmdPacket.getTrafo().invert()
 				.getTranslation());
 		this.targetPosition = tmp;
 		System.out.println("After Transformation...: "
