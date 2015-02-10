@@ -500,7 +500,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	imesStatemachine.curPose = currentPose;
 	imesStatemachine.cmdPose = currentPose;
 	imesStatemachine.controlMode = controlMode;
-	imesStatemachine.currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
+	imesStatemachine.setVisualIfDatatype(VisualIFDatatypes.ROBOTBASE);
 
     }
 

@@ -210,15 +210,8 @@ public class LwrStatemachine {
     /**
      * Represents the current datatype of the visualization interface.
      */
-    public VisualIFDatatypes currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE; // TODO
-										    // design
-										    // failure
-										    // field
-										    // is
-										    // accessed/written
-										    // from
-										    // the
-										    // outside.
+    private VisualIFDatatypes currentVisualIFDatatype = 
+	    VisualIFDatatypes.ROBOTBASE;
 
     /**
      * Flag to identify if the StateMachine should be Stopped.The robot state is
@@ -271,8 +264,8 @@ public class LwrStatemachine {
      * The current State of the LWR state machine.
      */
     private ILwrState mCurrentState;
-    
-    /** the current newest command packet.*/
+
+    /** the current newest command packet. */
     private CommandPacket currentPacket;
 
     /**
@@ -317,7 +310,6 @@ public class LwrStatemachine {
      * successfully .
      */
     private boolean transformReceivedFlag = false;
-
 
     /**
      * Constructor of LWRStatemachine. The Current state is set to the save
@@ -594,15 +586,15 @@ public class LwrStatemachine {
 				&& !this.StartVisual) {
 			    this.StartVisual = true;
 			    if (cmdArray[2].contentEquals("jnt")) {
-				this.currentVisualIFDatatype = VisualIFDatatypes.JOINTSPACE;
+				setVisualIfDatatype(VisualIFDatatypes.JOINTSPACE);
 			    } else if (cmdArray[1].contentEquals("rob")) {
-				this.currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
+				setVisualIfDatatype(VisualIFDatatypes.ROBOTBASE);
 			    } else if (cmdArray[2].contentEquals("img")) {
-				this.currentVisualIFDatatype = VisualIFDatatypes.IMAGESPACE;
+				setVisualIfDatatype(VisualIFDatatypes.IMAGESPACE);
 			    }
 			    System.out
 				    .println("StateMachine: Visual IF started with  datatype "
-					    + this.currentVisualIFDatatype
+					    + getVisualIfDatatype()
 					    + "(1=img, 2=rob, 3=jnt)");
 			} else if (cmdArray[1].contentEquals("false")
 				&& this.StartVisual) {
@@ -740,6 +732,26 @@ public class LwrStatemachine {
      */
     public final void setParamString(final String paramStr) {
 	this.paramString = paramStr;
+    }
+
+    /**
+     * Getter for the current visualization interface datatype.
+     * 
+     * @return the datatype
+     */
+    public final VisualIFDatatypes getVisualIfDatatype() {
+	return currentVisualIFDatatype;
+    }
+
+    /**
+     * setter for the current visualization interface datatype.
+     * 
+     * @param datatype
+     *            the new datatype;
+     */
+    public final void setVisualIfDatatype(
+	    final VisualIFDatatypes datatype) {
+	this.currentVisualIFDatatype = datatype;
     }
 
 }
