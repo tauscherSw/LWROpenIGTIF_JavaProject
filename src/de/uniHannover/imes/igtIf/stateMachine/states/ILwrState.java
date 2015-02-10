@@ -20,8 +20,9 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	=========================================================================*/
 
-package de.uniHannover.imes.igtIf.stateMachine;
+package de.uniHannover.imes.igtIf.stateMachine.states;
 
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 
 
@@ -50,7 +51,7 @@ import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
  * @see LwrMoveToPose
  *
  */
-interface ILwrState {
+public interface ILwrState {
     /**
      * In this Function control Mode Parameters are set and the commanded pose
      * are calculated due the current LWR State. For Further information see the

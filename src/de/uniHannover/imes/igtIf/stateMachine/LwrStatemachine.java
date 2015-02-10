@@ -41,6 +41,12 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
 import com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer11_OmitComments;
 
+import de.uniHannover.imes.igtIf.stateMachine.states.ILwrState;
+import de.uniHannover.imes.igtIf.stateMachine.states.LwrGravComp;
+import de.uniHannover.imes.igtIf.stateMachine.states.LwrIdle;
+import de.uniHannover.imes.igtIf.stateMachine.states.LwrMoveToPose;
+import de.uniHannover.imes.igtIf.stateMachine.states.LwrPathImp;
+import de.uniHannover.imes.igtIf.stateMachine.states.LwrVirtualFixtures;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
