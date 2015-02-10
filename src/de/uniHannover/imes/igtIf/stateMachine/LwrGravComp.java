@@ -117,7 +117,7 @@ public class LwrGravComp implements ILwrState {
 
 	String ack;
 	ack = "GravComp;";
-	lwrStatemachine.ackIgtMsg = ack;
+	lwrStatemachine.setAckIgtMsg(ack);
 
     }
 }

@@ -173,8 +173,7 @@ public class LwrStatemachine {
     /**
      * ACknowledgement OpenIGTLink Message for the state machine Interface.
      */
-    public String ackIgtMsg = null;// TODO design failure field is
-				   // accessed/written from the outside.
+    private String ackIgtMsg = null;
 
     /**
      * The command pose in Cartesian space of the LWR in robot coordinates.
@@ -752,6 +751,22 @@ public class LwrStatemachine {
     public final void setVisualIfDatatype(
 	    final VisualIFDatatypes datatype) {
 	this.currentVisualIFDatatype = datatype;
+    }
+
+    /**
+     * Getter for the acknowledgement string message.
+     * @return the ack msg.
+     */
+    public final String getAckIgtMsg() {
+        return ackIgtMsg;
+    }
+
+    /**
+     * Setter for the acknowledgement string message.
+     * @param msg the new message.
+     */
+    public final void setAckIgtMsg(final String msg) {
+        this.ackIgtMsg = msg;
     }
 
 }

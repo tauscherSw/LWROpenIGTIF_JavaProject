@@ -705,7 +705,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		if (slicerControlIf.comRunning) {
 		    // try to update the ACK String for the ControlIF Thread
-		    slicerControlIf.setAckMsg(imesStatemachine.ackIgtMsg);
+		    slicerControlIf.setAckMsg(imesStatemachine.getAckIgtMsg());
 		}
 
 		if (!errMsg.equals(lastPrintedError)) {

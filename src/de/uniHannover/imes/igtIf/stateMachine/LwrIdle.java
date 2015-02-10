@@ -199,9 +199,9 @@ class LwrIdle implements ILwrState {
 	ack = "IDLE;";
 	// Send the string to StateControl
 	if (lwrStatemachine.End) {
-	    lwrStatemachine.ackIgtMsg = "SHUTDOWN;";
+	    lwrStatemachine.setAckIgtMsg("SHUTDOWN;");
 	} else {
-	    lwrStatemachine.ackIgtMsg = ack;
+	    lwrStatemachine.setAckIgtMsg(ack);
 	}
     }
 

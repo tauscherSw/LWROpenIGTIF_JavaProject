@@ -235,7 +235,7 @@ public class LwrMoveToPose implements ILwrState {
 	} else {
 	    ack = "MoveToPose;false;";
 	}
-	lwrStatemachine.ackIgtMsg = ack;
+	lwrStatemachine.setAckIgtMsg(ack);
     }
 
 }

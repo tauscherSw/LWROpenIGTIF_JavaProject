@@ -330,7 +330,7 @@ public class LwrPathImp implements ILwrState {
 	    }
 	}
 
-	lwrStatemachine.ackIgtMsg = ack;
+	lwrStatemachine.setAckIgtMsg(ack);
     }
 
 }

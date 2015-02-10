@@ -514,7 +514,7 @@ public class LwrVirtualFixtures implements ILwrState {
 	} else {
 	    ack = "VirtualFixtures;none;";
 	}
-	lwrStatemachine.ackIgtMsg = ack;
+	lwrStatemachine.setAckIgtMsg(ack);
     }
 
 }
