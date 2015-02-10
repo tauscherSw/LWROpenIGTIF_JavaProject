@@ -535,9 +535,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		"Statistic Timing of Statemachine interface thread "
 			+ slicerControlIf.SMtiming);
 	getLogger().info(
-		"UID miss: " + slicerControlIf.UIDmiss + " UIDrepeats: "
-			+ slicerControlIf.UIDrepeatNum + "(max: "
-			+ slicerControlIf.UIDrepeat_max + ")");
+		comDataProvider.getUidStatistics());
 	getLogger().info(
 		"Statistic Timing of Visualisation interface thread "
 			+ slicerVisualIf.visualTiming);

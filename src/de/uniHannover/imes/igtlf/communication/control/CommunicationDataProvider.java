@@ -326,4 +326,15 @@ public class CommunicationDataProvider extends Observable {
 	return currentExternalTrafo;
     }
 
+    /**
+     * Gives statistics about uid misses.
+     * 
+     * @return a String containing the number of missed uids, the number of
+     *         repeated uids and the maximum allowed number of repeated uids.
+     */
+    public final synchronized String getUidStatistics() {
+	return new String("UID miss: " + uidMiss + " UIDrepeats: "
+		+ uidRepeatCount + "(max: " + uidRepeatMax + ")");
+    }
+
 }
