@@ -24,15 +24,44 @@ import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
 public class CommunicationDataProvider extends Observable {
 
     /**
-     * The string which represents, that a message has to be interpreted as a
-     * command.
+     * Represents the different types of igtl-messages.
      */
-    private static final String MESSAGE_TYPE_COMMAND = "STRING";
-    /**
-     * The string which represents, that a message has to be interpreted as a
-     * transformation to an external base.
-     */
-    private static final String MESSAGE_TYPE_TRANSFORM = "TRANSFORM";
+    public enum IgtlMsgType {
+
+	/** A message containing just a command string. */
+	Command("COMMAND"),
+	/**
+	 * A message containing an transformation matrix to an external
+	 * reference frame.
+	 */
+	Transform("TRANSFORM");
+
+	/**
+	 * The name of the message type in upper letter case for comparability
+	 * of incoming messages.
+	 */
+	private final String curName;
+
+	/**
+	 * Constructs a message type.
+	 * 
+	 * @param name
+	 *            the name of the message.
+	 */
+	private IgtlMsgType(final String name) {
+	    curName = name;
+	}
+
+	/**
+	 * Returns the correct name of the message type.
+	 * 
+	 * @return the correct name of the message type.
+	 */
+	public String getTypeName() {
+	    return curName;
+	}
+
+    }
 
     /** Number of elements of a rotational matrix. */
     private static final int SIZE_OF_ROTATION = 9;
@@ -44,18 +73,25 @@ public class CommunicationDataProvider extends Observable {
      */
     private static final int MAX_EQUAL_UIDS = 4;
 
-    // private List<Command> listOfCommands = new ArrayList<Command>();
+    /** The message type of the current message. */
+    private IgtlMsgType curMsgType = null;
 
     /** Logging object. */
     private ITaskLogger logger;
 
     /** the current and newest command received via openIGTL. */
-    private Command currentCommand = null;
+    private Command curCommand = null;
     /**
      * The current and newest external transformation matrix received via
      * openIGTL.
      */
-    private MatrixTransformation currentExternalTrafo = null;
+    private MatrixTransformation curExtTrafo = null;
+
+    /**
+     * Flag, which indicates if the current received message contains a
+     * transform.
+     */
+    private boolean curMsgContainsTransform = false;
 
     /**
      * delay loops between receiving and sending a packet with the same UID
@@ -104,8 +140,8 @@ public class CommunicationDataProvider extends Observable {
 	//
 	// If the current processed message is the first one, fields have to be
 	// initialized.
-	if (currentCommand == null) {
-	    currentCommand = new Command(0, "IDLE;");
+	if (curCommand == null) {
+	    curCommand = new Command(0, "IDLE;");
 	}
 
 	/*
@@ -115,9 +151,11 @@ public class CommunicationDataProvider extends Observable {
 	final String deviceName = getDeviceName(message.getHeader());
 	long uid = 0;
 	// Read uid only if message type was a command.
-	if (messageType.equalsIgnoreCase(MESSAGE_TYPE_COMMAND)) {
+	if (messageType.equalsIgnoreCase(IgtlMsgType.Command.getTypeName())) {
+	    curMsgType = IgtlMsgType.Command;
 	    uid = getUid(deviceName);
 	    updateUIDStatistics(uid);
+	    curMsgContainsTransform = false;
 	}
 
 	/*
@@ -125,22 +163,29 @@ public class CommunicationDataProvider extends Observable {
 	 * transform or the received uid is newer than the old go on, otherwise
 	 * return.
 	 */
-	if (messageType.equalsIgnoreCase(MESSAGE_TYPE_TRANSFORM)
-		|| currentCommand.getUid() < uid) {
+	if (messageType.equalsIgnoreCase(IgtlMsgType.Transform.getTypeName())
+		|| curCommand.getUid() < uid) {
 
 	    /*
 	     * Process body bytes and extract information.
 	     */
-	    if (messageType.equalsIgnoreCase(MESSAGE_TYPE_COMMAND)) {
+	    if (messageType.equalsIgnoreCase(IgtlMsgType.Command.getTypeName())) {
 		final String cmdString = getCommandString(message.getBody());
-		currentCommand = new Command(uid, cmdString);
+		curMsgType = IgtlMsgType.Command;
+		curCommand = new Command(uid, cmdString);
+		// TODO @Tobi Observer
 		setChanged();
-		notifyObservers(MESSAGE_TYPE_COMMAND);
+		notifyObservers(curMsgType);
+		curMsgContainsTransform = false;
 
-	    } else if (messageType.equalsIgnoreCase(MESSAGE_TYPE_TRANSFORM)) {
-		currentExternalTrafo = getTrafo(message.getBody());
+	    } else if (messageType.equalsIgnoreCase(IgtlMsgType.Transform
+		    .getTypeName())) {
+		curMsgType = IgtlMsgType.Transform;
+		curExtTrafo = getTrafo(message.getBody());
+		curMsgContainsTransform = true;
+		// TODO @Tobi Observer
 		setChanged();
-		notifyObservers(MESSAGE_TYPE_TRANSFORM);
+		notifyObservers(curMsgType);
 
 	    } else {
 		throw new UnknownCommandException("Message type: "
@@ -162,7 +207,7 @@ public class CommunicationDataProvider extends Observable {
      *            the uid of the current message.
      */
     private void updateUIDStatistics(final long uid) {
-	uidDelay = uid - currentCommand.getUid();
+	uidDelay = uid - curCommand.getUid();
 	if (uidDelay == 0) {
 	    if (uidRepeat == 0) {
 		uidRepeatCount++;
@@ -313,7 +358,7 @@ public class CommunicationDataProvider extends Observable {
      * @return the current command object.
      */
     public final synchronized Command getCurrentCommand() {
-	return currentCommand;
+	return curCommand;
     }
 
     /**
@@ -323,7 +368,7 @@ public class CommunicationDataProvider extends Observable {
      * @return the transformation object.
      */
     public final synchronized MatrixTransformation getCurrentExtTransform() {
-	return currentExternalTrafo;
+	return curExtTrafo;
     }
 
     /**
@@ -335,6 +380,27 @@ public class CommunicationDataProvider extends Observable {
     public final synchronized String getUidStatistics() {
 	return new String("UID miss: " + uidMiss + " UIDrepeats: "
 		+ uidRepeatCount + "(max: " + uidRepeatMax + ")");
+    }
+
+    /**
+     * Getter for the flag, which indicates if the current (newest) received
+     * message has an external transform.
+     * 
+     * @return true if the current (newest) received message has an external
+     *         transform otherwise false.
+     */
+    public final synchronized boolean transformReceived() {
+	return curMsgContainsTransform;
+
+    }
+
+    /**
+     * Return the type of the current (newest) message.
+     * 
+     * @return the type of the current message.
+     */
+    public final synchronized IgtlMsgType getCurrentMsgType() {
+	return curMsgType;
     }
 
 }

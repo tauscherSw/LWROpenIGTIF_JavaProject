@@ -534,8 +534,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	getLogger().info(
 		"Statistic Timing of Statemachine interface thread "
 			+ slicerControlIf.SMtiming);
-	getLogger().info(
-		comDataProvider.getUidStatistics());
+	getLogger().info(comDataProvider.getUidStatistics());
 	getLogger().info(
 		"Statistic Timing of Visualisation interface thread "
 			+ slicerVisualIf.visualTiming);
@@ -669,25 +668,19 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    // Try to read new command String from SlicerControl (Alive)
 		    // Thread
 
-			    Command curCommand = comDataProvider
-				    .getCurrentCommand();
-			    imesStatemachine.cmdIgtMsg = curCommand
-				    .getCmdString();
-			    imesStatemachine.IGTLdatatype = slicerControlIf.IGTLdatatype; //TODO Datatype correct extraction
-			    imesStatemachine.UID = curCommand.getUid();
-			    if (slicerControlIf.transformReceived
-				    && !imesStatemachine.transformReceivedFlag) {
-				imesStatemachine.transfRobotImg = slicerControlIf.transformImageRobot;
-				imesStatemachine.transformReceivedFlag = true;
-			    }
-			} else {
-			    getLogger()
-				    .fine("Acquiring of semaphore for "
-					    + "setting state machine parameters failed!");
-			}
-
-		    
-		}else { // if it is not to Error handling
+		    Command curCommand = comDataProvider.getCurrentCommand();
+		    imesStatemachine.cmdIgtMsg = curCommand.getCmdString();
+		    imesStatemachine.IGTLdatatype = comDataProvider
+			    .getCurrentMsgType(); // TODO Datatype correct
+						  // extraction
+		    imesStatemachine.UID = curCommand.getUid();
+		    if (comDataProvider.transformReceived()
+			    && !imesStatemachine.transformReceivedFlag) {
+			imesStatemachine.transfRobotImg = comDataProvider
+				.getCurrentExtTransform();
+			imesStatemachine.transformReceivedFlag = true;
+		    }
+		} else { // if it is not to Error handling
 		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
 		    errMsg = "Slicer Control Interface not Alive...";
 		    getLogger().error("Slicer control interface isn't running");
@@ -709,13 +702,15 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		// Check on Communication Quality
-		if (slicerControlIf.ErrorCode == OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
-		    imesStatemachine.ErrorMessage = "ERROR: State Control Interface "
-			    + "Bad Communication quality setting robot State to IDLE";
-		    imesStatemachine.ErrorFlag = true;
-		    slicerControlIf.ErrorCode = OpenIGTLinkErrorCode.Ok;
-
-		}
+		// if (slicerControlIf.ErrorCode ==
+		// OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
+		// imesStatemachine.ErrorMessage =
+		// "ERROR: State Control Interface "
+		// + "Bad Communication quality setting robot State to IDLE";
+		// imesStatemachine.ErrorFlag = true;
+		// slicerControlIf.ErrorCode = OpenIGTLinkErrorCode.Ok;
+		//
+		// }
 
 		// Print Error messages if there where any Errors
 		imesStatemachine.errHandler(true);
