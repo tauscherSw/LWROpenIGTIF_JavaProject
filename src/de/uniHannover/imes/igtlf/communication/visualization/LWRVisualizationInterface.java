@@ -43,7 +43,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
-import de.uniHannover.imes.igtlf.communication.OpenIGTLMessage;
+import de.uniHannover.imes.igtlf.communication.IGTLMsg;
 import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
@@ -630,7 +630,7 @@ public class LWRVisualizationInterface extends Thread {
      */
     public final boolean sendIGTLTransform(final String deviceName,
 	    final float[] transform) {
-	OpenIGTLMessage currentMessage = new OpenIGTLMessage();
+	IGTLMsg currentMessage = new IGTLMsg();
 	byte[] bodyByte = new byte[IGTLtransform.IGTL_TRANSFORM_SIZE];
 	byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
 	igtl_header header = new igtl_header();

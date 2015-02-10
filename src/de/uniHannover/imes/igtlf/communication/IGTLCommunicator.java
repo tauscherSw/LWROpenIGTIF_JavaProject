@@ -169,14 +169,14 @@ public final class IGTLCommunicator {
     }
 
     /**
-     * Sends a message to an IGT client {@linkplain IGTLMsgInterface}.
+     * Sends a message to an IGT client {@linkplain IOpenIGTLMsg}.
      * 
      * @param packet
      *            the packet to be send.
      * @throws IOException
      *             when sending failed.
      */
-    public void sendMsg(final IGTLMsgInterface packet) throws IOException {
+    public void sendMsg(final IOpenIGTLMsg packet) throws IOException {
 	if (packet.getHeader() != null && packet.getBody() != null) {
 	    sendBytes(packet.getHeader());
 	    sendBytes(packet.getBody());
@@ -194,7 +194,7 @@ public final class IGTLCommunicator {
      * @throws IOException
      *             reading of input stream fails.
      */
-    public synchronized IGTLMsgInterface receiveMsg() throws IOException {
+    public synchronized IOpenIGTLMsg receiveMsg() throws IOException {
 	// Header bytes
 	byte[] headerRead = new byte[IGTLheader.IGTL_HEADER_SIZE];
 	// Body bytes
@@ -215,7 +215,7 @@ public final class IGTLCommunicator {
 	/*
 	 * Construct the returned object as a IGTL response.
 	 */
-	IGTLMsgInterface response = new OpenIGTLMessage();
+	IOpenIGTLMsg response = new IGTLMsg();
 	response.init(headerRead, bodyRead);
 	return response;
 

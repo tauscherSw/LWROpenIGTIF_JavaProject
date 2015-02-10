@@ -36,7 +36,7 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
-import de.uniHannover.imes.igtlf.communication.OpenIGTLMessage;
+import de.uniHannover.imes.igtlf.communication.IGTLMsg;
 import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
 import openIGTLink.swig.ByteArr;
@@ -274,7 +274,7 @@ public class LWRStateMachineInterface extends Thread {
      */
     private void receiveMessage() throws IOException {
 
-	OpenIGTLMessage receivedMsg;
+	IGTLMsg receivedMsg;
 	byte[] headerBytes;
 	byte[] bodyBytes;
 	int numOfHeaderBytesRead;
@@ -306,7 +306,7 @@ public class LWRStateMachineInterface extends Thread {
 	    }
 
 	    // Construct a openIGTL message from header and body.
-	    receivedMsg = new OpenIGTLMessage();
+	    receivedMsg = new IGTLMsg();
 	    receivedMsg.init(headerBytes, bodyBytes);
 
 	} while (!comDataSink.setNewCmdMessage(receivedMsg)); // checks the new
@@ -463,7 +463,7 @@ public class LWRStateMachineInterface extends Thread {
      */
     private void sendIGTStringMessage(final String message) {
 
-	OpenIGTLMessage currentMsg;
+	IGTLMsg currentMsg;
 
 	byte[] bodyByte = new byte[message.length()
 		+ IGTLstring.IGTL_STRING_HEADER_SIZE];
@@ -495,7 +495,7 @@ public class LWRStateMachineInterface extends Thread {
 	}
 
 	try {
-	    currentMsg = new OpenIGTLMessage();
+	    currentMsg = new IGTLMsg();
 	    currentMsg.init(headerByte, bodyByte);
 	    communicator.sendMsg(currentMsg);
 	} catch (IOException e) {

@@ -4,7 +4,7 @@ package de.uniHannover.imes.igtlf.communication;
 /**
  * This class represents a message in the IGTL protocol.
  */
-public class OpenIGTLMessage implements IGTLMsgInterface {
+public class IGTLMsg implements IOpenIGTLMsg {
 
     /**
      * The header of the message.

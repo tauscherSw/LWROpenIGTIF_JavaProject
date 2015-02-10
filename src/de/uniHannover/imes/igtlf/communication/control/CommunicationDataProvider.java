@@ -11,7 +11,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
-import de.uniHannover.imes.igtlf.communication.OpenIGTLMessage;
+import de.uniHannover.imes.igtlf.communication.IGTLMsg;
 import de.uniHannover.imes.igtlf.communication.messages.Command;
 import de.uniHannover.imes.igtlf.communication.messages.UnknownCommandException;
 
@@ -91,7 +91,7 @@ public class CommunicationDataProvider extends Observable {
      * @return false if "new message" has not been processed, cause it either
      *         hasn't had any data or had no new data.
      */
-    public final boolean setNewCmdMessage(final OpenIGTLMessage message) {
+    public final boolean setNewCmdMessage(final IGTLMsg message) {
 
 	/*
 	 * Preliminary checks of the arguments.
