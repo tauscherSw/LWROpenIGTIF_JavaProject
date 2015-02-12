@@ -24,7 +24,8 @@ package de.uniHannover.imes.igtIf.stateMachine.states;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
-
+import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 
 /**
  * Interface for the LWR States defining the Functions void
@@ -59,13 +60,15 @@ public interface ILwrState {
      * 
      * @param lwrStatemachine
      *            The operated state machine
+     *            @param currentRobotDataSet current robot data.
      * @see LwrIdle
      * @see LwrGravComp
      * @see LwrVirtualFixtures
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    void calcControlParam(LwrStatemachine lwrStatemachine);
+    void calcControlParam(LwrStatemachine lwrStatemachine,
+	    RobotDataSet currentRobotDataSet);
 
     /**
      * In this Function the Command String which is received from the State
@@ -75,7 +78,8 @@ public interface ILwrState {
      * 
      * @param lwrStatemachine
      *            - The operated state machine
-     * @param cmdPacket the packet to be interpreted.
+     * @param cmdPacket
+     *            the packet to be interpreted.
      * @throws UnsupportedEncodingException
      * @see LwrIdle
      * @see LwrGravComp
@@ -83,8 +87,8 @@ public interface ILwrState {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    void interpretCmdPacket(LwrStatemachine lwrStatemachine
-	    , CommandPacket cmdPacket);
+    void interpretCmdPacket(LwrStatemachine lwrStatemachine,
+	    CommandPacket cmdPacket);
 
     /**
      * In this Function the Acknowledge String which is send to the State

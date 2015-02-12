@@ -24,6 +24,7 @@
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
+import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
@@ -32,6 +33,8 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 
 /**
  * In This State the LWR is moving to a specified position in Cartesian space.
@@ -94,14 +97,17 @@ public class LwrMoveToPose implements ILwrState {
      *            The operated state machine
      * @see LWRState
      */
-    public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine,
+	    final RobotDataSet currentRobotDataSet) {
 
 	Vector curPosition = null;
 	Vector aim = null;
 	double d = 0.0;
 	double lambda = 0.0;
 
-	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	CartesianImpedanceControlMode cartImp = 
+		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	    MatrixTransformation currentPose = currentRobotDataSet.getCurPose();
 
 	if (lwrStatemachine.stateChanged) {
 	    cartImp.parametrize(CartDOF.TRANSL).setStiffness(
@@ -112,16 +118,17 @@ public class LwrMoveToPose implements ILwrState {
 		    CART_TRANSL_STIFFNESS, CART_TRANSL_STIFFNESS,
 		    CART_ROT_STIFFNESS, CART_ROT_STIFFNESS, CART_ROT_STIFFNESS };
 	    lwrStatemachine.curCartStiffness = newStiffness;
-	    currentPointLine = Vector.of(lwrStatemachine.curPose
-		    .getTranslation().getX(), lwrStatemachine.curPose
-		    .getTranslation().getY(), lwrStatemachine.curPose
+
+	    currentPointLine = Vector.of(currentPose
+		    .getTranslation().getX(), currentPose
+		    .getTranslation().getY(), currentPose
 		    .getTranslation().getZ());
 	    startPointLine = currentPointLine;
 	    directionLine = targetPos.subtract(currentPointLine).normalize();
 	    lambdaEnd = targetPos.subtract(currentPointLine).length();
 	    lwrStatemachine.stateChanged = false;
 	}
-	curPosition = lwrStatemachine.curPose.getTranslation();
+	curPosition = currentPose.getTranslation();
 	if (!endOfPathFlag) {
 	    if (curPosition.subtract(targetPos).length() < END_OF_PATH_DEVIATION) {
 		lwrStatemachine.cmdPose = MatrixTransformation.of(targetPos,

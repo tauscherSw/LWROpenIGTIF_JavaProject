@@ -441,7 +441,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * visualization interface thread.
      */
     private void initInterfaceThreads() {
-	comDataProvider = new CommunicationDataProvider();
+	comDataProvider = new CommunicationDataProvider(imesLBR);
 	slicerControlIf = new LWRStateMachineInterface(comDataProvider);
 	slicerControlIf.setPriority(SLICER_CONTROL_PRIO);
 	slicerControlIf.millisectoSleep = SLICER_CONTROL_CYLCETIME_MS;
@@ -495,10 +495,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	imesStatemachine = new LwrStatemachine(comDataProvider);
 	imesStatemachine.StartVisual = true;
 
-	MatrixTransformation currentPose = MatrixTransformation
-		.of((ITransformation) imesTool.getDefaultMotionFrame());
-	imesStatemachine.curPose = currentPose;
-	imesStatemachine.cmdPose = currentPose;
+	comDataProvider.readNewRobotData();
+	imesStatemachine.cmdPose = comDataProvider.getCurRobotDataSet()
+		.getCurPose();
 	imesStatemachine.controlMode = controlMode;
 	imesStatemachine.setVisualIfDatatype(VisualIFDatatypes.ROBOTBASE);
 
@@ -591,14 +590,15 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		try {
 		    smartServoRuntime.updateWithRealtimeSystem();
 		    // Get the measured position in cartesian pose
-		    imesStatemachine.curPose = MatrixTransformation
-			    .of((ITransformation) imesTool
-				    .getDefaultMotionFrame());
-		    imesStatemachine.curJntPose = smartServoRuntime
-			    .getAxisQMsrOnController();
-		    imesStatemachine.tcpForce = smartServoRuntime
-			    .getExtForceVector();
-		    imesStatemachine.poseUid++;
+//		    imesStatemachine.curPose = MatrixTransformation
+//			    .of((ITransformation) imesTool
+//				    .getDefaultMotionFrame());
+//		    imesStatemachine.curJntPose = smartServoRuntime
+//			    .getAxisQMsrOnController();
+//		    imesStatemachine.tcpForce = smartServoRuntime
+//			    .getExtForceVector();
+//		    imesStatemachine.poseUid++;
+		    comDataProvider.readNewRobotData();
 		} catch (Exception e) {
 		    errMsg = "Error: Failed Update with RealtimeSystem!!";
 		    // TODO exception concept.
@@ -646,10 +646,11 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		// If SlicerControl Interface Thread is running...
 		if (slicerControlIf.comRunning) {
 
-		    //update the data in the state machine and reset error counter.
+		    // update the data in the state machine and reset error
+		    // counter.
 		    i = 0;
 		    imesStatemachine.updateStateControlData();
-		    
+
 		} else { // if it is not to Error handling
 		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
 		    errMsg = "Slicer Control Interface not Alive...";

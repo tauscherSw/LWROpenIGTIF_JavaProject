@@ -30,6 +30,8 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 
 /**
  * In This State the LWR can be moved along a linear Path in one direction to a
@@ -111,7 +113,8 @@ public class LwrPathImp implements ILwrState {
      * @see LWRState
      */
     @Override
-    public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine,
+	    final RobotDataSet currentRobotDataSet) {
 
 	double d = 0.0;
 	distance = 0.0;
@@ -122,18 +125,20 @@ public class LwrPathImp implements ILwrState {
 	Vector aTransStiffVal = null;
 	int[] newStiffness = { 0, 0, 0, 0, 0, 0 };
 
+	MatrixTransformation curPose = currentRobotDataSet.getCurPose();
+	
 	if (lwrStatemachine.stateChanged) {
 	    aim = Vector.of(0, 0, 0);
 	    targetOrientation = MatrixTransformation.of(Vector.of(0, 0, 0),
-		    lwrStatemachine.curPose.getRotation());
-	    ap = Vector.of(lwrStatemachine.curPose.getTranslation().getX(),
-		    lwrStatemachine.curPose.getTranslation().getY(),
-		    lwrStatemachine.curPose.getTranslation().getZ());
+		    curPose.getRotation());
+	    ap = Vector.of(curPose.getTranslation().getX(),
+		    curPose.getTranslation().getY(),
+		    curPose.getTranslation().getZ());
 	    lambdaEnd = targetPosition.subtract(ap).length();
 	    u = targetPosition.subtract(ap).normalize();
 	    lwrStatemachine.stateChanged = false;
 	}
-	curPosition = lwrStatemachine.curPose.getTranslation();
+	curPosition = curPose.getTranslation();
 
 
 	if (curPosition.subtract(targetPosition).length() < TOLERANCE) {

@@ -28,6 +28,8 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 
 /**
  * In this state the LWR is set to gravitation Compensation mode so that robot
@@ -57,7 +59,8 @@ public class LwrGravComp implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine,
+	    final RobotDataSet currentRobotDataSet) {
 
 	if (lwrStatemachine.stateChanged) {
 	    // We are in CartImp Mode,
@@ -74,12 +77,13 @@ public class LwrGravComp implements ILwrState {
 	    lwrStatemachine.stateChanged = false;
 	}
 	if (lwrStatemachine.cmdPose.getTranslation()
-		.subtract(lwrStatemachine.curPose.getTranslation()).length() > MAX_TRANSLATION) {
+		.subtract(currentRobotDataSet.getCurPose().getTranslation())
+		.length() > MAX_TRANSLATION) {
 
 	    System.out.println("Difference to big!");
 	}
 
-	lwrStatemachine.cmdPose = lwrStatemachine.curPose;
+	lwrStatemachine.cmdPose = currentRobotDataSet.getCurPose();
 
     }
 

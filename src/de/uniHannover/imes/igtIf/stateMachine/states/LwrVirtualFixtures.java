@@ -32,6 +32,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 
 /**
  * In this State two different kinds of Virtuall Fixtures, a plane and a cone
@@ -136,7 +137,8 @@ public class LwrVirtualFixtures implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public final void calcControlParam(final LwrStatemachine lwrStatemachine) {
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine,
+	    final RobotDataSet currentRobotDataSet) {
 	int[] newStiffness = { 0, 0, 0, 0, 0, 0 };
 	double aDampVal = 0.0, stiffVal = 0.0;
 	if (lwrStatemachine.stateChanged) {
@@ -153,7 +155,7 @@ public class LwrVirtualFixtures implements ILwrState {
 	    }
 	}
 	if (this.activeVirtualFixture == VirtualFixtureType.Plane) {
-	    Vector dv = lwrStatemachine.curPose.getTranslation().subtract(
+	    Vector dv = currentRobotDataSet.getCurPose().getTranslation().subtract(
 		    virtualFixturePosition);
 	    distance = virtualFixtureNormVector.dotProduct(dv);
 	    normVector = virtualFixtureNormVector;
@@ -184,7 +186,7 @@ public class LwrVirtualFixtures implements ILwrState {
 
 	    Vector curCartPoseCOcone = transformationBaseToCone
 		    .getRotationMatrix().multiply(
-			    lwrStatemachine.curPose.getTranslation().subtract(
+			    currentRobotDataSet.getCurPose().getTranslation().subtract(
 				    virtualFixturePosition));
 
 	    double diagonale = Math.sqrt(Math.pow(curCartPoseCOcone.getX(), 2)
@@ -251,7 +253,7 @@ public class LwrVirtualFixtures implements ILwrState {
 		}
 		lwrStatemachine.cmdPose = MatrixTransformation.of(
 			virtualFixturePosition,
-			lwrStatemachine.curPose.getRotation());
+		currentRobotDataSet.getCurPose().getRotation());
 
 	    } else if (distance >= 0) {
 
@@ -262,21 +264,21 @@ public class LwrVirtualFixtures implements ILwrState {
 		    stiffVal = getStiffnessValueApproach(distance, awaredist);
 		}
 		lwrStatemachine.cmdPose = MatrixTransformation.of(
-			lwrStatemachine.curPose.getTranslation(),
-			lwrStatemachine.curPose.getRotation());
+			currentRobotDataSet.getCurPose().getTranslation(),
+			currentRobotDataSet.getCurPose().getRotation());
 	    } else {
 		stiffVal = CART_TRANSL_STIFFNESS_MAX;
 		lwrStatemachine.cmdPose = MatrixTransformation.of(
-			lwrStatemachine.curPose.getTranslation().subtract(
+			currentRobotDataSet.getCurPose().getTranslation().subtract(
 				normVector.multiply(distance)),
-			lwrStatemachine.curPose.getRotation());
+				currentRobotDataSet.getCurPose().getRotation());
 	    }
 	} else {
 	    stiffVal = 0.01;
 	    aDampVal = 0.7;
 	    lwrStatemachine.cmdPose = MatrixTransformation.of(
-		    lwrStatemachine.curPose.getTranslation(),
-		    lwrStatemachine.curPose.getRotation());
+		    currentRobotDataSet.getCurPose().getTranslation(),
+		    currentRobotDataSet.getCurPose().getRotation());
 	}
 	Vector aTransStiffVal;
 	if (coneTip) {

@@ -35,10 +35,7 @@
 
 package de.uniHannover.imes.igtIf.stateMachine;
 
-import com.kuka.roboticsAPI.deviceModel.JointPosition;
-import com.kuka.roboticsAPI.geometricModel.math.ITransformation;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
-import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
 
 import de.uniHannover.imes.igtIf.stateMachine.states.ILwrState;
@@ -201,13 +198,10 @@ public class LwrStatemachine {
 							  // accessed/written
 							  // from the outside.
 
-
-
     /**
      * Represents the current datatype of the visualization interface.
      */
-    private VisualIFDatatypes currentVisualIFDatatype = 
-	    VisualIFDatatypes.ROBOTBASE;
+    private VisualIFDatatypes currentVisualIFDatatype = VisualIFDatatypes.ROBOTBASE;
 
     /**
      * Flag to identify if the StateMachine should be Stopped.The robot state is
@@ -276,8 +270,6 @@ public class LwrStatemachine {
      */
     private String paramString = "";
 
-
-
     /**
      * visualInterfaceDatatype.Robotbase current status of the client status.
      */
@@ -330,7 +322,7 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public final void calcControlParam() {
-	mCurrentState.calcControlParam(this);
+	mCurrentState.calcControlParam(this, dataSink.getCurRobotDataSet());
     }
 
     /**
@@ -709,23 +701,19 @@ public class LwrStatemachine {
 	}
 
     }
-    
-    public final void updateRobotData()
-    {
-	//ask dataSink for 
+
+    public final void updateRobotData() {
+	// ask dataSink for
 	/*
-	 * 		// Get the measured position in cartesian pose
-		    imesStatemachine.curPose = MatrixTransformation
-			    .of((ITransformation) imesTool
-				    .getDefaultMotionFrame());
-		    imesStatemachine.curJntPose = smartServoRuntime
-			    .getAxisQMsrOnController();
-		    imesStatemachine.tcpForce = smartServoRuntime
-			    .getExtForceVector();
-		    imesStatemachine.poseUid++;
+	 * // Get the measured position in cartesian pose
+	 * imesStatemachine.curPose = MatrixTransformation .of((ITransformation)
+	 * imesTool .getDefaultMotionFrame()); imesStatemachine.curJntPose =
+	 * smartServoRuntime .getAxisQMsrOnController();
+	 * imesStatemachine.tcpForce = smartServoRuntime .getExtForceVector();
+	 * imesStatemachine.poseUid++;
 	 */
-	
-	//TODO @Tobi read data from datasink
+
+	// TODO @Tobi read data from datasink
     }
 
     /**
@@ -753,25 +741,27 @@ public class LwrStatemachine {
      * @param datatype
      *            the new datatype;
      */
-    public final void setVisualIfDatatype(
-	    final VisualIFDatatypes datatype) {
+    public final void setVisualIfDatatype(final VisualIFDatatypes datatype) {
 	this.currentVisualIFDatatype = datatype;
     }
 
     /**
      * Getter for the acknowledgement string message.
+     * 
      * @return the ack msg.
      */
     public final String getAckIgtMsg() {
-        return ackIgtMsg;
+	return ackIgtMsg;
     }
 
     /**
      * Setter for the acknowledgement string message.
-     * @param msg the new message.
+     * 
+     * @param msg
+     *            the new message.
      */
     public final void setAckIgtMsg(final String msg) {
-        this.ackIgtMsg = msg;
+	this.ackIgtMsg = msg;
     }
 
 }

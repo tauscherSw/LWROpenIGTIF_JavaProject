@@ -429,4 +429,15 @@ public class CommunicationDataProvider {
 	return poseUid;
     }
 
+    /**
+     * Getter for the current robot dataset.
+     * 
+     * @return the current robot dataset.
+     */
+    public final RobotDataSet getCurRobotDataSet() {
+	synchronized (curRobotDataSet) {
+	    return curRobotDataSet;
+	}
+    }
+
 }

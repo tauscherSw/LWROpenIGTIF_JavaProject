@@ -28,6 +28,8 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 
 /**
  * In this state the LWR is holding its position with a maximum stiffness. This
@@ -72,7 +74,8 @@ public class LwrIdle implements ILwrState {
      * @see ILwrState
      */
     @Override
-    public void calcControlParam(final LwrStatemachine lwrStatemachine) {
+    public final void calcControlParam(final LwrStatemachine lwrStatemachine,
+	    final RobotDataSet currentRobotDataSet) {
 	final double aTransStiffVal = 5000;
 	final double aRotStiffVal = 300;
 	final int numOfDeltaStiffnessParam = 6;
@@ -99,7 +102,7 @@ public class LwrIdle implements ILwrState {
 		cartImp.parametrize(CartDOF.ROT).setStiffness(aRotStiffVal);
 		cartImp.setNullSpaceStiffness(0.);
 		lwrStatemachine.controlMode = cartImp;
-		lwrStatemachine.cmdPose = lwrStatemachine.curPose;
+		lwrStatemachine.cmdPose = currentRobotDataSet.getCurPose();
 		incStiffness = false;
 		lwrStatemachine.curCartStiffness = newStiffness;
 	    } else {
