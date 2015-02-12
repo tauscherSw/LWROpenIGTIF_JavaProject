@@ -7,6 +7,8 @@ import openIGTLink.swig.IGTLheader;
 import openIGTLink.swig.IGTLstring;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+import com.kuka.roboticsAPI.deviceModel.JointPosition;
+import com.kuka.roboticsAPI.deviceModel.LBR;
 import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
@@ -19,7 +21,7 @@ import de.uniHannover.imes.igtlf.communication.IGTLMsg;
  * openIGTL Client) and an ack-object (sent by openIGTL server as response).
  *
  */
-public class CommunicationDataProvider extends Observable {
+public class CommunicationDataProvider {
 
     /**
      * Represents the different types of igtl-messages.
@@ -104,6 +106,34 @@ public class CommunicationDataProvider extends Observable {
     private int uidRepeatCount = 0;
 
     /**
+     * Robot data sink for reading robot data into a cyclic image of the data.
+     */
+    private final LBR robotDataSink;
+
+    /**
+     * The cyclic image of the robot data.
+     */
+    private RobotDataSet curRobotDataSet;
+
+    /**
+     * UID of the Pose gotten via SmartServo. The value is increased each time
+     * new data is read from the robot.
+     */
+    private long poseUid;
+
+    /**
+     * Constructs an communication provider. Needs a robot-data-sink for reading
+     * data like joint position and so on.
+     * 
+     * @param dataSink
+     *            the robot object, which gains access to cyclic robot data.
+     */
+    public CommunicationDataProvider(final LBR dataSink) {
+	robotDataSink = dataSink;
+	poseUid = 0;
+    }
+
+    /**
      * 
      * @param message
      *            the message received from another OpenIGTL client as a
@@ -111,7 +141,7 @@ public class CommunicationDataProvider extends Observable {
      * @return false if "new message" has not been processed, cause it either
      *         hasn't had any data or had no new data.
      */
-    public final boolean setNewCmdMessage(final IGTLMsg message) {
+    public final boolean readNewCmdMessage(final IGTLMsg message) {
 
 	/*
 	 * Preliminary checks of the arguments.
@@ -192,6 +222,26 @@ public class CommunicationDataProvider extends Observable {
 	    return false;
 	}
 
+    }
+
+    /**
+     * Reads new robot data in a current robot dataset.
+     */
+    public final void readNewRobotData() {
+
+	MatrixTransformation currentTcpPose = MatrixTransformation
+		.of(robotDataSink.getCurrentCartesianPosition(
+			robotDataSink.getFlange()).transformationFromWorld());
+	JointPosition currentJointPosition = robotDataSink
+		.getCurrentJointPosition();
+	Vector tcpForce = robotDataSink.getExternalForceTorque(
+		robotDataSink.getFlange()).getForce();
+	synchronized (curRobotDataSet) {
+	    curRobotDataSet = new RobotDataSet(currentJointPosition,
+		    currentTcpPose, tcpForce);
+	}
+
+	poseUid++;
     }
 
     /**
@@ -368,6 +418,15 @@ public class CommunicationDataProvider extends Observable {
 	synchronized (curPacket) {
 	    return curPacket;
 	}
+    }
+
+    /**
+     * Getter for the current poseUid.
+     * 
+     * @return the poseUid
+     */
+    public final long getPoseUid() {
+	return poseUid;
     }
 
 }

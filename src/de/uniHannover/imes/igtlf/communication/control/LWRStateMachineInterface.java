@@ -23,7 +23,6 @@
 
 package de.uniHannover.imes.igtlf.communication.control;
 
-import java.util.concurrent.Semaphore;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -32,10 +31,7 @@ import java.nio.ByteBuffer;
 import com.kuka.common.StatisticTimer;
 import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
-import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
-
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
-import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
 import de.uniHannover.imes.igtlf.communication.IGTLMsg;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
@@ -309,7 +305,7 @@ public class LWRStateMachineInterface extends Thread {
 	    receivedMsg = new IGTLMsg();
 	    receivedMsg.init(headerBytes, bodyBytes);
 
-	} while (!comDataSink.setNewCmdMessage(receivedMsg)); // checks the new
+	} while (!comDataSink.readNewCmdMessage(receivedMsg)); // checks the new
 							      // message and
 							      // saves it if it
 							      // has new

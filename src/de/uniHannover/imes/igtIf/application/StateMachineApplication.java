@@ -648,7 +648,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		    //update the data in the state machine and reset error counter.
 		    i = 0;
-		    imesStatemachine.updateData();
+		    imesStatemachine.updateStateControlData();
 		    
 		} else { // if it is not to Error handling
 		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;

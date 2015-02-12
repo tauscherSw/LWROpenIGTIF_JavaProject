@@ -36,9 +36,11 @@
 package de.uniHannover.imes.igtIf.stateMachine;
 
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
+import com.kuka.roboticsAPI.geometricModel.math.ITransformation;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
+
 import de.uniHannover.imes.igtIf.stateMachine.states.ILwrState;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrGravComp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrIdle;
@@ -199,16 +201,7 @@ public class LwrStatemachine {
 							  // accessed/written
 							  // from the outside.
 
-    /**
-     * Current Joint Position of the LWR received via SmartServo.
-     */
-    public JointPosition curJntPose; // TODO design failure field is
-				     // accessed/written from the outside.
-    /**
-     * The current pose in Cartesian space of the LWR in robot coordinates.
-     */
-    public MatrixTransformation curPose; // TODO design failure field is
-					 // accessed/written from the outside.
+
 
     /**
      * Represents the current datatype of the visualization interface.
@@ -283,12 +276,7 @@ public class LwrStatemachine {
      */
     private String paramString = "";
 
-    /**
-     * UID of the Pose gotten via SmartServo. The value is increased each time
-     * new data is read from the robot.
-     */
-    public long poseUid = 0; // TODO design failure field is accessed/written
-			     // from the outside.
+
 
     /**
      * visualInterfaceDatatype.Robotbase current status of the client status.
@@ -302,12 +290,7 @@ public class LwrStatemachine {
      */
     public boolean StartVisual = false; // TODO design failure field is
 					// accessed/written from the outside.
-    /**
-     * Vector containing the force estimated at the tool center point by the
-     * internal torque sensors.
-     */
-    public Vector tcpForce;// TODO design failure field is accessed/written from
-			   // the outside.
+
     /**
      * Flag to identify if the Transform from image to robot space was
      * successfully .
@@ -717,7 +700,7 @@ public class LwrStatemachine {
      * provider for a new cmd packet and therefore update its uid, cmd string,
      * transform received flag and its igtldatatype.
      */
-    public final void updateData() {
+    public final void updateStateControlData() {
 	currentPacket = dataSink.getCurrentCmdPacket();
 	if (currentPacket.isTransformReceived()) {
 	    igtlDatatype = "TRANSFORM";
@@ -725,6 +708,24 @@ public class LwrStatemachine {
 	    igtlDatatype = "STRING";
 	}
 
+    }
+    
+    public final void updateRobotData()
+    {
+	//ask dataSink for 
+	/*
+	 * 		// Get the measured position in cartesian pose
+		    imesStatemachine.curPose = MatrixTransformation
+			    .of((ITransformation) imesTool
+				    .getDefaultMotionFrame());
+		    imesStatemachine.curJntPose = smartServoRuntime
+			    .getAxisQMsrOnController();
+		    imesStatemachine.tcpForce = smartServoRuntime
+			    .getExtForceVector();
+		    imesStatemachine.poseUid++;
+	 */
+	
+	//TODO @Tobi read data from datasink
     }
 
     /**
