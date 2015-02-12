@@ -22,6 +22,7 @@
 	=========================================================================*/
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
+import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
@@ -30,8 +31,8 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
-import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
 /**
  * In This State the LWR can be moved along a linear Path in one direction to a
@@ -53,6 +54,9 @@ public class LwrPathImp implements ILwrState {
 
     /** Maximum cartesian translational stiffness value in N/m. */
      private static final int CART_TRANSL_STIFFNESS_MAX = 5000;
+     
+     /** The logging object for logging output.*/
+     private ITaskLogger log = new DummyLogger();
 
 
     /**
@@ -147,7 +151,7 @@ public class LwrPathImp implements ILwrState {
 		lwrStatemachine.cmdPose = MatrixTransformation
 			.of(targetOrientation.withTranslation(targetPosition));
 		if (!endOfPath) {
-		    System.out.println("Path Impedance: Reached End of path ("
+		    log.info("Path Impedance: Reached End of path ("
 			    + targetPosition + ")");
 		}
 		endOfPath = true;
@@ -273,7 +277,7 @@ public class LwrPathImp implements ILwrState {
 	    String[] cmdArray = cmdString.split(";");
 	    if (cmdArray[1].contentEquals("img")) {
 		this.imageSpace = true;
-		System.out.println("Image space is set to true...");
+		log.info("Image space is set to true...");
 	    } else if (cmdArray[1].contentEquals("rob")) {
 		this.imageSpace = false;
 	    } else {
@@ -283,7 +287,7 @@ public class LwrPathImp implements ILwrState {
 	    this.targetPosition = Vector.of(Double.parseDouble(cmdArray[2]),
 		    Double.parseDouble(cmdArray[3]),
 		    Double.parseDouble(cmdArray[4]));
-	    System.out.println("Targetposition...: " + this.targetPosition);
+	    log.info("Targetposition...: " + this.targetPosition);
 
 	    if (this.imageSpace && cmdPacket.isTransformReceived()) {
 		Vector tmp;
@@ -293,7 +297,7 @@ public class LwrPathImp implements ILwrState {
 			.add(cmdPacket.getTrafo().invert()
 				.getTranslation());
 		this.targetPosition = tmp;
-		System.out.println("After Transformation...: "
+		log.info("After Transformation...: "
 			+ this.targetPosition);
 
 	    }
@@ -337,6 +341,15 @@ public class LwrPathImp implements ILwrState {
 	}
 
 	lwrStatemachine.setAckIgtMsg(ack);
+    }
+    
+    @Override
+    public final void setLogger(final ITaskLogger extlogger) {
+	if (null == extlogger) {
+	    throw new NullPointerException("External logger is null");
+	}
+	log = extlogger;
+
     }
 
 }

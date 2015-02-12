@@ -23,6 +23,7 @@
 
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
+import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
@@ -33,6 +34,7 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
 /**
  * In this State two different kinds of Virtuall Fixtures, a plane and a cone
@@ -60,6 +62,9 @@ public class LwrVirtualFixtures implements ILwrState {
 	/** The virtual fixture has a cone geometry. */
 	Cone,
     }
+    
+    /** The logging object for logging output.*/
+    private ITaskLogger log = new DummyLogger();
     
     //TODO @Sebastian further use?
     private static final int CONE_TOLERANCE_ENDPOINT = 10;
@@ -518,6 +523,15 @@ public class LwrVirtualFixtures implements ILwrState {
 	    ack = "VirtualFixtures;none;";
 	}
 	lwrStatemachine.setAckIgtMsg(ack);
+    }
+    
+    @Override
+    public final void setLogger(final ITaskLogger extlogger) {
+	if (null == extlogger) {
+	    throw new NullPointerException("External logger is null");
+	}
+	log = extlogger;
+
     }
 
 }

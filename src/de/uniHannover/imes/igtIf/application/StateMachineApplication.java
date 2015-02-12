@@ -446,7 +446,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	slicerControlIf.setPriority(SLICER_CONTROL_PRIO);
 	slicerControlIf.millisectoSleep = SLICER_CONTROL_CYLCETIME_MS;
 
-	slicerVisualIf = new LWRVisualizationInterface(imesLBR,
+	slicerVisualIf = new LWRVisualizationInterface(
 		comDataProvider, SLICER_VISUAL_CYLCETIME_MS, getLogger());
 	slicerVisualIf.setPriority(SLICER_VISUAL_PRIO);
 	slicerVisualIf.setSenderConfiguration(VisualIFDatatypes.JOINTSPACE,

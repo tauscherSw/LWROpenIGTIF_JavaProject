@@ -23,13 +23,14 @@
 
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
+import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
-import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
 /**
  * In this state the LWR is set to gravitation Compensation mode so that robot
@@ -45,6 +46,9 @@ public class LwrGravComp implements ILwrState {
      * Maximum translation deviation allowed.
      */
     private static final int MAX_TRANSLATION = 100;
+
+    /** The logging object for logging output. */
+    private ITaskLogger log = new DummyLogger();
 
     /**
      * In this Function control mode parameters are set and the command pose is
@@ -80,7 +84,9 @@ public class LwrGravComp implements ILwrState {
 		.subtract(currentRobotDataSet.getCurPose().getTranslation())
 		.length() > MAX_TRANSLATION) {
 
-	    System.out.println("Difference to big!");
+	    log.warn("Difference between command and current cartesian"
+	    	+ " tcp position is greater than "
+		    + MAX_TRANSLATION + "mm.");
 	}
 
 	lwrStatemachine.cmdPose = currentRobotDataSet.getCurPose();
@@ -123,6 +129,15 @@ public class LwrGravComp implements ILwrState {
 	String ack;
 	ack = "GravComp;";
 	lwrStatemachine.setAckIgtMsg(ack);
+
+    }
+
+    @Override
+    public final void setLogger(final ITaskLogger extlogger) {
+	if (null == extlogger) {
+	    throw new NullPointerException("External logger is null");
+	}
+	log = extlogger;
 
     }
 }

@@ -23,6 +23,7 @@
 
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
+import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
@@ -35,6 +36,7 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCo
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
 /**
  * In This State the LWR is moving to a specified position in Cartesian space.
@@ -52,6 +54,9 @@ public class LwrMoveToPose implements ILwrState {
     private static final double END_OF_PATH_DEVIATION = 10;
     /** Step length of movement in a cycle in mm. */
     private static final double LENGTH_OF_SINGLE_STEP = 10;
+    
+    /** The logging object for logging output.*/
+    private ITaskLogger log = new DummyLogger();
 
     /** Current point on the linear path which is closest to the robot position */
     private Vector currentPointLine = null;
@@ -81,7 +86,7 @@ public class LwrMoveToPose implements ILwrState {
 
     /**
      * Norm vector containing the direction of the linear path from strat point
-     * to End point
+     * to End point.
      */
     private Vector directionLine = null;
 
@@ -244,6 +249,15 @@ public class LwrMoveToPose implements ILwrState {
 	    ack = "MoveToPose;false;";
 	}
 	lwrStatemachine.setAckIgtMsg(ack);
+    }
+    
+    @Override
+    public final void setLogger(final ITaskLogger extlogger) {
+	if (null == extlogger) {
+	    throw new NullPointerException("External logger is null");
+	}
+	log = extlogger;
+
     }
 
 }

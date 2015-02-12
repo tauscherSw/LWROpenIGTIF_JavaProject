@@ -22,14 +22,15 @@
 	=========================================================================*/
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
+import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
-import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
 /**
  * In this state the LWR is holding its position with a maximum stiffness. This
@@ -41,6 +42,9 @@ import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 public class LwrIdle implements ILwrState {
     /** Flag for increasing the stiffness params of the robot. */
     private boolean incStiffness = false;
+    
+    /** The logging object for logging output.*/
+    private ITaskLogger log = new DummyLogger();
 
     /**
      * Maximum allowed change in translational stiffness value per cycle in N/m.
@@ -197,7 +201,7 @@ public class LwrIdle implements ILwrState {
      *            The operated Statemachine
      */
     @Override
-    public void setAckPacket(final LwrStatemachine lwrStatemachine) {
+    public final void setAckPacket(final LwrStatemachine lwrStatemachine) {
 
 	String ack;
 	ack = "IDLE;";
@@ -207,6 +211,15 @@ public class LwrIdle implements ILwrState {
 	} else {
 	    lwrStatemachine.setAckIgtMsg(ack);
 	}
+    }
+    
+    @Override
+    public final void setLogger(final ITaskLogger extlogger) {
+	if (null == extlogger) {
+	    throw new NullPointerException("External logger is null");
+	}
+	log = extlogger;
+
     }
 
 }

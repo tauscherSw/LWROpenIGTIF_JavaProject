@@ -35,9 +35,12 @@
 
 package de.uniHannover.imes.igtIf.stateMachine;
 
+import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
+import com.neuronrobotics.sdk.common.Log;
 
+import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.stateMachine.states.ILwrState;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrGravComp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrIdle;
@@ -47,6 +50,7 @@ import de.uniHannover.imes.igtIf.stateMachine.states.LwrVirtualFixtures;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
 /**
  * State machine class using the LWRState interface and its sub class/states.
@@ -177,6 +181,9 @@ public class LwrStatemachine {
      * ACknowledgement OpenIGTLink Message for the state machine Interface.
      */
     private String ackIgtMsg = null;
+
+    /** The logging object for logging output. */
+    private ITaskLogger log = new DummyLogger();
 
     /**
      * The command pose in Cartesian space of the LWR in robot coordinates.
@@ -570,15 +577,13 @@ public class LwrStatemachine {
 			    } else if (cmdArray[2].contentEquals("img")) {
 				setVisualIfDatatype(VisualIFDatatypes.IMAGESPACE);
 			    }
-			    System.out
-				    .println("StateMachine: Visual IF started with  datatype "
-					    + getVisualIfDatatype()
-					    + "(1=img, 2=rob, 3=jnt)");
+			    log.info("StateMachine: Visual IF started with  datatype "
+				    + getVisualIfDatatype()
+				    + "(1=img, 2=rob, 3=jnt)");
 			} else if (cmdArray[1].contentEquals("false")
 				&& this.StartVisual) {
 			    this.StartVisual = false;
-			    System.out
-				    .println("StateMachine: Visual IF stopped!");
+			    log.warn("StateMachine: Visual IF stopped!");
 			}
 			this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			this.stateChanged = false;
@@ -632,7 +637,7 @@ public class LwrStatemachine {
 	    if (!this.lastPrintedErr.equals(ErrorMessage)) {
 		// Print the new ErrorMessage
 		if (debugInfo) {
-		    System.out.println(this.ErrorMessage);
+		    log.error(this.ErrorMessage);
 		}
 		// If necessary change robot state to LWRError
 		if (ErrorCode == OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
