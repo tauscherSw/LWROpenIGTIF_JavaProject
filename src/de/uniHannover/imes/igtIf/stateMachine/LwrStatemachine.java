@@ -765,7 +765,7 @@ public class LwrStatemachine {
      * @param newState
      *            the new state of the state machine.
      */
-    private void setNewState(final ILwrState newState) {
+    public final void setNewState(final ILwrState newState) {
 	mCurrentState = newState;
 	newState.setLogger(log);
     }

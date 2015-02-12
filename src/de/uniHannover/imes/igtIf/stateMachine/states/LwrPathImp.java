@@ -304,7 +304,7 @@ public class LwrPathImp implements ILwrState {
 	    if (err) {
 		lwrStatemachine.ErrorCode = 
 			OpenIGTLinkErrorCode.ConfigurationError;
-		lwrStatemachine.changeLWRState(new LwrIdle());
+		lwrStatemachine.setNewState(new LwrIdle());
 	    }
 
 	} else {
