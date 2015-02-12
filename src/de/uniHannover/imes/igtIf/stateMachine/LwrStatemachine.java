@@ -310,7 +310,7 @@ public class LwrStatemachine {
 		    "Communication data provider argument is null");
 	}
 	dataSink = dataProvider;
-	mCurrentState = new LwrIdle();
+	setNewState(new LwrIdle());
 	ackIgtMsg = "IDLE;";
 	stateChanged = true;
 	transformReceivedFlag = false;
@@ -329,17 +329,7 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public final void calcControlParam() {
-	mCurrentState.calcControlParam(this, dataSink.getCurRobotDataSet());
-    }
-
-    /**
-     * This function change the current state of the robot to the new state.
-     * 
-     * @param newState
-     *            the new LWRState
-     */
-    public final void changeLWRState(final ILwrState newState) {
-	mCurrentState = newState;
+	getCurrentState().calcControlParam(this, dataSink.getCurRobotDataSet());
     }
 
     /**
@@ -410,7 +400,7 @@ public class LwrStatemachine {
 		    // &&flagZ || ...) what ever you want
 		    LwrIdle newState = new LwrIdle();
 		    this.stateChanged = true;
-		    this.changeLWRState(newState);
+		    setNewState(newState);
 		    this.ErrorFlag = false;
 		    RobotState = LWRStatus.IDLE;
 		    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
@@ -425,7 +415,7 @@ public class LwrStatemachine {
 			// ToDO: Add check if it is allowed e.g. if(flagX &&
 			// flagY &&flagZ || ...) what ever you want
 			LwrGravComp newState = new LwrGravComp();
-			this.changeLWRState(newState);
+			setNewState(newState);
 			this.ErrorFlag = false;
 			// Set the init flag true
 			this.stateChanged = true;
@@ -448,7 +438,7 @@ public class LwrStatemachine {
 			if (cmdArray.length >= 9) {
 			    LwrVirtualFixtures newState = new LwrVirtualFixtures();
 
-			    this.changeLWRState(newState);
+			    setNewState(newState);
 			    // Set the init flag true
 			    this.stateChanged = true;
 			    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
@@ -477,7 +467,7 @@ public class LwrStatemachine {
 			    || RobotState == LWRStatus.VirtualFixtures) {
 			if (cmdArray.length == 5) {
 			    LwrPathImp newState = new LwrPathImp();
-			    this.changeLWRState(newState);
+			    setNewState(newState);
 			    // Set the init flag true
 			    this.stateChanged = true;
 			    this.ErrorFlag = false;
@@ -515,7 +505,7 @@ public class LwrStatemachine {
 			    this.ErrorCode = OpenIGTLinkErrorCode.ConfigurationError;
 
 			} else {
-			    this.changeLWRState(newState);
+			    setNewState(newState);
 			    // Set the init flag true
 			    this.stateChanged = true;
 			    this.ErrorFlag = false;
@@ -598,7 +588,7 @@ public class LwrStatemachine {
 		    this.stateChanged = true;
 		    this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 		    LwrIdle newState = new LwrIdle();
-		    this.changeLWRState(newState);
+		    setNewState(newState);
 		    RobotState = LWRStatus.IDLE;
 
 		} else {
@@ -618,7 +608,7 @@ public class LwrStatemachine {
 	    // If the State was Changed then interpret the CMD Packet according
 	    // to the Current stat
 	    if (this.stateChanged && !this.ErrorFlag) {
-		this.mCurrentState.interpretCmdPacket(this, null);
+		getCurrentState().interpretCmdPacket(this, null);
 	    }
 	} else {
 	    this.stateChanged = false;
@@ -644,14 +634,14 @@ public class LwrStatemachine {
 		    if (RobotState == LWRStatus.IDLE
 			    || RobotState == LWRStatus.GravComp) {
 			LwrIdle newState = new LwrIdle();
-			changeLWRState(newState);
+			setNewState(newState);
 			this.stateChanged = true;
 			RobotState = LWRStatus.IDLE;
 		    } else if (RobotState == LWRStatus.VirtualFixtures
 			    || RobotState == LWRStatus.PathImp
 			    || RobotState == LWRStatus.MovetoPose) {
 			LwrIdle newState = new LwrIdle();
-			changeLWRState(newState);
+			setNewState(newState);
 			this.stateChanged = true;
 			RobotState = LWRStatus.IDLE;
 		    }
@@ -675,7 +665,7 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public final void interpretCmdPacket() {
-	mCurrentState.interpretCmdPacket(this, currentPacket);
+	getCurrentState().interpretCmdPacket(this, currentPacket);
     }
 
     /**
@@ -689,7 +679,7 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public final void setAckPacket() {
-	mCurrentState.setAckPacket(this);
+	getCurrentState().setAckPacket(this);
     }
 
     /**
@@ -767,6 +757,26 @@ public class LwrStatemachine {
      */
     public final void setAckIgtMsg(final String msg) {
 	this.ackIgtMsg = msg;
+    }
+
+    /**
+     * Sets a new state and connects a logging mechanism to it.
+     * 
+     * @param newState
+     *            the new state of the state machine.
+     */
+    private void setNewState(final ILwrState newState) {
+	mCurrentState = newState;
+	newState.setLogger(log);
+    }
+
+    /**
+     * Getter for the current state of the statemachine .
+     * 
+     * @return the current state.
+     */
+    public final ILwrState getCurrentState() {
+	return mCurrentState;
     }
 
 }
