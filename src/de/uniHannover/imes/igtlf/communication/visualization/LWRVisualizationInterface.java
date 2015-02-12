@@ -45,6 +45,7 @@ import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
 import de.uniHannover.imes.igtlf.communication.IGTLMsg;
 import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
 
 /**
@@ -248,12 +249,6 @@ public class LWRVisualizationInterface extends Thread {
     private int poseUidTmpOld = -1;
 
     /**
-     * The data sink for robot data like the current jnt position or an external
-     * force vector.
-     */
-    private LBR robotDataSink;
-
-    /**
      * Provider for command data received via another openIGTL channel.
      */
     private CommunicationDataProvider comDataSink;
@@ -288,40 +283,32 @@ public class LWRVisualizationInterface extends Thread {
     /**
      * Constructor, which initializes this thread as a daemon.
      * 
-     * @param robotDataProvider
-     *            used as sink for robot-data send to slicer.
      * @param comDataProvider
      *            provider for command data received via another IGTL channel.
      */
-    public LWRVisualizationInterface(final LBR robotDataProvider,
+    public LWRVisualizationInterface(
 	    final CommunicationDataProvider comDataProvider) {
 
-	init(robotDataProvider, comDataProvider, new DummyLogger(),
-		CYCLE_TIME_DEFAULT);
+	init(comDataProvider, new DummyLogger(), CYCLE_TIME_DEFAULT);
 
     }
 
     /**
      * Constructor, which initializes this thread as a daemon.
      * 
-     * @param robotDataProvider
-     *            used as sink for robot-data send to slicer.
      * @param cycleTimeMs
      *            the desired cycle time for the main loop in ms.
      * @param comDataProvider
      *            provider for command data received via another IGTL channel.
      */
-    public LWRVisualizationInterface(final LBR robotDataProvider,
-	    final int cycleTimeMs,
+    public LWRVisualizationInterface(final int cycleTimeMs,
 	    final CommunicationDataProvider comDataProvider) {
-	init(robotDataProvider, comDataProvider, new DummyLogger(), cycleTimeMs);
+	init(comDataProvider, new DummyLogger(), cycleTimeMs);
     }
 
     /**
      * Constructor, which initializes this thread as a daemon.
      * 
-     * @param robotDataProvider
-     *            used as sink for robot-data send to slicer.
      * @param cycleTimeMs
      *            the desired cycle time for the main loop in ms.
      * @param logger
@@ -329,18 +316,16 @@ public class LWRVisualizationInterface extends Thread {
      * @param comDataProvider
      *            provider for command data received via another IGTL channel.
      */
-    public LWRVisualizationInterface(final LBR robotDataProvider,
+    public LWRVisualizationInterface(
 	    final CommunicationDataProvider comDataProvider,
 	    final int cycleTimeMs, final ITaskLogger logger) {
-	init(robotDataProvider, comDataProvider, logger, cycleTimeMs);
+	init(comDataProvider, logger, cycleTimeMs);
     }
 
     /**
      * Initializes this class according to the parameters which are set before
      * in the different constructors.
      * 
-     * @param datasink
-     *            the sink for robot data.
      * @param comDataProvider
      *            provider for command data received via another IGTL channel.
      * @param logger
@@ -348,10 +333,8 @@ public class LWRVisualizationInterface extends Thread {
      * @param cycletime
      *            the desired cycle time in ms.
      */
-    private void init(final LBR datasink,
-	    final CommunicationDataProvider comDataProvider,
+    private void init(final CommunicationDataProvider comDataProvider,
 	    final ITaskLogger logger, final int cycletime) {
-	robotDataSink = datasink;
 	comDataSink = comDataProvider;
 	log = logger;
 	cycleTime = cycletime;
@@ -834,19 +817,13 @@ public class LWRVisualizationInterface extends Thread {
 	    final MatrixTransformation trafoExternalBase = comDataSink
 		    .getCurrentCmdPacket().getTrafo();
 
+	    comDataSink.readNewRobotData();
+	    RobotDataSet dataSet = comDataSink.getCurRobotDataSet();
 	    // Construct current data set.
-	    currentDataSet.setData(
-		    robotDataSink.getCurrentJointPosition(),
-		    robotDataSink.getExternalForceTorque(
-			    robotDataSink.getFlange()).getForce(),
-		    MatrixTransformation.of(robotDataSink
-			    .getCurrentCartesianPosition(
-				    robotDataSink.getFlange())
-			    .transformationFromWorld()), trafoExternalBase
-			    .compose(MatrixTransformation.of(robotDataSink
-				    .getCurrentCartesianPosition(
-					    robotDataSink.getFlange())
-				    .transformationFromWorld())));
+	    currentDataSet.setData(dataSet.getCurJntPose(),
+		    dataSet.getTcpForce(),
+		    dataSet.getCurPose(), trafoExternalBase
+			    .compose(dataSet.getCurPose()));
 	}
     }
 
