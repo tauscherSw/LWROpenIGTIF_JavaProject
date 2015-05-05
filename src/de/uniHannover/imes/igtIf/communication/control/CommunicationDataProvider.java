@@ -1,4 +1,4 @@
-package de.uniHannover.imes.igtlf.communication.control;
+package de.uniHannover.imes.igtIf.communication.control;
 
 import java.nio.ByteBuffer;
 import java.util.Observable;
@@ -13,7 +13,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
-import de.uniHannover.imes.igtlf.communication.IGTLMsg;
+import de.uniHannover.imes.igtIf.communication.IGTLMsg;
 
 /**
  * This class represents the communication data, which is exchanged via the

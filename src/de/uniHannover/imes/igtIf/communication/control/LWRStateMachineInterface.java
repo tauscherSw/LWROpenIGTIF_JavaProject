@@ -21,7 +21,7 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	=========================================================================*/
 
-package de.uniHannover.imes.igtlf.communication.control;
+package de.uniHannover.imes.igtIf.communication.control;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,9 +32,9 @@ import com.kuka.common.StatisticTimer;
 import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
-import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
-import de.uniHannover.imes.igtlf.communication.IGTLMsg;
-import de.uniHannover.imes.igtlf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.communication.IGTLCommunicator;
+import de.uniHannover.imes.igtIf.communication.IGTLMsg;
+import de.uniHannover.imes.igtIf.logging.DummyLogger;
 import openIGTLink.swig.ByteArr;
 import openIGTLink.swig.IGTLheader;
 import openIGTLink.swig.IGTLstring;

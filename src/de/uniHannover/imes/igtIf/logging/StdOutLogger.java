@@ -1,4 +1,4 @@
-package de.uniHannover.imes.igtlf.logging;
+package de.uniHannover.imes.igtIf.logging;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 

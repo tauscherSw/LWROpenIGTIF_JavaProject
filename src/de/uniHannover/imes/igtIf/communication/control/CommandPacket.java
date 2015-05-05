@@ -1,9 +1,9 @@
-package de.uniHannover.imes.igtlf.communication.control;
+package de.uniHannover.imes.igtIf.communication.control;
 
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
-import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider.IgtlMsgType;
+import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider.IgtlMsgType;
 
 /**
  * This class represents one single cyclic dataset, which is given to the

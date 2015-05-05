@@ -33,10 +33,10 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
-import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
-import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
-import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtlf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtIf.logging.DummyLogger;
 
 /**
  * In This State the LWR is moving to a specified position in Cartesian space.

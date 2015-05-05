@@ -44,10 +44,10 @@ import de.uniHannover.imes.igtIf.stateMachine.states.LwrIdle;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrMoveToPose;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrPathImp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrVirtualFixtures;
-import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
-import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
-import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
-import de.uniHannover.imes.igtlf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtIf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtIf.logging.DummyLogger;
 
 /**
  * State machine class using the LWRState interface and its sub class/states.

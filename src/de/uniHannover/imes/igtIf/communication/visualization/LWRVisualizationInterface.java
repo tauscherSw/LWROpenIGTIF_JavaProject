@@ -20,7 +20,7 @@
 	NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	=========================================================================*/
-package de.uniHannover.imes.igtlf.communication.visualization;
+package de.uniHannover.imes.igtIf.communication.visualization;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -42,11 +42,11 @@ import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
-import de.uniHannover.imes.igtlf.communication.IGTLCommunicator;
-import de.uniHannover.imes.igtlf.communication.IGTLMsg;
-import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
-import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtlf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.communication.IGTLCommunicator;
+import de.uniHannover.imes.igtIf.communication.IGTLMsg;
+import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtIf.logging.DummyLogger;
 
 /**
  * This Class for the Communication with a Visualization system using the

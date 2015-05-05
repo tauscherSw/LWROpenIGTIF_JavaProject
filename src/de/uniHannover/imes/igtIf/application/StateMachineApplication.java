@@ -39,10 +39,10 @@ import java.util.concurrent.TimeUnit;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
-import de.uniHannover.imes.igtlf.communication.control.CommunicationDataProvider;
-import de.uniHannover.imes.igtlf.communication.control.LWRStateMachineInterface;
-import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface;
-import de.uniHannover.imes.igtlf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtIf.communication.control.LWRStateMachineInterface;
+import de.uniHannover.imes.igtIf.communication.visualization.LWRVisualizationInterface;
+import de.uniHannover.imes.igtIf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
 
 import com.kuka.common.StatisticTimer;
 import com.kuka.common.ThreadUtil;

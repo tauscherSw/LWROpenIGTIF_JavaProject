@@ -32,9 +32,9 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
-import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
-import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtlf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtIf.logging.DummyLogger;
 
 /**
  * In this State two different kinds of Virtuall Fixtures, a plane and a cone

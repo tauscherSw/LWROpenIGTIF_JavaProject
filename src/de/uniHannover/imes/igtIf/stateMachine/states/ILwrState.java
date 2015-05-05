@@ -25,8 +25,8 @@ package de.uniHannover.imes.igtIf.stateMachine.states;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
-import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
-import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
+import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
 
 /**
  * Interface for the LWR States defining the Functions void
