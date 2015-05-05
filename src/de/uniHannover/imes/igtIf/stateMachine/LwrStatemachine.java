@@ -38,9 +38,6 @@ package de.uniHannover.imes.igtIf.stateMachine;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
-import com.neuronrobotics.sdk.common.Log;
-
-import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.stateMachine.states.ILwrState;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrGravComp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrIdle;
