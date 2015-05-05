@@ -170,7 +170,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * The nullspace stiffness (rotational), when the robot is moving in
      * cartesian impedance mode. Value in Nm/rad.
      */
-    private static final double NULLSP_STIFF = 5000;
+    private static final double NULLSP_STIFF = 200.;
     /**
      * The maximum path-orientation deviation in a-angle, when the robot is
      * moving in cartesian impedance mode. Values in rad.
@@ -239,7 +239,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * The translational stiffness, when the robot is moving in cartesian
      * impedance mode. Value in N/m.
      */
-    private static final double TRANSL_STIFF = 5000;
+    private static final double TRANSL_STIFF = 2000;
     /**
      * Velocity of robot movements during state-machine execution. Value in %.
      */
@@ -413,7 +413,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	controlMode = new CartesianImpedanceControlMode();
 	paramCartesianImpedanceMode(controlMode);
 	getLogger().info(
-		controlMode.getClass().getName()
+		controlMode.getClass().getSimpleName()
 			+ " set for state machine.");
 
 	/*
@@ -469,8 +469,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	aRealtimeMotion.setJointAccelerationRel(VEL);
 	aRealtimeMotion.setJointVelocityRel(ACC);
 
-	System.out.println("Starting SmartServo Realtime Motion in "
-		+ controlMode.getClass().getName());
+	getLogger().info("Starting SmartServo Realtime Motion in "
+		+ controlMode.getClass().getSimpleName());
 
 	// Set the control mode as member of the realtime motion
 	imesTool.getDefaultMotionFrame().moveAsync(
