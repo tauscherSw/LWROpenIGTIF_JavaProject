@@ -30,6 +30,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
+import de.uniHannover.imes.igtIf.util.MathUtil;
 import de.uniHannover.imes.igtlf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtlf.communication.control.RobotDataSet;
 import de.uniHannover.imes.igtlf.logging.DummyLogger;
@@ -202,9 +203,9 @@ public class LwrPathImp implements ILwrState {
 	    cartImp.parametrize(CartDOF.Z).setStiffness(aTransStiffVal.getZ());
 	    cartImp.parametrize(CartDOF.ROT).setStiffness(CART_ROT_STIFFNESS);
 	    cartImp.setNullSpaceStiffness(0.0);
-	    newStiffness[0] = Math.toIntExact(Math.round(aTransStiffVal.getX()));
-	    newStiffness[1] = Math.toIntExact(Math.round(aTransStiffVal.getY()));
-	    newStiffness[2] = Math.toIntExact(Math.round(aTransStiffVal.getZ()));
+	    newStiffness[0] = MathUtil.longToInt(Math.round(aTransStiffVal.getX()));
+	    newStiffness[1] = MathUtil.longToInt(Math.round(aTransStiffVal.getY()));
+	    newStiffness[2] = MathUtil.longToInt(Math.round(aTransStiffVal.getZ()));
 	    newStiffness[3] = CART_ROT_STIFFNESS;
 	    newStiffness[4] = CART_ROT_STIFFNESS;
 	    newStiffness[5] = CART_ROT_STIFFNESS;
