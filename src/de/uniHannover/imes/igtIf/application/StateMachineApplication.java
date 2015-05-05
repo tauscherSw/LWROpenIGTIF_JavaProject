@@ -413,7 +413,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	controlMode = new CartesianImpedanceControlMode();
 	paramCartesianImpedanceMode(controlMode);
 	getLogger().info(
-		controlMode.getClass().getTypeName()
+		controlMode.getClass().getName()
 			+ " set for state machine.");
 
 	/*
