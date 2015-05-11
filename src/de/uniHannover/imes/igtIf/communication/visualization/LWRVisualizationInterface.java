@@ -332,6 +332,7 @@ public class LWRVisualizationInterface extends Thread {
 	cycleTime = cycletime;
 	setDaemon(true);
 	communicator = new IGTLCommunicator(SLICER_VISUAL_COM_PORT, cycleTime);
+	cyclicDataLock = new Object();
     }
 
     // // TODO duplicate code same method can be found in
