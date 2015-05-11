@@ -63,6 +63,7 @@ public final class FileSystemUtil {
 
 	jEntry = jFile.getJarEntry(filename);
 	if (jEntry == null) {
+	    jFile.close();
 	    throw new IllegalArgumentException("The file " + filename
 		    + " cant be found in " + sourceJar.getName());
 	}
@@ -72,6 +73,8 @@ public final class FileSystemUtil {
 
 	// Check write access, check if file is lockable
 	if (!destinationFile.canWrite() || !destinationFile.setReadOnly()) {
+	    jFile.close();
+	    outPut.close();
 	    throw new IOException("Cannot write & lock file "
 		    + destinationFile.getAbsolutePath());
 	}

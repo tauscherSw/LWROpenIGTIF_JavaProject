@@ -89,9 +89,14 @@ public class LWRStateMachineInterface extends Thread {
     private static final int CYCLE_TIME_DEFAULT = 20;
 
     /**
-     * External swig library + path within the jar.
+     * External swig library.
      */
     private static final String SWIG_DLL = "OpenIGTLinkLib/SWIGigtlutil.dll";
+
+    /**
+     * Relative dll path in jar.
+     */
+    private static final String SWIG_DLL_RELPATH = "OpenIGTLinkLib/";
 
     /**
      * Relative library path in project directory.
@@ -115,13 +120,14 @@ public class LWRStateMachineInterface extends Thread {
 		+ File.separatorChar + "Git" + File.separatorChar);
 	File[] dirs = ProjectParentDir.listFiles();
 	File projectDir = dirs[0];
-	File JarSource = new File(projectDir.getAbsolutePath()
-		+ LIB_PATH_REL);
-	File JarDestination = new File(projectDir.getAbsolutePath() + File.separatorChar + SWIG_DLL);
-	System.out.println("Source File: " +JarSource.getAbsolutePath());
-	System.out.println("Dest File: " +JarDestination.getAbsolutePath());
+	File JarSource = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
+	File JarDestination = new File(projectDir.getAbsolutePath()
+		+ File.separatorChar + SWIG_DLL);
+	System.out.println("Source File: " + JarSource.getAbsolutePath());
+	System.out.println("Dest File: " + JarDestination.getAbsolutePath());
 	try {
-	    FileSystemUtil.extractFileFromJar(JarSource, JarDestination, SWIG_DLL);
+	    FileSystemUtil.extractFileFromJar(JarSource, JarDestination,
+		    SWIG_DLL_RELPATH + SWIG_DLL);
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
