@@ -30,6 +30,7 @@ public final class FileSystemUtil {
 	    final File destinationFile, final String filename)
 	    throws IOException {
 
+
 	/*
 	 * Preliminary checks if arguments are correct
 	 */
@@ -40,6 +41,13 @@ public final class FileSystemUtil {
 	if (destinationFile.isDirectory()) {
 	    throw new IllegalArgumentException("the argument "
 		    + destinationFile.getAbsolutePath() + " is no file");
+	}
+	if (!destinationFile.exists()) {
+	    if (!destinationFile.createNewFile()) {
+		throw new IOException("Failed to create "
+			+ destinationFile.getAbsolutePath());
+	    }
+	    
 	}
 
 	/*
@@ -52,48 +60,38 @@ public final class FileSystemUtil {
 	/*
 	 * Begin search for file in jar-archive and copy it.
 	 */
-	try {
-	    jEntry = jFile.getJarEntry(filename);
-	    if (jEntry == null) {
-		throw new IllegalArgumentException("The file " + filename
-			+ " cant be found in " + sourceJar.getName());
-	    }
 
-	    InputStream dllStream = jFile.getInputStream(jEntry);
-	    outPut = new FileOutputStream(destinationFile);
-
-	    // Check write access, check if file is lockable
-	    if (!destinationFile.canWrite() || !destinationFile.setReadOnly()) {
-		throw new IOException("Cannot write & lock file "
-			+ destinationFile.getAbsolutePath());
-	    }
-
-	    while (true) {
-		int bytesRead = dllStream.read();
-		// check if all bytes were read.
-		if (bytesRead == -1) {
-		    break;
-		}
-		outPut.write(bytesRead);
-	    }
-
-	    destinationFile.setWritable(true);
-
-	    System.out.println("Copied " + filename + " from "
-		    + sourceJar.getName() + " to "
-		    + destinationFile.getAbsolutePath());
-
-	} catch (IOException e) {
-	    System.out.println("Failed to copy " + filename + " from "
-		    + sourceJar.getName() + " to "
-		    + destinationFile.getAbsolutePath());
-	    throw e;
-	} finally {
-	    if (null != outPut) {
-		outPut.close();
-	    }
-	    jFile.close();
+	jEntry = jFile.getJarEntry(filename);
+	if (jEntry == null) {
+	    throw new IllegalArgumentException("The file " + filename
+		    + " cant be found in " + sourceJar.getName());
 	}
+
+	InputStream dllStream = jFile.getInputStream(jEntry);
+	outPut = new FileOutputStream(destinationFile);
+
+	// Check write access, check if file is lockable
+	if (!destinationFile.canWrite() || !destinationFile.setReadOnly()) {
+	    throw new IOException("Cannot write & lock file "
+		    + destinationFile.getAbsolutePath());
+	}
+
+	while (true) {
+	    int bytesRead = dllStream.read();
+	    // check if all bytes were read.
+	    if (bytesRead == -1) {
+		break;
+	    }
+	    outPut.write(bytesRead);
+	}
+
+	outPut.close();
+	jFile.close();
+	destinationFile.setWritable(true);
+
+	System.out.println("Copied " + filename + " from "
+		+ sourceJar.getName() + " to "
+		+ destinationFile.getAbsolutePath());
 
     }
 

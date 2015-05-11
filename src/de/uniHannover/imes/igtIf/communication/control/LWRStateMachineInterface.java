@@ -42,6 +42,7 @@ import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLCommunicator;
 import de.uniHannover.imes.igtIf.communication.IGTLMsg;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.util.FileSystemUtil;
 
 /**
  * This Class for the Communication with a control system using the opnIGTLink
@@ -88,9 +89,9 @@ public class LWRStateMachineInterface extends Thread {
     private static final int CYCLE_TIME_DEFAULT = 20;
 
     /**
-     * External swig library.
+     * External swig library + path within the jar.
      */
-    private static final String SWIG_DLL = "SWIGigtlutil.dll";
+    private static final String SWIG_DLL = "OpenIGTLinkLib/SWIGigtlutil.dll";
 
     /**
      * Relative library path in project directory.
@@ -119,8 +120,12 @@ public class LWRStateMachineInterface extends Thread {
 	File JarDestination = new File(projectDir.getAbsolutePath() + File.separatorChar + SWIG_DLL);
 	System.out.println("Source File: " +JarSource.getAbsolutePath());
 	System.out.println("Dest File: " +JarDestination.getAbsolutePath());
-	System.load("C:/KRC/ApplicationServer/Git/IGTBasicStateMachine"
-		+ "/OpenIGTLinkLib/SWIGigtlutil.dll");
+	try {
+	    FileSystemUtil.extractFileFromJar(JarSource, JarDestination, SWIG_DLL);
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+	System.load(JarDestination.getAbsolutePath());
     }
 
     /**
