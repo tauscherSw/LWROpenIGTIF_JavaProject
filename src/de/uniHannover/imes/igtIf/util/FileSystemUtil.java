@@ -1,6 +1,7 @@
 package de.uniHannover.imes.igtIf.util;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystem;
@@ -16,7 +17,7 @@ import java.util.jar.JarFile;
  * This class provides static methods for file-operations on the robot
  * controller.
  */
-public class FileSystemUtil {
+public final class FileSystemUtil {
 
     /**
      * Extracts a file from a jar archive. This means this methods searches for
@@ -31,7 +32,7 @@ public class FileSystemUtil {
      * @throws IOException
      *             if extraction of the file fails.
      */
-    public static void extractFileFromJar(final File sourceJar,
+    public static final void extractFileFromJar(final File sourceJar,
 	    final File destinationFile, final String filename)
 	    throws IOException {
 
@@ -53,8 +54,7 @@ public class FileSystemUtil {
 	JarFile jFile = new JarFile(sourceJar);
 	JarEntry jEntry = null;
 	boolean fileFoundFlag = false;
-	FileSystem fs = FileSystems.getDefault();
-	Path outputFile = fs.getPath(destinationFile.getAbsolutePath());
+	FileOutputStream outPut = null;
 
 	/*
 	 * Begin search for file in jar-archive and copy it.
@@ -69,8 +69,26 @@ public class FileSystemUtil {
 		// file found
 		if (jEntry.getName().equals(filename)) {
 		    InputStream dllStream = jFile.getInputStream(jEntry);
-		    Files.copy(dllStream, outputFile,
-			    StandardCopyOption.REPLACE_EXISTING);
+		    outPut = new FileOutputStream(destinationFile);
+
+		    // Check write access, check if file is lockable
+		    if (!destinationFile.canWrite()
+			    || !destinationFile.setReadOnly()) {
+			throw new IOException("Cannot write & lock file "
+				+ destinationFile.getAbsolutePath());
+		    }
+
+		    while (true) {
+			int bytesRead = dllStream.read();
+			// check if all bytes were read.
+			if (bytesRead == -1) {
+			    break;
+			}
+			outPut.write(bytesRead);
+		    }
+
+		    destinationFile.setWritable(true);
+
 		    System.out.println("Copied " + filename + " from "
 			    + sourceJar.getName() + " to "
 			    + destinationFile.getAbsolutePath());
@@ -91,6 +109,9 @@ public class FileSystemUtil {
 		    + destinationFile.getAbsolutePath());
 	    throw e;
 	} finally {
+	    if (null != outPut) {
+		outPut.close();
+	    }
 	    jFile.close();
 	}
 
