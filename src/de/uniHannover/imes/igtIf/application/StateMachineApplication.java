@@ -421,18 +421,18 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	 */
 	getLogger().fine("Initializing smart servo...");
 	initSmartServo();
-	getLogger().fine("Smart servo initialized.");
+	getLogger().info("Smart servo initialized.");
 
-	getLogger().fine(
+	getLogger().info(
 		"Initializing slicer control and slicer "
 			+ "visualization threads...");
 	initInterfaceThreads();
-	getLogger().fine(
+	getLogger().info(
 		"slicer control and slicer visualization threads initialized.");
 
 	getLogger().fine("Initializing state machine...");
 	initStateMachine();
-	getLogger().fine("state machine initialized.");
+	getLogger().info("state machine initialized.");
 
     }
 
@@ -446,8 +446,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	slicerControlIf.setPriority(SLICER_CONTROL_PRIO);
 	slicerControlIf.millisectoSleep = SLICER_CONTROL_CYLCETIME_MS;
 
-	slicerVisualIf = new LWRVisualizationInterface(
-		comDataProvider, SLICER_VISUAL_CYLCETIME_MS, getLogger());
+	slicerVisualIf = new LWRVisualizationInterface(comDataProvider,
+		SLICER_VISUAL_CYLCETIME_MS, getLogger());
 	slicerVisualIf.setPriority(SLICER_VISUAL_PRIO);
 	slicerVisualIf.setSenderConfiguration(VisualIFDatatypes.JOINTSPACE,
 		false);
@@ -469,8 +469,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	aRealtimeMotion.setJointAccelerationRel(VEL);
 	aRealtimeMotion.setJointVelocityRel(ACC);
 
-	getLogger().info("Starting SmartServo Realtime Motion in "
-		+ controlMode.getClass().getSimpleName());
+	getLogger().info(
+		"Starting SmartServo Realtime Motion in "
+			+ controlMode.getClass().getSimpleName());
 
 	// Set the control mode as member of the realtime motion
 	imesTool.getDefaultMotionFrame().moveAsync(
@@ -570,11 +571,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	long startTimeStamp = System.nanoTime();
 	JointPosition initialPosition = imesLBR.getCurrentJointPosition();
 
-	getLogger().info("Starting Thread for state control communication ");
+	getLogger().info("Starting Thread for state control communication.");
 	slicerControlIf.start();
 
 	StatisticTimer timing = new StatisticTimer();
 
+	getLogger().info("Entering main loop");
 	// Main loop
 	while (stateMachineRun && i < N_OF_RUNS) {
 
@@ -590,14 +592,14 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		try {
 		    smartServoRuntime.updateWithRealtimeSystem();
 		    // Get the measured position in cartesian pose
-//		    imesStatemachine.curPose = MatrixTransformation
-//			    .of((ITransformation) imesTool
-//				    .getDefaultMotionFrame());
-//		    imesStatemachine.curJntPose = smartServoRuntime
-//			    .getAxisQMsrOnController();
-//		    imesStatemachine.tcpForce = smartServoRuntime
-//			    .getExtForceVector();
-//		    imesStatemachine.poseUid++;
+		    // imesStatemachine.curPose = MatrixTransformation
+		    // .of((ITransformation) imesTool
+		    // .getDefaultMotionFrame());
+		    // imesStatemachine.curJntPose = smartServoRuntime
+		    // .getAxisQMsrOnController();
+		    // imesStatemachine.tcpForce = smartServoRuntime
+		    // .getExtForceVector();
+		    // imesStatemachine.poseUid++;
 		    comDataProvider.readNewRobotData();
 		} catch (Exception e) {
 		    errMsg = "Error: Failed Update with RealtimeSystem!!";
@@ -618,7 +620,11 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    // // Start the Visualization thread
 		    // slicerVisualIf.start();
 		    // visualOnFlag = true;
+		    getLogger()
+			    .info("Starting Thread for robot-visualization communication.");
+
 		    slicerVisualIf.updateData();
+		    slicerVisualIf.start();
 		    slicerVisualIf.setCyclicCommunication(true);
 
 		}
@@ -667,8 +673,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		// If the State has changed print the new State
 		if (imesStatemachine.stateChanged) {
-		    System.out.println("Robot State has Changed to:"
-			    + imesStatemachine.RobotState.name());
+		    getLogger().info(
+			    "Robot State has Changed to:"
+				    + imesStatemachine.RobotState.name());
 
 		}
 
@@ -687,14 +694,21 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		imesStatemachine.errHandler(true);
 
 		// Calculating the new control Param and Change the parameters
+		getLogger().fine("Calculating new control parameters");
 		imesStatemachine.calcControlParam(); // TODO calc method should
 						     // return a value
 
 		// Change the control mode settings of the robot and send a new
 		// Destination pose
 		try {
+		    getLogger().fine(
+			    "Changing control mode settings to "
+				    + imesStatemachine.controlMode.toString());
 		    smartServoRuntime
 			    .changeControlModeSettings(imesStatemachine.controlMode);
+		    getLogger().fine(
+			    "Commanding new robot-pose "
+				    + imesStatemachine.cmdPose.toString());
 		    smartServoRuntime.setDestination(imesStatemachine.cmdPose);
 		} catch (Exception e) {
 		    errMsg = "Error: Failed to change Realtime Settings!!";

@@ -416,10 +416,18 @@ public class CommunicationDataProvider {
      * @return the command packet.
      */
     public final CommandPacket getCurrentCmdPacket() {
+
+	//Initialize packet if it is null for the first time
+	if (curPacket == null) {
+	    // initialize the current command packet.
+	    curPacket = new CommandPacket("IDLE;", IgtlMsgType.Command, 0,
+		    null, false);
+	}
 	synchronized (curPacket) {
 	    return curPacket;
 	}
     }
+    
 
     /**
      * Getter for the current poseUid.

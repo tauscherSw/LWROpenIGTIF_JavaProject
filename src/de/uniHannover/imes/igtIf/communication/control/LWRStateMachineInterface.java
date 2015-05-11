@@ -116,23 +116,24 @@ public class LWRStateMachineInterface extends Thread {
 	 * found in another jar-archive.
 	 */
 	// Get path to jar.
-	File ProjectParentDir = new File(System.getProperty("user.dir")
+	File projParentDir = new File(System.getProperty("user.dir")
 		+ File.separatorChar + "Git" + File.separatorChar);
-	File[] dirs = ProjectParentDir.listFiles();
+	File[] dirs = projParentDir.listFiles();
 	File projectDir = dirs[0];
-	File JarSource = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
-	File JarDestination = new File(projectDir.getAbsolutePath()
+	File jarSrc = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
+	File jarDest = new File(projectDir.getAbsolutePath()
 		+ File.separatorChar + SWIG_DLL);
-	System.out.println("Source File: " + JarSource.getAbsolutePath());
-	System.out.println("Dest File: " + JarDestination.getAbsolutePath());
+	System.out.println("Source File: " + jarSrc.getAbsolutePath());
+	System.out.println("Dest File: " + jarDest.getAbsolutePath());
 	try {
-	    FileSystemUtil.extractFileFromJar(JarSource, JarDestination,
+	    FileSystemUtil.extractFileFromJar(jarSrc, jarDest,
 		    SWIG_DLL_RELPATH + SWIG_DLL);
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
-	System.load(JarDestination.getAbsolutePath());
-	System.out.println("Loaded library " + JarDestination.getAbsolutePath());
+	System.load(jarDest.getAbsolutePath());
+	System.out
+		.println("Loaded library " + jarDest.getAbsolutePath());
     }
 
     /**
@@ -375,18 +376,13 @@ public class LWRStateMachineInterface extends Thread {
 
 	comRunning = true; // TODO Tobi
 
-	try {
-	    if (!communicator.isClosed()) {
-		sendIGTStringMessage(getAckMsg()
-			+ comDataSink.getCurrentCmdPacket().getUid() + ";");
-	    }
-	} catch (Exception e1) {
-	    log.error("StateMachineIF: Couldn't Send ACk data");
-	}
-
 	// Entering Loop for Communication - the loop is stopped if ControlRun
 	// is set to false
+	log.info("Entering main loop in LWRStateMachine Interface Thread.");
+	long currentUid = 0;
 	while (comRunning) {
+
+	    log.info(this.getName() + " begins its main loop");
 	    // Starting Time
 	    long startTimeStamp = (long) (System.nanoTime());
 
@@ -395,10 +391,15 @@ public class LWRStateMachineInterface extends Thread {
 
 		try {
 		    // Receive Message from State Control
+		    log.info("");
 		    receiveMessage(); // TODO deal with Runtime exceptions
 				      // properly
-		    sendIGTStringMessage(getAckMsg()
-			    + comDataSink.getCurrentCmdPacket().getUid() + ";");
+		    log.info(this.getName() + " received a message.");
+		    currentUid = comDataSink.getCurrentCmdPacket().getUid();
+		    sendIGTStringMessage(getAckMsg() + currentUid + ";");
+		    log.info(this.getName()
+			    + " sends an acknowledgement for msg with uid "
+			    + currentUid + ".");
 		} catch (IOException e) {
 		    connectionErrCounter++;
 		}
@@ -406,7 +407,12 @@ public class LWRStateMachineInterface extends Thread {
 	    } else { // If there is an connection error stop listening server
 		     // and restart the server
 		try {
+		    log.warn(this.getName()
+			    + " restarts its communicator port because "
+			    + "the connection was closed.");
 		    communicator.restart();
+		    log.info(this.getName()
+			    + " restarted successfully its communicator.");
 		} catch (IOException e) {
 		    log.error("Could not reestablish openIGTL connection", e);
 
@@ -444,10 +450,12 @@ public class LWRStateMachineInterface extends Thread {
 			    .getMeanTimeMillis() < 2 * millisectoSleep)) {
 		log.error("StateMachineIF: Warning bad communication quality!");
 	    }
+	    log.info(this.getName() + " ends its main loop");
 	} // end while
 
 	// End all communication, when run() ends.
 	try {
+	    log.info(this.getName() + " will be disposed.");
 	    communicator.dispose();
 	} catch (IOException e) {
 	    log.error("Closing of the IGTL connection failed", e);
