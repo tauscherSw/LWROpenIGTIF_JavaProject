@@ -22,6 +22,7 @@
 	=========================================================================*/
 package de.uniHannover.imes.igtIf.communication.visualization;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -35,7 +36,6 @@ import com.kuka.common.StatisticTimer;
 import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
-import com.kuka.roboticsAPI.deviceModel.LBR;
 import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
@@ -47,6 +47,7 @@ import de.uniHannover.imes.igtIf.communication.IGTLMsg;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.util.FileSystemUtil;
 
 /**
  * This Class for the Communication with a Visualization system using the
@@ -104,16 +105,6 @@ public class LWRVisualizationInterface extends Thread {
      */
     public static final int SLICER_VISUAL_COM_PORT = 49002;
 
-    /**
-     * Load SWIG igtlutil library (Default Library folder is
-     * "..\OpenIGTLinkLib\swig\"
-     */
-    static {
-	
-
-	System.load("C:/KRC/ApplicationServer/Git/"
-		+ "IGTBasicStateMachine/OpenIGTLinkLib/SWIGigtlutil.dll");
-    }
 
     /**
      * In this function the homogeneous Matrix-Transformation for each Joint is
@@ -822,9 +813,8 @@ public class LWRVisualizationInterface extends Thread {
 	    RobotDataSet dataSet = comDataSink.getCurRobotDataSet();
 	    // Construct current data set.
 	    currentDataSet.setData(dataSet.getCurJntPose(),
-		    dataSet.getTcpForce(),
-		    dataSet.getCurPose(), trafoExternalBase
-			    .compose(dataSet.getCurPose()));
+		    dataSet.getTcpForce(), dataSet.getCurPose(),
+		    trafoExternalBase.compose(dataSet.getCurPose()));
 	}
     }
 

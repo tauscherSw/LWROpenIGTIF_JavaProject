@@ -91,7 +91,7 @@ public class LWRStateMachineInterface extends Thread {
     /**
      * External swig library.
      */
-    private static final String SWIG_DLL = "OpenIGTLinkLib/SWIGigtlutil.dll";
+    private static final String SWIG_DLL = "SWIGigtlutil.dll";
 
     /**
      * Relative dll path in jar.
@@ -132,6 +132,7 @@ public class LWRStateMachineInterface extends Thread {
 	    e.printStackTrace();
 	}
 	System.load(JarDestination.getAbsolutePath());
+	System.out.println("Loaded library " + JarDestination.getAbsolutePath());
     }
 
     /**
