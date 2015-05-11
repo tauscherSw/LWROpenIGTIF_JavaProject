@@ -56,7 +56,6 @@ import com.kuka.roboticsAPI.deviceModel.LBR;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.LoadData;
 import com.kuka.roboticsAPI.geometricModel.Tool;
-import com.kuka.roboticsAPI.geometricModel.math.ITransformation;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.physics.Inertia;
 import com.kuka.roboticsAPI.motionModel.ISmartServoRuntime;
@@ -576,10 +575,14 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 	StatisticTimer timing = new StatisticTimer();
 
-	getLogger().info("Entering main loop");
 	// Main loop
+	getLogger().info(
+		this.getClass().getName() + " is entering the main loop");
+
 	while (stateMachineRun && i < N_OF_RUNS) {
 
+	    getLogger().info(
+		    this.getClass().getName() + " begins the main loop");
 	    try {
 
 		/*
@@ -590,6 +593,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		/* Update with controller of LWR. */
 		try {
+		    getLogger().info(
+			    this.getClass().getName()
+				    + " updates the smart servo runtime.");
 		    smartServoRuntime.updateWithRealtimeSystem();
 		    // Get the measured position in cartesian pose
 		    // imesStatemachine.curPose = MatrixTransformation
@@ -600,14 +606,25 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    // imesStatemachine.tcpForce = smartServoRuntime
 		    // .getExtForceVector();
 		    // imesStatemachine.poseUid++;
+		    getLogger()
+			    .info(this.getClass().getName()
+				    + " induces an update of the current robot data.");
 		    comDataProvider.readNewRobotData();
 		} catch (Exception e) {
 		    errMsg = "Error: Failed Update with RealtimeSystem!!";
+		    getLogger()
+			    .error(this.getClass().getName()
+				    + " failed to update the smart servo runtime.");
 		    // TODO exception concept.
 		}
 
 		if (slicerVisualIf.isEnabled()) {
 
+		    getLogger().info(
+			    this.getClass().getName()
+				    + " enables the main loop in the "
+				    + slicerVisualIf.getClass().getName()
+				    + " thread.");
 		    slicerVisualIf.setSenderConfiguration(null, true);
 		    slicerVisualIf.updateData();
 		}
@@ -620,22 +637,26 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    // // Start the Visualization thread
 		    // slicerVisualIf.start();
 		    // visualOnFlag = true;
-		    getLogger()
-			    .info("Starting Thread for robot-visualization communication.");
+		    getLogger().info(
+			    this.getClass().getName() + " starts the "
+				    + slicerVisualIf.getClass().getName()
+				    + " thread.");
 
 		    slicerVisualIf.updateData();
 		    slicerVisualIf.start();
 		    slicerVisualIf.setCyclicCommunication(true);
-
-		}
-
-		else if (imesStatemachine.StartVisual && visualOnFlag
+		} else if (imesStatemachine.StartVisual && visualOnFlag
 			&& !slicerVisualIf.isDataTransmissionEnable()) {
 		    /*
 		     * if Visualization interface is started, not active but is
 		     * set active Change VisualActive to true. Thereby, the pose
 		     * is send to the visualization.
 		     */
+		    getLogger()
+			    .info(this.getClass().getName()
+				    + " enables the cyclic communication in the "
+				    + slicerVisualIf.getClass().getName()
+				    + " thread.");
 		    slicerVisualIf.setCyclicCommunication(true);
 
 		} else if (!imesStatemachine.StartVisual
@@ -646,6 +667,11 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		     * VisualACtive flag to false - thereby, no more data is
 		     * send to the visualization.
 		     */
+		    getLogger()
+			    .info(this.getClass().getName()
+				    + " disables the cyclic communication in the "
+				    + slicerVisualIf.getClass().getName()
+				    + " thread.");
 		    slicerVisualIf.setDataTransmission(false);
 		}
 
@@ -654,13 +680,20 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		    // update the data in the state machine and reset error
 		    // counter.
+		    getLogger()
+			    .info(this.getClass().getName()
+				    + " induces a update of the statemachine data.");
 		    i = 0;
 		    imesStatemachine.updateStateControlData();
 
 		} else { // if it is not to Error handling
 		    imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
 		    errMsg = "Slicer Control Interface not Alive...";
-		    getLogger().error("Slicer control interface isn't running");
+		    getLogger()
+			    .error(this.getClass().getName()
+				    + " has detected, that the communication in "
+				    + slicerControlIf.getClass().getName()
+				    + " isnt running.");
 		    i++;
 		}
 		// Check if there is a Transition Request and in that case
@@ -668,6 +701,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		// calling the function InterpretCommandString of the Current
 		// State
 
+		getLogger().info(
+			this.getClass().getName()
+				+ " induces a check of a transition request"
+				+ " in the state machine.");
 		imesStatemachine.checkTransitionRequest(); // TODO check should
 							   // return a boolean
 
@@ -694,19 +731,19 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		imesStatemachine.errHandler(true);
 
 		// Calculating the new control Param and Change the parameters
-		getLogger().fine("Calculating new control parameters");
+		getLogger().info("Calculating new control parameters");
 		imesStatemachine.calcControlParam(); // TODO calc method should
 						     // return a value
 
 		// Change the control mode settings of the robot and send a new
 		// Destination pose
 		try {
-		    getLogger().fine(
+		    getLogger().info(
 			    "Changing control mode settings to "
 				    + imesStatemachine.controlMode.toString());
 		    smartServoRuntime
 			    .changeControlModeSettings(imesStatemachine.controlMode);
-		    getLogger().fine(
+		    getLogger().info(
 			    "Commanding new robot-pose "
 				    + imesStatemachine.cmdPose.toString());
 		    smartServoRuntime.setDestination(imesStatemachine.cmdPose);
@@ -716,15 +753,19 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		}
 
 		// Defining the Acknowledgement String for Control Interface
+		getLogger()
+			.fine(this.getClass().getName()
+				+ "aquires the acknowledgement packet from the state machine.");
 		imesStatemachine.setAckPacket();
 
 		if (slicerControlIf.comRunning) {
 		    // try to update the ACK String for the ControlIF Thread
+		    getLogger().fine("Sending acknowledgement message");
 		    slicerControlIf.setAckMsg(imesStatemachine.getAckIgtMsg());
 		}
 
 		if (!errMsg.equals(lastPrintedError)) {
-		    getLogger().fine(errMsg);
+		    getLogger().error(errMsg);
 		    lastPrintedError = errMsg;
 		}
 
@@ -735,13 +776,18 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		// Overall timing end
 		aStep.end();
 		if (imesStatemachine.End) {
+		    getLogger().info(
+			    "State machine was stopped, ending main loop.");
 		    stateMachineRun = false;
 
 		}
 	    } catch (InterruptedException e) {
 
-		System.out.println(e);
-		e.printStackTrace();
+		getLogger().error(
+			this.getClass().getName()
+				+ " was interrupted in its main loop. "
+				+ "All connections will be closed.", e);
+
 		slicerControlIf.comRunning = false;
 		slicerVisualIf.quitCommunication();
 	    }
@@ -751,5 +797,4 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	printFinalInfos(timing);
 
     }
-
 }

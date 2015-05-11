@@ -1,10 +1,6 @@
 package de.uniHannover.imes.igtIf.communication.control;
 
 import java.nio.ByteBuffer;
-import java.util.Observable;
-
-
-
 import OpenIGTLink.swig.IGTLheader;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;

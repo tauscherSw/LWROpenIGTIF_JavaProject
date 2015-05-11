@@ -105,7 +105,6 @@ public class LWRVisualizationInterface extends Thread {
      */
     public static final int SLICER_VISUAL_COM_PORT = 49002;
 
-
     /**
      * In this function the homogeneous Matrix-Transformation for each Joint is
      * calculated from the set of denavit hartenberg parameter.
@@ -518,7 +517,10 @@ public class LWRVisualizationInterface extends Thread {
 	    log.error("Initial set up of communicator failed.", e1);
 	}
 
+	// Enter the main loop
+	log.info(this.getName() + " enters the main loop");
 	while (isEnabled()) {
+	    log.info(this.getName() + " begins its main loop");
 	    long startTimeStamp = (long) (System.nanoTime());
 	    aStep = visualTiming.newTimeStep();
 
@@ -526,12 +528,18 @@ public class LWRVisualizationInterface extends Thread {
 		    && connectionErr < MAX_ALLOWED_CONNECTION_ERROR
 		    && isDataTransmissionEnable()) {
 		synchronized (cyclicDataLock) {
+		    log.info(this.getName() + " sends a transformation.");
 		    sendTransformation(currentDataSet, currentSenderConfig);
 		}
 
 	    } else {
 		try {
+		    log.warn(this.getName()
+			    + " restarts its communicator port because "
+			    + "the connection was closed.");
 		    communicator.restart(10 * cycleTime);
+		    log.info(this.getName()
+			    + " restarted successfully its communicator.");
 		} catch (IOException e) {
 		    log.error("Could not establish IGTL connection", e);
 
@@ -541,7 +549,8 @@ public class LWRVisualizationInterface extends Thread {
 	    // TODO @Tobias uids
 	    if (poseUidTmp == poseUidTmpOld) {
 
-		log.error("Visual IF: Getting Old Data from State Machine Thread");
+		log.warn(this.getName()
+			+ " receives old Data from State Machine Thread (according to the UIDs)");
 		poseUidOldCount++;
 	    }
 	    poseUidTmpOld = poseUidTmp;
@@ -552,7 +561,7 @@ public class LWRVisualizationInterface extends Thread {
 			cycleTime);
 	    } catch (InterruptedException e) {
 
-		log.error("Visual Thread Sleep failed!!");
+		log.error(this.getName() + " sleep failed!!");
 		// TODO exception concept.
 	    }
 	    aStep.end();
@@ -564,13 +573,15 @@ public class LWRVisualizationInterface extends Thread {
 		    || visualTiming.getMeanTimeMillis() > (double) 2
 			    * cycleTime) {
 
-		log.error("VisualIF: Warning bad communication quality!");
+		log.warn(this.getName() + " has bad communication quality!");
 
 	    }
-	}
+	    log.info(this.getName() + " ends its main loop");
+	}// end while
 
 	// End all communication, when run() ends.
 	try {
+	    log.info(this.getName() + " will be disposed.");
 	    communicator.dispose();
 	} catch (IOException e) {
 	    log.error("Closing of the IGTL connection failed", e);

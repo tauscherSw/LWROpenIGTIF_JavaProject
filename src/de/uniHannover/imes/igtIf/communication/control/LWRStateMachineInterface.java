@@ -115,7 +115,7 @@ public class LWRStateMachineInterface extends Thread {
 	 * packed by sunrise workbench to a jar-archive. The dll-file can be
 	 * found in another jar-archive.
 	 */
-	// Get path to jar.
+	// Get path to jar
 	File projParentDir = new File(System.getProperty("user.dir")
 		+ File.separatorChar + "Git" + File.separatorChar);
 	File[] dirs = projParentDir.listFiles();
@@ -378,7 +378,7 @@ public class LWRStateMachineInterface extends Thread {
 
 	// Entering Loop for Communication - the loop is stopped if ControlRun
 	// is set to false
-	log.info("Entering main loop in LWRStateMachine Interface Thread.");
+	log.info(this.getName()+ " enters the main loop");
 	long currentUid = 0;
 	while (comRunning) {
 
@@ -425,7 +425,7 @@ public class LWRStateMachineInterface extends Thread {
 			millisectoSleep);
 	    } catch (InterruptedException e) {
 		// TODO exception concept.
-		log.error("Thread Sleep failed!");
+		log.error(this.getName() + " sleep failed!!");
 	    }
 
 	    if (connectionErrCounter >= MAX_ALLOWED_CONNECTION_ERR) {
