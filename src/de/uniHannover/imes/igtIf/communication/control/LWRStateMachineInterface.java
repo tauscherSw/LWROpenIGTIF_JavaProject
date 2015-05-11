@@ -93,7 +93,7 @@ public class LWRStateMachineInterface extends Thread {
     private static final String SWIG_DLL = "SWIGigtlutil.dll";
 
     /**
-     * Relative library path in project directory
+     * Relative library path in project directory.
      */
     private static final String LIB_PATH_REL = File.separatorChar + "Libs"
 	    + File.separatorChar + "SWIG" + File.separatorChar

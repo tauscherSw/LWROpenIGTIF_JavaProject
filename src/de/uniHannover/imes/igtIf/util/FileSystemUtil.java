@@ -53,55 +53,41 @@ public final class FileSystemUtil {
 	 */
 	JarFile jFile = new JarFile(sourceJar);
 	JarEntry jEntry = null;
-	boolean fileFoundFlag = false;
 	FileOutputStream outPut = null;
 
 	/*
 	 * Begin search for file in jar-archive and copy it.
 	 */
 	try {
-	    Enumeration<JarEntry> jEntries = jFile.entries();
-
-	    // Search for the file
-	    while (jEntries.hasMoreElements()) {
-		jEntry = jEntries.nextElement();
-
-		// file found
-		if (jEntry.getName().equals(filename)) {
-		    InputStream dllStream = jFile.getInputStream(jEntry);
-		    outPut = new FileOutputStream(destinationFile);
-
-		    // Check write access, check if file is lockable
-		    if (!destinationFile.canWrite()
-			    || !destinationFile.setReadOnly()) {
-			throw new IOException("Cannot write & lock file "
-				+ destinationFile.getAbsolutePath());
-		    }
-
-		    while (true) {
-			int bytesRead = dllStream.read();
-			// check if all bytes were read.
-			if (bytesRead == -1) {
-			    break;
-			}
-			outPut.write(bytesRead);
-		    }
-
-		    destinationFile.setWritable(true);
-
-		    System.out.println("Copied " + filename + " from "
-			    + sourceJar.getName() + " to "
-			    + destinationFile.getAbsolutePath());
-		    fileFoundFlag = true;
-		    break;
-
-		}
-
-	    }
-	    if (!fileFoundFlag) {
+	    jEntry = jFile.getJarEntry(filename);
+	    if (jEntry == null) {
 		throw new IllegalArgumentException("The file " + filename
 			+ " cant be found in " + sourceJar.getName());
 	    }
+
+	    InputStream dllStream = jFile.getInputStream(jEntry);
+	    outPut = new FileOutputStream(destinationFile);
+
+	    // Check write access, check if file is lockable
+	    if (!destinationFile.canWrite() || !destinationFile.setReadOnly()) {
+		throw new IOException("Cannot write & lock file "
+			+ destinationFile.getAbsolutePath());
+	    }
+
+	    while (true) {
+		int bytesRead = dllStream.read();
+		// check if all bytes were read.
+		if (bytesRead == -1) {
+		    break;
+		}
+		outPut.write(bytesRead);
+	    }
+
+	    destinationFile.setWritable(true);
+
+	    System.out.println("Copied " + filename + " from "
+		    + sourceJar.getName() + " to "
+		    + destinationFile.getAbsolutePath());
 
 	} catch (IOException e) {
 	    System.out.println("Failed to copy " + filename + " from "
