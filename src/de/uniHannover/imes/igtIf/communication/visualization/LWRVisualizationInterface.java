@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 
-import openIGTLink.swig.ByteArr;
-import openIGTLink.swig.IGTLheader;
-import openIGTLink.swig.IGTLtransform;
-import openIGTLink.swig.igtl_header;
+import OpenIGTLink.swig.ByteArr;
+import OpenIGTLink.swig.IGTLheader;
+import OpenIGTLink.swig.IGTLtransform;
+import OpenIGTLink.swig.igtl_header;
 
 import com.kuka.common.StatisticTimer;
 import com.kuka.common.StatisticTimer.OneTimeStep;
@@ -109,6 +109,7 @@ public class LWRVisualizationInterface extends Thread {
      * "..\OpenIGTLinkLib\swig\"
      */
     static {
+	
 
 	System.load("C:/KRC/ApplicationServer/Git/"
 		+ "IGTBasicStateMachine/OpenIGTLinkLib/SWIGigtlutil.dll");

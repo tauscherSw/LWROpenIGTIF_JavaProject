@@ -23,22 +23,26 @@
 
 package de.uniHannover.imes.igtIf.communication.control;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+
+import OpenIGTLink.swig.ByteArr;
+import OpenIGTLink.swig.IGTLheader;
+import OpenIGTLink.swig.IGTLstring;
+import OpenIGTLink.swig.igtl_header;
 
 import com.kuka.common.StatisticTimer;
 import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLCommunicator;
 import de.uniHannover.imes.igtIf.communication.IGTLMsg;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
-import openIGTLink.swig.ByteArr;
-import openIGTLink.swig.IGTLheader;
-import openIGTLink.swig.IGTLstring;
-import openIGTLink.swig.igtl_header;
 
 /**
  * This Class for the Communication with a control system using the opnIGTLink
@@ -85,10 +89,39 @@ public class LWRStateMachineInterface extends Thread {
     private static final int CYCLE_TIME_DEFAULT = 20;
 
     /**
+     * External swig library.
+     */
+    private static final String SWIG_DLL = "SWIGigtlutil.dll";
+
+    /**
+     * Swig libraries archive.
+     */
+    private static final String SWIG_ARCHIVE = "SWIG_communication.jar";
+
+    /**
      * Load SWIG igtlutil library (Default Library folder is
      * "..\OpenIGTLinkLib\swig\"
      */
     static {
+	/*
+	 * To load the correct swig library we need to extract the file. It is
+	 * packed by sunrise workbench to a jar-archive. The dll-file can be
+	 * found in another jar-archive.
+	 */
+//	File JarSource = new File(System.getProperty("user.dir")
+//		+ File.separatorChar + "Libs" + File.separatorChar + JarName);
+//	File JarDestination = new File(System.getProperty("user.dir")
+//		+ File.separatorChar + DllName);
+//
+//	try {
+//	    loadDllFromJarFile(JarSource, JarDestination, DllName);
+//	} catch (URISyntaxException e) {
+//	    // TODO Auto-generated catch block
+//	    e.printStackTrace();
+//	} catch (IOException e) {
+//	    // TODO Auto-generated catch block
+//	    e.printStackTrace();
+//	}
 	System.load("C:/KRC/ApplicationServer/Git/IGTBasicStateMachine"
 		+ "/OpenIGTLinkLib/SWIGigtlutil.dll");
     }
@@ -306,10 +339,10 @@ public class LWRStateMachineInterface extends Thread {
 	    receivedMsg.init(headerBytes, bodyBytes);
 
 	} while (!comDataSink.readNewCmdMessage(receivedMsg)); // checks the new
-							      // message and
-							      // saves it if it
-							      // has new
-							      // content.
+							       // message and
+							       // saves it if it
+							       // has new
+							       // content.
     }
 
     /**

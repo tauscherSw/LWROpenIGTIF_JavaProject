@@ -10,7 +10,7 @@ import java.net.Socket;
 
 import javax.net.ServerSocketFactory;
 
-import openIGTLink.swig.IGTLheader;
+import OpenIGTLink.swig.IGTLheader;
 
 /**
  * This class provides basic methods for sending and receiving messages to and

@@ -3,8 +3,9 @@ package de.uniHannover.imes.igtIf.communication.control;
 import java.nio.ByteBuffer;
 import java.util.Observable;
 
-import openIGTLink.swig.IGTLheader;
-import openIGTLink.swig.IGTLstring;
+
+
+import OpenIGTLink.swig.IGTLheader;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
@@ -286,9 +287,9 @@ public class CommunicationDataProvider {
     private String getCommandString(final byte[] bodyByte) {
 
 	byte[] tmpString = new byte[bodyByte.length
-		- IGTLstring.IGTL_STRING_HEADER_SIZE];
+		- OpenIGTLink.swig.IGTLstring.IGTL_STRING_HEADER_SIZE];
 	int p = 0;
-	final int readBeginPos = IGTLstring.IGTL_STRING_HEADER_SIZE;
+	final int readBeginPos = OpenIGTLink.swig.IGTLstring.IGTL_STRING_HEADER_SIZE;
 	for (int z = readBeginPos; z < bodyByte.length; z++) {
 	    tmpString[p] = bodyByte[z];
 	    p++;
@@ -331,7 +332,7 @@ public class CommunicationDataProvider {
      * @return the device name.
      */
     private String getDeviceName(final byte[] headerBytes) {
-	byte[] tmpDeviceName = new byte[IGTLheader.IGTL_HEADER_DEVSIZE];
+	byte[] tmpDeviceName = new byte[OpenIGTLink.swig.IGTLheader.IGTL_HEADER_DEVSIZE];
 	int l = 0;
 	int enddata = 0;
 	final int readBeginPos = 14;
