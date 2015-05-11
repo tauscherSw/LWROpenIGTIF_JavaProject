@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 
 import OpenIGTLink.swig.ByteArr;
@@ -94,9 +93,11 @@ public class LWRStateMachineInterface extends Thread {
     private static final String SWIG_DLL = "SWIGigtlutil.dll";
 
     /**
-     * Swig libraries archive.
+     * Relative library path in project directory
      */
-    private static final String SWIG_ARCHIVE = "SWIG_communication.jar";
+    private static final String LIB_PATH_REL = File.separatorChar + "Libs"
+	    + File.separatorChar + "SWIG" + File.separatorChar
+	    + "SWIG_communication.jar";
 
     /**
      * Load SWIG igtlutil library (Default Library folder is
@@ -108,20 +109,16 @@ public class LWRStateMachineInterface extends Thread {
 	 * packed by sunrise workbench to a jar-archive. The dll-file can be
 	 * found in another jar-archive.
 	 */
-//	File JarSource = new File(System.getProperty("user.dir")
-//		+ File.separatorChar + "Libs" + File.separatorChar + JarName);
-//	File JarDestination = new File(System.getProperty("user.dir")
-//		+ File.separatorChar + DllName);
-//
-//	try {
-//	    loadDllFromJarFile(JarSource, JarDestination, DllName);
-//	} catch (URISyntaxException e) {
-//	    // TODO Auto-generated catch block
-//	    e.printStackTrace();
-//	} catch (IOException e) {
-//	    // TODO Auto-generated catch block
-//	    e.printStackTrace();
-//	}
+	// Get path to jar.
+	File ProjectParentDir = new File(System.getProperty("user.dir")
+		+ File.separatorChar + "Git" + File.separatorChar);
+	File[] dirs = ProjectParentDir.listFiles();
+	File projectDir = dirs[0];
+	File JarSource = new File(projectDir.getAbsolutePath()
+		+ LIB_PATH_REL);
+	File JarDestination = new File(projectDir.getAbsolutePath() + File.separatorChar + SWIG_DLL);
+	System.out.println("Source File: " +JarSource.getAbsolutePath());
+	System.out.println("Dest File: " +JarDestination.getAbsolutePath());
 	System.load("C:/KRC/ApplicationServer/Git/IGTBasicStateMachine"
 		+ "/OpenIGTLinkLib/SWIGigtlutil.dll");
     }
