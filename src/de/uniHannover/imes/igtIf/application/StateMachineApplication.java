@@ -305,9 +305,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * The tool object describing the physical properties of the tool attached
      * to the robot's flange.
      */
-    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.6,
-	    MatrixTransformation.ofTranslation(-5, 0, 50), Inertia.ZERO));
-
+//    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.4,
+//	    MatrixTransformation.ofTranslation(-5,0,50), Inertia.ZERO));
+    //TODO dummy tool
+    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.0,
+    	    MatrixTransformation.ofTranslation(0,0,0), Inertia.ZERO));
+    
     /**
      * Object of the state machine interface class for the communication with a
      * state control software using the OpenIGTLink protocol.
@@ -366,6 +369,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	imesLBR = (LBR) ServoMotionUtilities.locateLBR(getContext());
 	getLogger().fine("robot object successfully created.");
 	imesTool.addDefaultMotionFrame("TCP", toolTCP);
+	getLogger().warn("No tool configured in this application");
 	imesTool.attachTo(imesLBR.getFlange());
 	getLogger().fine("Tool attached to the robot object.");
 
@@ -597,6 +601,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			    this.getClass().getName()
 				    + " updates the smart servo runtime.");
 		    smartServoRuntime.updateWithRealtimeSystem();
+		    ThreadUtil.milliSleep(MS_TO_SLEEP);
+		    smartServoRuntime.updateWithRealtimeSystem();
+		    ThreadUtil.milliSleep(MS_TO_SLEEP);
 		    // Get the measured position in cartesian pose
 		    // imesStatemachine.curPose = MatrixTransformation
 		    // .of((ITransformation) imesTool
@@ -611,10 +618,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 				    + " induces an update of the current robot data.");
 		    comDataProvider.readNewRobotData();
 		} catch (Exception e) {
-		    errMsg = "Error: Failed Update with RealtimeSystem!!";
 		    getLogger()
 			    .error(this.getClass().getName()
 				    + " failed to update the smart servo runtime.");
+		    initSmartServo();
 		    // TODO exception concept.
 		}
 

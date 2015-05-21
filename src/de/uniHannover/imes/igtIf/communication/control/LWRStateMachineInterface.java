@@ -41,6 +41,7 @@ import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLCommunicator;
 import de.uniHannover.imes.igtIf.communication.IGTLMsg;
+import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
 import de.uniHannover.imes.igtIf.util.FileSystemUtil;
 
@@ -126,14 +127,13 @@ public class LWRStateMachineInterface extends Thread {
 	System.out.println("Source File: " + jarSrc.getAbsolutePath());
 	System.out.println("Dest File: " + jarDest.getAbsolutePath());
 	try {
-	    FileSystemUtil.extractFileFromJar(jarSrc, jarDest,
-		    SWIG_DLL_RELPATH + SWIG_DLL);
+	    FileSystemUtil.extractFileFromJar(jarSrc, jarDest, SWIG_DLL_RELPATH
+		    + SWIG_DLL);
 	} catch (IOException e) {
 	    e.printStackTrace();
 	}
 	System.load(jarDest.getAbsolutePath());
-	System.out
-		.println("Loaded library " + jarDest.getAbsolutePath());
+	System.out.println("Loaded library " + jarDest.getAbsolutePath());
     }
 
     /**
@@ -313,40 +313,10 @@ public class LWRStateMachineInterface extends Thread {
      */
     private void receiveMessage() throws IOException {
 
-	IGTLMsg receivedMsg;
-	byte[] headerBytes;
-	byte[] bodyBytes;
-	int numOfHeaderBytesRead;
-	int numOfBodyBytesRead;
-	int bodySize;
+	IOpenIGTLMsg receivedMsg;
 
 	do {
-	    // Init header frame copy field.
-	    headerBytes = new byte[IGTLheader.IGTL_HEADER_SIZE];
-
-	    // Read header frame.
-	    numOfHeaderBytesRead = instr.read(headerBytes);
-	    if (numOfHeaderBytesRead < headerBytes.length) {
-		throw new UnknownCommandException(
-			"Unsufficent number of header bytes read");
-	    }
-
-	    // Extract size of body frame.
-	    bodySize = IGTLCommunicator.extractBodySize(headerBytes);
-
-	    // Init body frame copy field.
-	    bodyBytes = new byte[bodySize];
-
-	    // Read body bytes
-	    numOfBodyBytesRead = instr.read(bodyBytes);
-	    if (numOfBodyBytesRead < bodyBytes.length) {
-		throw new UnknownCommandException(
-			"Unsufficent number of body bytes read");
-	    }
-
-	    // Construct a openIGTL message from header and body.
-	    receivedMsg = new IGTLMsg();
-	    receivedMsg.init(headerBytes, bodyBytes);
+	    receivedMsg = communicator.receiveMsg();
 
 	} while (!comDataSink.readNewCmdMessage(receivedMsg)); // checks the new
 							       // message and
@@ -378,7 +348,7 @@ public class LWRStateMachineInterface extends Thread {
 
 	// Entering Loop for Communication - the loop is stopped if ControlRun
 	// is set to false
-	log.info(this.getName()+ " enters the main loop");
+	log.info(this.getName() + " enters the main loop");
 	long currentUid = 0;
 	while (comRunning) {
 

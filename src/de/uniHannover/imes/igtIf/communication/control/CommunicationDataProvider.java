@@ -1,6 +1,7 @@
 package de.uniHannover.imes.igtIf.communication.control;
 
 import java.nio.ByteBuffer;
+
 import OpenIGTLink.swig.IGTLheader;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
@@ -11,12 +12,13 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
 import de.uniHannover.imes.igtIf.communication.IGTLMsg;
+import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
 
 /**
  * This class represents the communication data, which is exchanged via the
  * OpenIGTLink protocol. It consists basically of command-object (sent by
  * openIGTL Client) and an ack-object (sent by openIGTL server as response).
- *
+ * 
  */
 public class CommunicationDataProvider {
 
@@ -138,7 +140,7 @@ public class CommunicationDataProvider {
      * @return false if "new message" has not been processed, cause it either
      *         hasn't had any data or had no new data.
      */
-    public final boolean readNewCmdMessage(final IGTLMsg message) {
+    public final boolean readNewCmdMessage(final IOpenIGTLMsg message) {
 
 	/*
 	 * Preliminary checks of the arguments.
@@ -198,11 +200,11 @@ public class CommunicationDataProvider {
 	    } else if (messageType.equalsIgnoreCase(IgtlMsgType.Transform
 		    .getTypeName())) {
 		tmpCmdString = curPacket.getCmdString(); // when transform
-							 // received cmd string
-							 // doesn't change
+		// received cmd string
+		// doesn't change
 		tmpMsgType = IgtlMsgType.Transform;
 		tmpUid = curPacket.getUid(); // ignore new uid when command is
-					     // transform
+		// transform
 		tmpExtTrafo = getTrafo(message.getBody());
 		tmpTransformReceived = true;
 
@@ -233,6 +235,12 @@ public class CommunicationDataProvider {
 		.getCurrentJointPosition();
 	Vector tcpForce = robotDataSink.getExternalForceTorque(
 		robotDataSink.getFlange()).getForce();
+	// for initialization no synchronized access to curRobotDataSet
+	if (null == curRobotDataSet) {
+	    curRobotDataSet = new RobotDataSet(currentJointPosition,
+		    currentTcpPose, tcpForce);
+	}
+	// only synchronized access is allowed
 	synchronized (curRobotDataSet) {
 	    curRobotDataSet = new RobotDataSet(currentJointPosition,
 		    currentTcpPose, tcpForce);
@@ -413,7 +421,7 @@ public class CommunicationDataProvider {
      */
     public final CommandPacket getCurrentCmdPacket() {
 
-	//Initialize packet if it is null for the first time
+	// Initialize packet if it is null for the first time
 	if (curPacket == null) {
 	    // initialize the current command packet.
 	    curPacket = new CommandPacket("IDLE;", IgtlMsgType.Command, 0,
@@ -423,7 +431,6 @@ public class CommunicationDataProvider {
 	    return curPacket;
 	}
     }
-    
 
     /**
      * Getter for the current poseUid.
