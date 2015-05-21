@@ -22,7 +22,6 @@
 	=========================================================================*/
 package de.uniHannover.imes.igtIf.communication.visualization;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -47,13 +46,11 @@ import de.uniHannover.imes.igtIf.communication.IGTLMsg;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
-import de.uniHannover.imes.igtIf.util.FileSystemUtil;
 
 /**
  * This Class for the Communication with a Visualization system using the
  * opnIGTLink protocol is based on the igtlink4j class developed at the WPI.
  * 
- * @author Sebastian Tauscher
  * @see SimpleStateExample
  */
 public class LWRVisualizationInterface extends Thread {
