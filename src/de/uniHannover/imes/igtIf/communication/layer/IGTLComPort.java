@@ -1,4 +1,4 @@
-package de.uniHannover.imes.igtIf.communication;
+package de.uniHannover.imes.igtIf.communication.layer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,13 +12,14 @@ import javax.net.ServerSocketFactory;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
+import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
 import OpenIGTLink.swig.IGTLheader;
 
 /**
  * This class provides basic methods for sending and receiving messages to and
  * from via IGTLink.
  */
-public final class IGTLCommunicator {
+final class IGTLComPort {
 
 	/** Maximum supported port. */
 	private static final int MAXIMUM_PORT_NUMBER = 49005;
@@ -81,7 +82,7 @@ public final class IGTLCommunicator {
 	 * @param socketTimeout
 	 *            the initial socket timeout in milliseconds.
 	 */
-	public IGTLCommunicator(final int port, final int socketTimeout,
+	public IGTLComPort(final int port, final int socketTimeout,
 			final ITaskLogger logger) {
 		if (port <= MAXIMUM_PORT_NUMBER && port >= MINIMUM_PORT_NUMBER) {
 			serverPort = port;

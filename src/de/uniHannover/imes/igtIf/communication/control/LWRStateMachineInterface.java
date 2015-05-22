@@ -39,9 +39,10 @@ import com.kuka.common.StatisticTimer.OneTimeStep;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
-import de.uniHannover.imes.igtIf.communication.IGTLCommunicator;
-import de.uniHannover.imes.igtIf.communication.IGTLMsg;
 import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
+import de.uniHannover.imes.igtIf.communication.layer.IGTLMsg;
+import de.uniHannover.imes.igtIf.communication.layer.IIGTLCommunicator;
+import de.uniHannover.imes.igtIf.communication.layer.IIGTLCommunicator.Channel;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
 import de.uniHannover.imes.igtIf.util.FileSystemUtil;
 
@@ -60,528 +61,373 @@ import de.uniHannover.imes.igtIf.util.FileSystemUtil;
  */
 public class LWRStateMachineInterface extends Thread {
 
-	/**
-	 * The port for the slicer-control-thread.
+    /** Default String encoding for the OpenIGTLink String data type. */
+    private static final int DEFAULT_STRING_ENCODING = 3;
+
+    /**
+     * The maximum allowed connection error for udp / tcp communication.
+     */
+    private static final int MAX_ALLOWED_CONNECTION_ERR = 100;
+
+    /**
+     * Maximum allowed number of repitive received equal uids.
+     */
+    private static final int MAX_EQUAL_UIDS = 4;
+
+    /** Number of elements of a rotational matrix. */
+    private static final int SIZE_OF_ROTATION = 9;
+
+    /** Number of elements of a translation vector. */
+    private static final int SIZE_OF_TRANS = 3;
+
+    /**
+     * Default cycle time for this main loop in milliseconds.
+     */
+    private static final int CYCLE_TIME_DEFAULT = 20;
+
+    /**
+     * External swig library.
+     */
+    private static final String SWIG_DLL = "SWIGigtlutil.dll";
+
+    /**
+     * Relative dll path in jar.
+     */
+    private static final String SWIG_DLL_RELPATH = "OpenIGTLinkLib/";
+
+    /**
+     * Relative library path in project directory.
+     */
+    private static final String LIB_PATH_REL = File.separatorChar + "Libs"
+	    + File.separatorChar + "SWIG" + File.separatorChar
+	    + "SWIG_communication.jar";
+
+    /**
+     * Load SWIG igtlutil library (Default Library folder is
+     * "..\OpenIGTLinkLib\swig\"
+     */
+    static {
+	/*
+	 * To load the correct swig library we need to extract the file. It is
+	 * packed by sunrise workbench to a jar-archive. The dll-file can be
+	 * found in another jar-archive.
 	 */
-	public static final int SLICER_CONTROL_COM_PORT = 49001;
+	// Get path to jar
+	File projParentDir = new File(System.getProperty("user.dir")
+		+ File.separatorChar + "Git" + File.separatorChar);
+	File[] dirs = projParentDir.listFiles();
+	File projectDir = dirs[0];
+	File jarSrc = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
+	File jarDest = new File(projectDir.getAbsolutePath()
+		+ File.separatorChar + SWIG_DLL);
+	try {
+	    FileSystemUtil.extractFileFromJar(jarSrc, jarDest, SWIG_DLL_RELPATH
+		    + SWIG_DLL);
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+	System.load(jarDest.getAbsolutePath());
+    }
 
-	/** Default String encoding for the OpenIGTLink String data type. */
-	private static final int DEFAULT_STRING_ENCODING = 3;
+    /**
+     * Acknowledgement OpenIGTLink Message working copy.
+     */
+    private String ackMsg;
 
-	/**
-	 * The maximum allowed connection error for udp / tcp communication.
-	 */
-	private static final int MAX_ALLOWED_CONNECTION_ERR = 100;
+    /**
+     * Object handles IGTL communication.
+     */
+    private IIGTLCommunicator communicator;
 
-	/**
-	 * Maximum allowed number of repitive received equal uids.
-	 */
-	private static final int MAX_EQUAL_UIDS = 4;
+    /**
+     * Provider for command data received via another openIGTL channel.
+     */
+    private CommunicationDataProvider comDataSink;
 
-	/** Number of elements of a rotational matrix. */
-	private static final int SIZE_OF_ROTATION = 9;
+    /**
+     * Time step for statistic timing of the State Machine Interface thread.
+     */
+    private OneTimeStep aStep;
 
-	/** Number of elements of a translation vector. */
-	private static final int SIZE_OF_TRANS = 3;
+    /**
+     * Flag to indicate if the communication interface is running or not.
+     */
+    public boolean comRunning = false; // TODO design failure other threads
+    // access this field.
 
-	/**
-	 * Default cycle time for this main loop in milliseconds.
-	 */
-	private static final int CYCLE_TIME_DEFAULT = 20;
+    /**
+     * input stream of the socket communication.
+     */
+    private InputStream instr;
 
-	/**
-	 * External swig library.
-	 */
-	private static final String SWIG_DLL = "SWIGigtlutil.dll";
+    /**
+     * cycle time of the state control interface thread. Default value is 50 ms.
+     */
+    public int millisectoSleep = 50; // TODO design failure other threads access
+    // this field.
 
-	/**
-	 * Relative dll path in jar.
-	 */
-	private static final String SWIG_DLL_RELPATH = "OpenIGTLinkLib/";
+    /**
+     * Statistic Timer for the State Machine Interface Thread.
+     */
+    public StatisticTimer SMtiming = new StatisticTimer(); // TODO design
+    // failure other
+    // threads access
+    // this field.
 
-	/**
-	 * Relative library path in project directory.
-	 */
-	private static final String LIB_PATH_REL = File.separatorChar + "Libs"
-			+ File.separatorChar + "SWIG" + File.separatorChar
-			+ "SWIG_communication.jar";
+    /**
+     * Logging mechanism object.
+     */
+    private ITaskLogger log;
 
-	/**
-	 * Load SWIG igtlutil library (Default Library folder is
-	 * "..\OpenIGTLinkLib\swig\"
-	 */
-	static {
-		/*
-		 * To load the correct swig library we need to extract the file. It is
-		 * packed by sunrise workbench to a jar-archive. The dll-file can be
-		 * found in another jar-archive.
-		 */
-		// Get path to jar
-		File projParentDir = new File(System.getProperty("user.dir")
-				+ File.separatorChar + "Git" + File.separatorChar);
-		File[] dirs = projParentDir.listFiles();
-		File projectDir = dirs[0];
-		File jarSrc = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
-		File jarDest = new File(projectDir.getAbsolutePath()
-				+ File.separatorChar + SWIG_DLL);
-		try {
-			FileSystemUtil.extractFileFromJar(jarSrc, jarDest, SWIG_DLL_RELPATH
-					+ SWIG_DLL);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		System.load(jarDest.getAbsolutePath());
+    /**
+     * cycle time of the state machine interface thread. Default value is 25 ms.
+     */
+    private int cycleTime;
+
+    /**
+     * Counter for connection errors.
+     */
+    private int connectionErrCounter;
+
+    /**
+     * Constructor, which initializes this thread as a daemon.
+     * 
+     * @param comHandler
+     *            a handler which gains access to IGTL communication.
+     * @param comDataProvider
+     *            provider for command data received via another IGTL channel.
+     * @throws IOException
+     *             when setup of communication fails.
+     */
+    public LWRStateMachineInterface(final IIGTLCommunicator comHandler,
+	    final CommunicationDataProvider comDataProvider) throws IOException {
+	new LWRStateMachineInterface(comHandler, comDataProvider,
+		CYCLE_TIME_DEFAULT, new DummyLogger());
+    }
+
+    /**
+     * Constructor, which initializes this thread as a daemon. *
+     * 
+     * @param comHandler
+     *            a handler which gains access to IGTL communication.
+     * @param comDataProvider
+     *            provider for command data received via another IGTL channel.
+     * 
+     * @param cycleTimeMs
+     *            the desired cycle time for the main loop in milliseconds.
+     * @param logger
+     *            an external logger which collects the logging output of this
+     *            class.
+     * @throws IOException
+     *             when setup of communication fails.
+     */
+    public LWRStateMachineInterface(final IIGTLCommunicator comHandler,
+	    final CommunicationDataProvider comDataProvider,
+	    final int cycleTimeMs, final ITaskLogger logger) throws IOException {
+	communicator = comHandler;
+	comDataSink = comDataProvider;
+	log = logger;
+	cycleTime = cycleTimeMs;
+	connectionErrCounter = 0;
+    }
+
+    /**
+     * In this function a message from the Client Socket is received and
+     * according to the OpenIGTLink datatype the recieved data is saved in the
+     * member variable CMDmessage. If the data type is neither Transform nor
+     * String an ErrorMessage is created. (Error Message not used yet...)
+     * 
+     */
+    private void receiveMessage() {
+
+	IOpenIGTLMsg receivedMsg = null;
+
+	do {
+	    receivedMsg = communicator.receiveMsg();
+
+	} while (!comDataSink.readNewCmdMessage(receivedMsg)); // checks the new
+	// message and
+	// saves it if it
+	// has new
+	// content.
+    }
+
+    /**
+     * main/run method function of the State control Interface. In this function
+     * the server is initialized and a packet handler is started. In a loop with
+     * a cycle time of 20 ms the new Command String is received and the
+     * Acknowledgment String send to the state control (e.g. 3d Slicer).
+     **/
+    public final void run() {
+
+	comRunning = true; // TODO Tobi
+
+	// Entering Loop for Communication - the loop is stopped if ControlRun
+	// is set to false
+	log.info(this.getClass().getSimpleName() + " enters the main loop");
+	long currentUid = 0;
+	while (comRunning) {
+
+	    log.info(this.getClass().getSimpleName() + " begins its main loop");
+	    // Starting Time
+	    long startTimeStamp = (long) (System.nanoTime());
+
+	    aStep = SMtiming.newTimeStep();
+
+	    // Receive Message from State Control
+	    receiveMessage(); // TODO deal with Runtime exceptions
+	    // properly
+	    log.info(this.getClass().getSimpleName() + " received a message.");
+	    currentUid = comDataSink.getCurrentCmdPacket().getUid();
+	    sendIGTStringMessage(getAckMsg() + currentUid + ";");
+	    log.info(this.getClass().getSimpleName()
+		    + " sends an acknowledgement for msg with uid "
+		    + currentUid + ".");
+
+	    // Set the Module in Sleep mode for stability enhancement
+	    try {
+		StateMachineApplication.cyclicSleep(startTimeStamp, 2,
+			millisectoSleep);
+	    } catch (InterruptedException e) {
+		// TODO exception concept.
+		log.error(this.getClass().getSimpleName() + " sleep failed!!");
+	    }
+
+	    if (connectionErrCounter >= MAX_ALLOWED_CONNECTION_ERR) {
+		log.error("Got " + connectionErrCounter
+			+ " connection errors. Stopping communication.");
+		break;
+	    }
+
+	    aStep.end();
+
+	    /*
+	     * analysis of timer statistics.
+	     */
+	    // TODO @Sebastian following section must be simplified
+	    if (SMtiming.getMaxTimeMillis() >= 10 * millisectoSleep
+		    || SMtiming.getMeanTimeMillis() >= 2 * millisectoSleep) {
+		log.error("StateMachineIF: Attention! Bad communication quality "
+			+ "robot changes state to Error!");
+	    } else if ((SMtiming.getMaxTimeMillis() > 3.0 * millisectoSleep && SMtiming
+		    .getMaxTimeMillis() < 10.0 * millisectoSleep)
+		    || (SMtiming.getMeanTimeMillis() > millisectoSleep + 5 && SMtiming
+			    .getMeanTimeMillis() < 2 * millisectoSleep)) {
+		log.error("StateMachineIF: Warning bad communication quality!");
+	    }
+	    log.info(this.getName() + " ends its main loop");
+	} // end while
+
+    }
+
+    /**
+     * Sets the current acknowledgement message.
+     * 
+     * @param msg
+     *            the message for ack.
+     */
+    public final void setAckMsg(final String msg) {
+	synchronized (ackMsg) {
+	    ackMsg = msg;
+	}
+    }
+
+    /**
+     * Getter for acknowledgement message.
+     * 
+     * @return the ack msg.
+     */
+    private String getAckMsg() {
+	synchronized (ackMsg) {
+	    return ackMsg;
 	}
 
-	/**
-	 * Acknowledgement OpenIGTLink Message working copy.
-	 */
-	private String ackMsg;
+    }
 
-	/**
-	 * Object handles IGTL communication.
-	 */
-	private IGTLCommunicator communicator;
+    /**
+     * Sends an OpenIGTlink String message.
+     * 
+     * @param message
+     *            the message to be send.
+     * 
+     */
+    private void sendIGTStringMessage(final String message) {
 
-	/**
-	 * Provider for command data received via another openIGTL channel.
-	 */
-	private CommunicationDataProvider comDataSink;
+	sendIGTStringMessage(message, communicator, log);
 
-	/**
-	 * Time step for statistic timing of the State Machine Interface thread.
-	 */
-	private OneTimeStep aStep;
+    }
 
-	/**
-	 * Flag to indicate if the communication interface is running or not.
-	 */
-	public boolean comRunning = false; // TODO design failure other threads
-	// access this field.
+    /**
+     * Sends an OpenIGTlink String message.
+     * 
+     * @param message
+     *            the message
+     * @param com
+     *            the communication handler
+     * @param logger
+     *            a logger
+     */
+    public static void sendIGTStringMessage(final String message,
+	    final IIGTLCommunicator com, final ITaskLogger logger) {
 
-	/**
-	 * input stream of the socket communication.
-	 */
-	private InputStream instr;
+	IGTLMsg currentMsg;
 
-	/**
-	 * cycle time of the state control interface thread. Default value is 50 ms.
-	 */
-	public int millisectoSleep = 50; // TODO design failure other threads access
-	// this field.
+	byte[] bodyByte = new byte[message.length()
+		+ IGTLstring.IGTL_STRING_HEADER_SIZE];
+	byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
+	igtl_header header = new igtl_header();
+	header.setVersion(IGTLheader.IGTL_HEADER_VERSION);
+	header.setBody_size((BigInteger.valueOf(message.length()
+		+ IGTLstring.IGTL_STRING_HEADER_SIZE)));
+	header.setName("STRING");
+	header.setDevice_name("ACK"); /* Device name */
+	header.setTimestamp(BigInteger.valueOf(System.nanoTime()));
+	ByteBuffer bodyBuffer = ByteBuffer.allocate(message.length()
+		+ IGTLstring.IGTL_STRING_HEADER_SIZE);
+	bodyBuffer.putShort((short) DEFAULT_STRING_ENCODING);
+	bodyBuffer.putShort((short) message.length());
+	bodyBuffer.put(message.getBytes());
 
-	/**
-	 * Statistic Timer for the State Machine Interface Thread.
-	 */
-	public StatisticTimer SMtiming = new StatisticTimer(); // TODO design
-	// failure other
-	// threads access
-	// this field.
-
-	/**
-	 * Logging mechanism object.
-	 */
-	private ITaskLogger log;
-
-	/**
-	 * cycle time of the state machine interface thread. Default value is 25 ms.
-	 */
-	private int cycleTime;
-
-	/**
-	 * Counter for connection errors.
-	 */
-	private int connectionErrCounter;
-
-	/**
-	 * Constructor, which initializes this thread as a daemon.
-	 * 
-	 * @param comDataProvider
-	 *            provider for command data received via another IGTL channel.
-	 * @throws IOException
-	 *             when setup of communication fails.
-	 */
-	public LWRStateMachineInterface(
-			final CommunicationDataProvider comDataProvider) throws IOException {
-		init(comDataProvider, new DummyLogger(), CYCLE_TIME_DEFAULT);
+	bodyByte = bodyBuffer.array();
+	ByteArr bodyArray = new ByteArr(message.length()
+		+ IGTLstring.IGTL_STRING_HEADER_SIZE);
+	for (int i = 0; i < message.length()
+		+ IGTLstring.IGTL_STRING_HEADER_SIZE; i++) {
+	    bodyArray.setitem(i, bodyByte[i]);
+	}
+	ByteArr headerArray = ByteArr.frompointer(IGTLheader.PackHeader(header,
+		bodyArray.cast()));
+	for (int i = 0; i < IGTLheader.IGTL_HEADER_SIZE; i++) {
+	    headerByte[i] = (byte) headerArray.getitem(i);
 	}
 
-	/**
-	 * Constructor, which initializes this thread as a daemon.
-	 * 
-	 * @param comDataProvider
-	 *            provider for command data received via another IGTL channel.
-	 * 
-	 * @param cycleTimeMs
-	 *            the desired cycle time for the main loop in milliseconds.
-	 * @throws IOException
-	 *             when setup of communication fails.
-	 */
-	public LWRStateMachineInterface(
-			final CommunicationDataProvider comDataProvider,
-			final int cycleTimeMs) throws IOException {
-		init(comDataProvider, new DummyLogger(), cycleTimeMs);
+	currentMsg = new IGTLMsg();
+	currentMsg.init(headerByte, bodyByte);
+	if (null == com) {
+	    throw new NullPointerException("Communicator is null");
 	}
+	com.sendMsg(currentMsg, Channel.CONTROL);
 
-	/**
-	 * Constructor, which initializes this thread as a daemon.
-	 * 
-	 * @param cycleTimeMs
-	 *            the desired cycle time for the main loop in milliseconds.
-	 * @param logger
-	 *            an external logger which collects the logging output of this
-	 *            class.
-	 * @throws IOException
-	 *             when setup of communication fails.
-	 */
-	public LWRStateMachineInterface(
-			final CommunicationDataProvider comDataProvider,
-			final int cycleTimeMs, final ITaskLogger logger) throws IOException {
-		init(comDataProvider, logger, cycleTimeMs);
-	}
+    }
 
-	/**
-	 * Initializes this class according to the parameters which are set before
-	 * in the different constructors.
-	 * 
-	 * @param comDataProvider
-	 *            provider for command data received via another IGTL channel.
-	 * 
-	 * @param logger
-	 *            the task logger.
-	 * @param cycletime
-	 *            the desired cycle time in ms.
-	 * @throws IOException
-	 *             when setup of communication fails.
-	 */
-	private void init(final CommunicationDataProvider comDataProvider,
-			final ITaskLogger logger, final int cycletime) throws IOException {
-		comDataSink = comDataProvider;
-		log = logger;
-		cycleTime = cycletime;
-		communicator = new IGTLCommunicator(SLICER_CONTROL_COM_PORT, cycleTime,
-				log);
-		communicator.setup();
-		connectionErrCounter = 0;
-	}
-
-	// /**
-	// * Starts the listening server on the defined port.
-	// *
-	// * @throws IOException
-	// * when connection to the port fails.
-	// */
-	// private void connectServer() throws IOException {
-	// stopServer();
-	// try {
-	// ServerSocketFactory serverSocketFactory = ServerSocketFactory
-	// .getDefault();
-	// openIGTServer = serverSocketFactory.createServerSocket(this.port);
-	// openIGTServer.setReuseAddress(true);
-	// log.info("State machine interface server Socket succesfully "
-	// + "created (port " + this.port + ")");
-	// } catch (IOException e) {
-	// log.error("Could not Connect to port :" + this.port + ")", e);
-	// throw e; // TODO exception concept.
-	// }
-	// }
-
-	// /**
-	// * Closes the connection to the server and the client.
-	// */
-	// public final void finalize() {
-	// if (openIGTServer != null) {
-	// try {
-	// openIGTServer.close();
-	// openIGTServer = null;
-	// openIGTClient.close();
-	// openIGTClient = null;
-	// log.info("State machine interface server stopped");
-	// } catch (IOException e) {
-	// log.error(
-	// "Could not disconnect from state machine interface server",
-	// e);
-	// e.printStackTrace(); // TODO exception concept.
-	// }
-	// }
-	//
-	// };
-
-	/**
-	 * In this function a message from the Client Socket is received and
-	 * according to the OpenIGTLink datatype the recieved data is saved in the
-	 * member variable CMDmessage. If the data type is neither Transform nor
-	 * String an ErrorMessage is created. (Error Message not used yet...)
-	 * 
-	 * @throws IOException
-	 *             when the received data has the wrong datatype or is
-	 *             incomplete.
-	 */
-	private void receiveMessage() throws IOException {
-
-		IOpenIGTLMsg receivedMsg = null;
-
-		do {
-			if (!communicator.isClosed()) {
-				receivedMsg = communicator.receiveMsg();
-
-			} else {
-				communicator.restart();
-			}
-
-		} while (!comDataSink.readNewCmdMessage(receivedMsg)); // checks the new
-		// message and
-		// saves it if it
-		// has new
-		// content.
-	}
-
-	/**
-	 * main/run method function of the State control Interface. In this function
-	 * the server is initialized and a packet handler is started. In a loop with
-	 * a cycle time of 20 ms the new Command String is received and the
-	 * Acknowledgment String send to the state control (e.g. 3d Slicer).
-	 **/
-	public final void run() {
-
-		// Initializing the Communication with Slicer
-		try {
-			communicator.setup();
-			log.info("State machine interface client connected ( "
-					+ communicator.getInetAddress() + ", "
-					+ communicator.getPort() + ")");
-
-		} catch (IOException e1) {
-			log.error("Initial set up of communicator failed.", e1);
-			try {
-				log.info(this.getName() + " will be disposed.");
-				communicator.dispose();
-			} catch (IOException e) {
-				log.error("Cannot dispose communicator", e);
-			} finally {
-				throw new IllegalStateException("Communicator failure");
-			}
-		}
-
-		comRunning = true; // TODO Tobi
-
-		// Entering Loop for Communication - the loop is stopped if ControlRun
-		// is set to false
-		log.info(this.getClass().getSimpleName() + " enters the main loop");
-		long currentUid = 0;
-		while (comRunning) {
-
-			log.info(this.getClass().getSimpleName() + " begins its main loop");
-			// Starting Time
-			long startTimeStamp = (long) (System.nanoTime());
-
-			aStep = SMtiming.newTimeStep();
-			if (!communicator.isClosed()) {
-
-				try {
-					// Receive Message from State Control
-					receiveMessage(); // TODO deal with Runtime exceptions
-					// properly
-					log.info(this.getClass().getSimpleName()
-							+ " received a message.");
-					currentUid = comDataSink.getCurrentCmdPacket().getUid();
-					sendIGTStringMessage(getAckMsg() + currentUid + ";");
-					log.info(this.getClass().getSimpleName()
-							+ " sends an acknowledgement for msg with uid "
-							+ currentUid + ".");
-				} catch (IOException e) {
-					connectionErrCounter++;
-					try {
-						communicator.dispose();
-					} catch (IOException e1) {
-						log.error(this.getName()
-								+ " fails while disposing its communicator instance ");
-					}
-				}
-
-			} else { // If there is an connection error stop listening server
-				// and restart the server
-				try {
-					log.warn(this.getClass().getSimpleName()
-							+ " restarts its communicator port because "
-							+ "the connection was closed.");
-					communicator.restart();
-					log.info(this.getClass().getSimpleName()
-							+ " restarted successfully its communicator.");
-				} catch (IOException e) {
-					log.error("Could not reestablish openIGTL connection", e);
-					try {
-						log.info(this.getClass().getSimpleName()
-								+ " will be disposed.");
-						communicator.dispose();
-					} catch (IOException e2) {
-						log.error("Cannot dispose communicator", e2);
-					}
-
-				}
-			}
-
-			// Set the Module in Sleep mode for stability enhancement
-			try {
-				StateMachineApplication.cyclicSleep(startTimeStamp, 2,
-						millisectoSleep);
-			} catch (InterruptedException e) {
-				// TODO exception concept.
-				log.error(this.getClass().getSimpleName() + " sleep failed!!");
-			}
-
-			if (connectionErrCounter >= MAX_ALLOWED_CONNECTION_ERR) {
-				log.error("Got " + connectionErrCounter
-						+ " connection errors. Stopping communication.");
-				break;
-			}
-
-			aStep.end();
-
-			/*
-			 * analysis of timer statistics.
-			 */
-			// TODO @Sebastian following section must be simplified
-			if (SMtiming.getMaxTimeMillis() >= 10 * millisectoSleep
-					|| SMtiming.getMeanTimeMillis() >= 2 * millisectoSleep) {
-				log.error("StateMachineIF: Attention! Bad communication quality "
-						+ "robot changes state to Error!");
-			} else if ((SMtiming.getMaxTimeMillis() > 3.0 * millisectoSleep && SMtiming
-					.getMaxTimeMillis() < 10.0 * millisectoSleep)
-					|| (SMtiming.getMeanTimeMillis() > millisectoSleep + 5 && SMtiming
-							.getMeanTimeMillis() < 2 * millisectoSleep)) {
-				log.error("StateMachineIF: Warning bad communication quality!");
-			}
-			log.info(this.getName() + " ends its main loop");
-		} // end while
-
-		// End all communication, when run() ends.
-		try {
-			log.info(this.getClass().getSimpleName() + " will be disposed.");
-			communicator.dispose();
-		} catch (IOException e) {
-			log.error("Closing of the IGTL connection failed", e);
-		}
-
-	}
-
-	/**
-	 * Sets the current acknowledgement message.
-	 * 
-	 * @param msg
-	 *            the message for ack.
-	 */
-	public final void setAckMsg(final String msg) {
-		synchronized (ackMsg) {
-			ackMsg = msg;
-		}
-	}
-
-	/**
-	 * Getter for acknowledgement message.
-	 * 
-	 * @return the ack msg.
-	 */
-	private String getAckMsg() {
-		synchronized (ackMsg) {
-			return ackMsg;
-		}
-
-	}
-
-	// /**
-	// * Sends bytes.
-	// *
-	// * @param bytes
-	// * the array to be send.
-	// * @throws IOException
-	// * when sending fails.
-	// */
-	// private synchronized void sendBytes(byte[] bytes) throws IOException {
-	// outstr.write(bytes);
-	// outstr.flush();
-	// }
-
-	/**
-	 * Sends an OpenIGTlink String message.
-	 * 
-	 * @param message
-	 *            the message to be send.
-	 * 
-	 */
-	private void sendIGTStringMessage(final String message) {
-
-		sendIGTStringMessage(message, communicator, log);
-
-	}
-
-	public static void sendIGTStringMessage(final String message,
-			final IGTLCommunicator com, final ITaskLogger logger) {
-
-		IGTLMsg currentMsg;
-
-		byte[] bodyByte = new byte[message.length()
-				+ IGTLstring.IGTL_STRING_HEADER_SIZE];
-		byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
-		igtl_header header = new igtl_header();
-		header.setVersion(IGTLheader.IGTL_HEADER_VERSION);
-		header.setBody_size((BigInteger.valueOf(message.length()
-				+ IGTLstring.IGTL_STRING_HEADER_SIZE)));
-		header.setName("STRING");
-		header.setDevice_name("ACK"); /* Device name */
-		header.setTimestamp(BigInteger.valueOf(System.nanoTime()));
-		ByteBuffer bodyBuffer = ByteBuffer.allocate(message.length()
-				+ IGTLstring.IGTL_STRING_HEADER_SIZE);
-		bodyBuffer.putShort((short) DEFAULT_STRING_ENCODING);
-		bodyBuffer.putShort((short) message.length());
-		bodyBuffer.put(message.getBytes());
-
-		bodyByte = bodyBuffer.array();
-		ByteArr bodyArray = new ByteArr(message.length()
-				+ IGTLstring.IGTL_STRING_HEADER_SIZE);
-		for (int i = 0; i < message.length()
-				+ IGTLstring.IGTL_STRING_HEADER_SIZE; i++) {
-			bodyArray.setitem(i, bodyByte[i]);
-		}
-		ByteArr headerArray = ByteArr.frompointer(IGTLheader.PackHeader(header,
-				bodyArray.cast()));
-		for (int i = 0; i < IGTLheader.IGTL_HEADER_SIZE; i++) {
-			headerByte[i] = (byte) headerArray.getitem(i);
-		}
-
-		try {
-			currentMsg = new IGTLMsg();
-			currentMsg.init(headerByte, bodyByte);
-			if (null == com)
-				throw new NullPointerException("Communicator is null");
-			if (com.isClosed())
-				throw new IllegalStateException("Communicator isnt connected.");
-			com.sendMsg(currentMsg);
-		} catch (IOException e) {
-			logger.error("Sending of bytes failed.", e);
-			// TODO exception concept.
-		}
-
-	}
-
-	// /**
-	// * Closes the IGT server and client connection.
-	// *
-	// */
-	// private void stopServer() {
-	//
-	// if (openIGTServer != null) {
-	// try {
-	// openIGTServer.close();
-	// openIGTServer = null; // TODO besser reset function
-	// openIGTClient.close();
-	// openIGTClient = null; // TODO besser reset function
-	// System.out.println("State machine interface server stopped");
-	// } catch (IOException e) {
-	// log.error("Cannot close server or client connection", e);
-	// // TODO exception concept.
-	// }
-	// }
-	// }
+    // /**
+    // * Closes the IGT server and client connection.
+    // *
+    // */
+    // private void stopServer() {
+    //
+    // if (openIGTServer != null) {
+    // try {
+    // openIGTServer.close();
+    // openIGTServer = null; // TODO besser reset function
+    // openIGTClient.close();
+    // openIGTClient = null; // TODO besser reset function
+    // System.out.println("State machine interface server stopped");
+    // } catch (IOException e) {
+    // log.error("Cannot close server or client connection", e);
+    // // TODO exception concept.
+    // }
+    // }
+    // }
 
 }
