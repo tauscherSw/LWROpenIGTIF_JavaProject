@@ -327,34 +327,10 @@ public class LWRVisualizationInterface extends Thread {
 		comDataSink = comDataProvider;
 		log = logger;
 		cycleTime = cycletime;
-		setDaemon(true);
-		communicator = new IGTLCommunicator(SLICER_VISUAL_COM_PORT, cycleTime);
+		communicator = new IGTLCommunicator(SLICER_VISUAL_COM_PORT, cycleTime,
+				log);
 		cyclicDataLock = new Object();
 	}
-
-	// // TODO duplicate code same method can be found in
-	// LWRStateMachineInterface
-	// /**
-	// * Starts the listening server on the defined port.
-	// *
-	// * @throws IOException
-	// * when connection to openIGT server fails.
-	// */
-	// private void connectServer() throws IOException {
-	// stopServer();
-	// try {
-	// ServerSocketFactory serverSocketFactory = ServerSocketFactory
-	// .getDefault();
-	// openIGTServer = serverSocketFactory.createServerSocket(this.port);
-	// openIGTServer.setReuseAddress(true);
-	// log.info("Visualization interface server socket "
-	// + "succesfully created (port " + this.port + ")");
-	//
-	// } catch (IOException e) {
-	// log.error("Could not Connect to Visualization interface server", e);
-	// throw e; // TODO exception concept.
-	// }
-	// }
 
 	/**
 	 * This method enables the main loop to run, and thus activates this
@@ -398,29 +374,6 @@ public class LWRVisualizationInterface extends Thread {
 		return transmitDataFlag;
 	}
 
-	// /**
-	// * Disposes the openIGT connection by closing the connection and setting
-	// the
-	// * corresponding objects to null.
-	// */
-	// public final void finalize() {
-	// if (openIGTServer != null) {
-	// try {
-	// openIGTServer.close();
-	// openIGTServer = null;
-	// openIGTClient.close();
-	// openIGTClient = null;
-	// log.info("Visualization interface server stopped");
-	// } catch (IOException e) {
-	// log.error(
-	// "Could not disconnect from visualization interface server",
-	// e);
-	// e.printStackTrace(); // TODO exception concept.
-	// }
-	// }
-	//
-	// }
-
 	/**
 	 * Getter for the current connection state of this igtl-communicator.
 	 * 
@@ -446,36 +399,6 @@ public class LWRVisualizationInterface extends Thread {
 		visualRun = false;
 	}
 
-	// // TODO duplicate code. This method already exists in
-	// // state-machine-interface.
-	// /**
-	// * Function to restart the IGTLink Server and reinitialize the connection.
-	// */
-	// private void restartIGTServer() {
-	//
-	// log.error("StateMachineIF: Lost Connection to Client. Try to reconnect...");
-	//
-	// stopServer();
-	// try {
-	// // Set up server
-	// connectServer();
-	// setCyclicCommunication(true);
-	// openIGTClient = openIGTServer.accept();
-	// openIGTClient.setTcpNoDelay(true);
-	// openIGTClient.setSoTimeout(1 * cycleTime);
-	// this.outstr = openIGTClient.getOutputStream();
-	// this.currentStatus = ClientStatus.CONNECTED;
-	// log.error("Visual interface client connected ( "
-	// + openIGTClient.getInetAddress() + ", "
-	// + openIGTClient.getPort() + ")");
-	// connectionErr = 0;
-	//
-	// } catch (Exception e) {
-	// log.error("Couldn't connect to visualisation interface server!");
-	//
-	// }
-	//
-	// }
 
 	/**
 	 * Main function of the Visualization Interface. In this function the server
@@ -485,26 +408,6 @@ public class LWRVisualizationInterface extends Thread {
 	 **/
 	public final void run() {
 
-		// // Initializing the Communication with the Visualization Software
-		// try {
-		// // Set up server
-		// connectServer();
-		// setCyclicCommunication(true);
-		// openIGTClient = openIGTServer.accept();
-		// openIGTClient.setTcpNoDelay(true);
-		// openIGTClient.setSoTimeout(10 * cycleTime); // TODO @Sebastian
-		// // unknown value.
-		// this.outstr = openIGTClient.getOutputStream();
-		// this.currentStatus = ClientStatus.CONNECTED;
-		// log.info("Visualization interface client connected ( "
-		// + openIGTClient.getInetAddress() + ", "
-		// + openIGTClient.getPort() + ")");
-		//
-		// } catch (Exception e) {
-		// // TODO exception concept.
-		//
-		// log.error("Couldn't connect to Visualization interface server!");
-		// }
 		try {
 			communicator.setup();
 			log.info("Visualization interface client is connected ( "
@@ -513,12 +416,17 @@ public class LWRVisualizationInterface extends Thread {
 
 		} catch (IOException e1) {
 			log.error("Initial set up of communicator failed.", e1);
+			try {
+				communicator.dispose();
+			} catch (IOException e) {
+				log.error("Cannot dispose communicator", e);
+			}
 		}
 
 		// Enter the main loop
-		log.info(this.getName() + " enters the main loop");
+		log.info(this.getClass().getSimpleName() + " enters the main loop");
 		while (isEnabled()) {
-			log.info(this.getName() + " begins its main loop");
+			log.info(this.getClass().getSimpleName() + " begins its main loop");
 			long startTimeStamp = (long) (System.nanoTime());
 			aStep = visualTiming.newTimeStep();
 
@@ -526,17 +434,17 @@ public class LWRVisualizationInterface extends Thread {
 					&& connectionErr < MAX_ALLOWED_CONNECTION_ERROR
 					&& isDataTransmissionEnable()) {
 				synchronized (cyclicDataLock) {
-					log.info(this.getName() + " sends a transformation.");
+					log.info(this.getClass().getSimpleName() + " sends a transformation.");
 					sendTransformation(currentDataSet, currentSenderConfig);
 				}
 
 			} else {
 				try {
-					log.warn(this.getName()
+					log.warn(this.getClass().getSimpleName()
 							+ " restarts its communicator port because "
 							+ "the connection was closed.");
 					communicator.restart(10 * cycleTime);
-					log.info(this.getName()
+					log.info(this.getClass().getSimpleName()
 							+ " restarted successfully its communicator.");
 				} catch (IOException e) {
 					log.error("Could not establish IGTL connection", e);
@@ -547,7 +455,7 @@ public class LWRVisualizationInterface extends Thread {
 			// TODO @Tobias uids
 			if (poseUidTmp == poseUidTmpOld) {
 
-				log.warn(this.getName()
+				log.warn(this.getClass().getSimpleName()
 						+ " receives old Data from State Machine Thread (according to the UIDs)");
 				poseUidOldCount++;
 			}
@@ -559,7 +467,7 @@ public class LWRVisualizationInterface extends Thread {
 						cycleTime);
 			} catch (InterruptedException e) {
 
-				log.error(this.getName() + " sleep failed!!");
+				log.error(this.getClass().getSimpleName() + " sleep failed!!");
 				// TODO exception concept.
 			}
 			aStep.end();
@@ -571,18 +479,19 @@ public class LWRVisualizationInterface extends Thread {
 					|| visualTiming.getMeanTimeMillis() > (double) 2
 							* cycleTime) {
 
-				log.warn(this.getName() + " has bad communication quality!");
+				log.warn(this.getClass().getSimpleName() + " has bad communication quality!");
 
 			}
-			log.info(this.getName() + " ends its main loop");
+			log.info(this.getClass().getSimpleName() + " ends its main loop");
 		}// end while
 
 		// End all communication, when run() ends.
+
 		try {
-			log.info(this.getName() + " will be disposed.");
+			log.info(this.getClass().getSimpleName() + " will be disposed.");
 			communicator.dispose();
 		} catch (IOException e) {
-			log.error("Closing of the IGTL connection failed", e);
+			log.error("Cannot dispose communicator", e);
 		}
 	}
 

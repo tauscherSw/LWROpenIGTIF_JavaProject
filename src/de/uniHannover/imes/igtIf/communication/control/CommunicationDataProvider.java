@@ -153,6 +153,10 @@ public class CommunicationDataProvider {
 	//
 	// If the current processed message is the first one, fields have to be
 	// initialized.
+    if(null == message)
+    {
+    	return false;
+    }
 	if (curPacket == null) {
 	    // initialize the current command packet.
 	    curPacket = new CommandPacket("IDLE;", IgtlMsgType.Command, 0,

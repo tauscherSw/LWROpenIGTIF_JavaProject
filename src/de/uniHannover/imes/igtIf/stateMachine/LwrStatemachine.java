@@ -371,6 +371,10 @@ public class LwrStatemachine {
 	if (this.igtlDatatype.equals("STRING")) {
 	    // this.InitFlag = false;
 	    String cmdString;
+	    if(null == currentPacket)
+	    {
+	    	updateStateControlData();	    	
+	    }
 	    cmdString = currentPacket.getCmdString();
 	    // Split String into a String array with ";" as a separator
 	    String[] cmdArray = cmdString.split(";");
@@ -605,7 +609,7 @@ public class LwrStatemachine {
 	    // If the State was Changed then interpret the CMD Packet according
 	    // to the Current stat
 	    if (this.stateChanged && !this.ErrorFlag) {
-		getCurrentState().interpretCmdPacket(this, null);
+		getCurrentState().interpretCmdPacket(this, currentPacket);//TODO
 	    }
 	} else {
 	    this.stateChanged = false;
