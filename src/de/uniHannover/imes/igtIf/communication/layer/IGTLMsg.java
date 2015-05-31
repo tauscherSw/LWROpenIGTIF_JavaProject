@@ -1,6 +1,5 @@
 package de.uniHannover.imes.igtIf.communication.layer;
 
-import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
 
 
 /**

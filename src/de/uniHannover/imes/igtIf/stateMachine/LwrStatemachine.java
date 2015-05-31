@@ -46,7 +46,7 @@ import de.uniHannover.imes.igtIf.stateMachine.states.LwrPathImp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrVirtualFixtures;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
-import de.uniHannover.imes.igtIf.communication.visualization.LWRVisualizationInterface.VisualIFDatatypes;
+import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread.VisualIFDatatypes;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
 
 /**
@@ -325,7 +325,7 @@ public class LwrStatemachine {
      * @see LwrPathImp
      * @see LwrMoveToPose
      */
-    public final void calcControlParam() {
+    public final void updateCtrlParam() {
 	getCurrentState().calcControlParam(this, dataSink.getCurRobotDataSet());
     }
 

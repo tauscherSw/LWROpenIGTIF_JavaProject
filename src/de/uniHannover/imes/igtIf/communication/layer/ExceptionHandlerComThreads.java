@@ -1,4 +1,4 @@
-package de.uniHannover.imes.igtIf.communication;
+package de.uniHannover.imes.igtIf.communication.layer;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 
