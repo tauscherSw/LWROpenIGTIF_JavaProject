@@ -1,3 +1,4 @@
+package deprecated;
 ///*=========================================================================
 //
 //  Program:   LWRStateMachineInterface

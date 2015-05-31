@@ -44,9 +44,9 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.util.FileSystemUtil;
 import de.uniHannover.imes.igtIf.util.StatisticalTimer;
+import de.uniHannover.imes.igtIf.communication.ExceptionHandlerComThreads;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.control.ControlThread;
-import de.uniHannover.imes.igtIf.communication.layer.ExceptionHandlerComThreads;
 import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread;
 import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread.VisualIFDatatypes;
 

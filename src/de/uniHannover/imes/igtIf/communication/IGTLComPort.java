@@ -1,4 +1,4 @@
-package de.uniHannover.imes.igtIf.communication.layer;
+package de.uniHannover.imes.igtIf.communication;
 
 import java.io.IOException;
 import java.io.InputStream;

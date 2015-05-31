@@ -29,9 +29,9 @@ import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
+import de.uniHannover.imes.igtIf.communication.IGTLComPort;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtIf.communication.layer.IGTLComPort;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
 import de.uniHannover.imes.igtIf.util.KinematicsLwrUtil;
 import de.uniHannover.imes.igtIf.util.StatisticalTimer;

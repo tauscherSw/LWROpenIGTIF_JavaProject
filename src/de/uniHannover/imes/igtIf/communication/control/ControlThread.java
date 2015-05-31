@@ -27,8 +27,8 @@ import java.io.IOException;
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
-import de.uniHannover.imes.igtIf.communication.layer.IGTLComPort;
-import de.uniHannover.imes.igtIf.communication.layer.IOpenIGTLMsg;
+import de.uniHannover.imes.igtIf.communication.IGTLComPort;
+import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.util.StatisticalTimer;

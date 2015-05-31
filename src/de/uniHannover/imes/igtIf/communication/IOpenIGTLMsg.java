@@ -1,4 +1,4 @@
-package de.uniHannover.imes.igtIf.communication.layer;
+package de.uniHannover.imes.igtIf.communication;
 
 /**
  * All openIGTL messages contain of a body and a header. This interface gains

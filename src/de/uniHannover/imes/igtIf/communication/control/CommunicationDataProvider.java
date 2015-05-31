@@ -11,8 +11,8 @@ import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
-import de.uniHannover.imes.igtIf.communication.layer.IGTLMsg;
-import de.uniHannover.imes.igtIf.communication.layer.IOpenIGTLMsg;
+import de.uniHannover.imes.igtIf.communication.IGTLMsg;
+import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
 
 /**
  * This class represents the communication data, which is exchanged via the
