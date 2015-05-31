@@ -36,20 +36,22 @@ import de.uniHannover.imes.igtIf.logging.DummyLogger;
  * In this state the LWR is set to gravitation Compensation mode so that robot
  * can be moved manually and freely without constraints. The GravComp/Free mode
  * can be used for e.g., for registration purposes
- * 
- * @author Sebastian Tauscher
- * @version 0.1
+ *
  */
 public class LwrGravComp implements ILwrState {
 
+    //**************************Constants**********************/
     /**
      * Maximum translation deviation allowed.
      */
     private static final int MAX_TRANSLATION = 100;
 
+    //**************************Components*********************/
     /** The logging object for logging output. */
     private ITaskLogger log = new DummyLogger();
 
+
+    //***************************Methods***********************/
     /**
      * In this Function control mode parameters are set and the command pose is
      * calculated due to the current LWR State. In the GravComp State the

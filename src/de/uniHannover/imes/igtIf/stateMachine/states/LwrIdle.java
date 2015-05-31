@@ -35,23 +35,18 @@ import de.uniHannover.imes.igtIf.logging.DummyLogger;
 /**
  * In this state the LWR is holding its position with a maximum stiffness. This
  * is an save mode to which the robot could always change to.
- * 
- * @author Sebastian Tauscher
- * @version 0.1
  */
 public class LwrIdle implements ILwrState {
-    /** Flag for increasing the stiffness params of the robot. */
-    private boolean incStiffness = false;
-    
-    /** The logging object for logging output.*/
-    private ITaskLogger log = new DummyLogger();
 
+
+    //**************************Constants**********************/
     /**
      * Maximum allowed change in translational stiffness value per cycle in N/m.
      */
     private static final int MAX_DELTA_STIFFNESS_TRANS = 100;
 
-    /** Maximum allowed change in rotational stiffness value per cycle in rad/m. */
+    /** Maximum allowed change in rotational stiffness value per cycle in
+     *  rad/m. */
     private static final int MAX_DELTA_STIFFNESS_ROT = 30;
 
     /**
@@ -63,6 +58,18 @@ public class LwrIdle implements ILwrState {
      */
     private static final int CART_STIFFNESS_INCREMENT = 50;
 
+    
+
+    //*************************Parameters**********************/
+    /** Flag for increasing the stiffness params of the robot. */
+    private boolean incStiffness = false;
+
+
+    //**************************Components*********************/
+    /** The logging object for logging output.*/
+    private ITaskLogger log = new DummyLogger();
+
+    //***************************Methods***********************/
     /**
      * In this function control mode parameters are set and the command pose are
      * calculated due the current LWR State. During the Idle state the Cartesian
@@ -83,7 +90,8 @@ public class LwrIdle implements ILwrState {
 	final double aTransStiffVal = 5000;
 	final double aRotStiffVal = 300;
 	final int numOfDeltaStiffnessParam = 6;
-	CartesianImpedanceControlMode cartImp = (CartesianImpedanceControlMode) lwrStatemachine.controlMode;
+	CartesianImpedanceControlMode cartImp = 
+		(CartesianImpedanceControlMode) lwrStatemachine.controlMode;
 	int[] deltaStiffness = new int[numOfDeltaStiffnessParam];
 	int[] newStiffness = { (int) aTransStiffVal, (int) aTransStiffVal,
 		(int) aTransStiffVal, (int) aRotStiffVal, (int) aRotStiffVal,

@@ -45,7 +45,6 @@ import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
  * 	- Send the Command plus parameters and check if it works
  * </pre>
  * 
- * @author Sebastian Tauscher
  * @see LwrIdle
  * @see LwrGravComp
  * @see LwrVirtualFixtures
@@ -54,6 +53,9 @@ import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
  *
  */
 public interface ILwrState {
+    
+
+    //***************************Methods***********************/
     /**
      * In this Function control Mode Parameters are set and the commanded pose
      * are calculated due the current LWR State. For Further information see the

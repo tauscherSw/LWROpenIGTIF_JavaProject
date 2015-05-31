@@ -9,7 +9,9 @@ import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
  * 
  */
 public class StdOutLogger implements ITaskLogger {
-
+    
+    
+    //***************************Methods***********************/
     @Override
     public final void error(final String msg) {
 	System.err.println(msg);

@@ -38,8 +38,6 @@ package de.uniHannover.imes.igtIf.application;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.util.FileSystemUtil;
@@ -50,10 +48,7 @@ import de.uniHannover.imes.igtIf.communication.control.ControlThread;
 import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread;
 import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread.VisualIFDatatypes;
 
-import com.kuka.common.StatisticTimer;
 import com.kuka.common.ThreadUtil;
-import com.kuka.common.StatisticTimer.OneTimeStep;
-import com.kuka.common.UncaughtExceptionLogHandler;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
 
 import static com.kuka.roboticsAPI.motionModel.BasicMotions.ptp;
@@ -324,6 +319,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     private final MatrixTransformation toolTCP = MatrixTransformation
 	    .ofTranslation(-40, 10, 207);
 
+    //***************************Methods***********************/
     /**
      * Load SWIG igtlutil library (Default Library folder is
      * "..\OpenIGTLinkLib\swig\"
@@ -524,7 +520,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     private void initStateMachine() {
 	imesStatemachine = new LwrStatemachine(comDataProvider);
-	imesStatemachine.StartVisual = true;
+	imesStatemachine.startVisual = true;
 
 	comDataProvider.readNewRobotData();
 	imesStatemachine.cmdPose = comDataProvider.getCurRobotDataSet()
@@ -591,7 +587,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	    timer = new StatisticalTimer(MS_TO_SLEEP); // timing statistics for
 						       // following loop.
 	    long startTimeStamp;
-	    JointPosition initialPosition = imesLBR.getCurrentJointPosition();
 
 	    getLogger()
 		    .info("Starting Thread for state control communication.");
@@ -601,7 +596,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			    + "but yet not enabled to send data.");
 	    visualizationThread.start();
 
-	    StatisticTimer timing = new StatisticTimer();
 
 	    // Main loop
 	    getLogger().info(
@@ -655,7 +649,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		     * Control the sending of the visualization data by the
 		     * visualization thread.
 		     */
-		    if (imesStatemachine.StartVisual) {
+		    if (imesStatemachine.startVisual) {
 
 			getLogger().info(
 				this.getClass().getName()

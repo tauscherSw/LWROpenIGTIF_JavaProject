@@ -9,7 +9,8 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
  * visualization-communication-interface.
  */
 final class VisualSenderData {
-
+    
+    //**************************Components*********************/
     /**
      * Joint position of each robot joint in rad.
      */
@@ -28,6 +29,9 @@ final class VisualSenderData {
      */
     private MatrixTransformation cartPoseTcpExternalBase;
 
+
+    
+    //***************************Methods***********************/
     /**
      * Getter for the joint position in rad.
      * 

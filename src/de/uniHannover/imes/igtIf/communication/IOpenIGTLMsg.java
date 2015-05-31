@@ -7,6 +7,7 @@ package de.uniHannover.imes.igtIf.communication;
  */
 public interface IOpenIGTLMsg {
 
+    //***************************Methods***********************/
     /**
      * Getter for the header of a IGTL message.
      * 

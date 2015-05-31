@@ -7,6 +7,8 @@ import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
  * logger.
  */
 public class DummyLogger implements ITaskLogger {
+    
+    //***************************Methods***********************/
 
     @Override
     public void error(final String msg) {

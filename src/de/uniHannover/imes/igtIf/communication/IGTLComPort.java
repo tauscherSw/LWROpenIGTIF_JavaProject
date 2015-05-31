@@ -80,6 +80,7 @@ public final class IGTLComPort {
     /** The current socket timeout in milliseconds . */
     private int curSocketTimeout;
 
+    //*************************Constructors********************/
     /**
      * Creates and initializes the communication object.
      * 
@@ -106,7 +107,9 @@ public final class IGTLComPort {
 	}
 
     }
-
+    
+    
+    //***************************Methods***********************/
     /**
      * Setups all communication related objects. This method blocks until a
      * connection is set up to the igtserver. Input and output streams will be
@@ -141,19 +144,6 @@ public final class IGTLComPort {
 		+ serverPort + " was successfully established.");
 
     }
-
-    // /**
-    // * Getter for the connection state.
-    // *
-    // * @return true if not connected otherwise false;
-    // */
-    // public boolean isClosed() {
-    // if (openIGTServer != null) {
-    // return openIGTServer.isClosed();
-    // } else {
-    // return false;
-    // }
-    // }
 
     /**
      * Closes the connection, which was previously established via IGT.

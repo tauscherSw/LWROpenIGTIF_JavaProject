@@ -10,6 +10,7 @@ import com.kuka.common.StatisticTimer.OneTimeStep;
  */
 public class StatisticalTimer {
 
+    // **************************Components*********************/
     /** Saves the timing of one loop. */
     private OneTimeStep step;
     /** Timer object for evaluating statistics over loop iterations. */
@@ -20,6 +21,7 @@ public class StatisticalTimer {
      */
     private int millisectoSleep;
 
+    // *************************Constructors********************/
     /**
      * Creates a statistical timer, which is used to record the timing
      * statistics of a loop.
@@ -32,8 +34,10 @@ public class StatisticalTimer {
     public StatisticalTimer(final int msToSleep) {
 	millisectoSleep = msToSleep;
 	init();
+
     }
 
+    // ***************************Methods***********************/
     /**
      * Creates a new timer object. Should only be called within the constructor.
      */

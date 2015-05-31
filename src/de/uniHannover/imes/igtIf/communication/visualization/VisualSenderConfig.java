@@ -10,6 +10,7 @@ import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread
  */
 final class VisualSenderConfig {
 
+    //**************************Components*********************/
     /**
      * The datatype the position data is requested in. Possible types are listed
      * in the enumeration {@link VisualIFDatatypes}.
@@ -21,6 +22,9 @@ final class VisualSenderConfig {
      */
     private boolean sendTcpForce;
 
+    
+
+    //***************************Methods***********************/
     /**
      * Sets the data for this class at once.
      * 

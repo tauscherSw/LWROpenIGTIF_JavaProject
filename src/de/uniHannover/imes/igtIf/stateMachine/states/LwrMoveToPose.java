@@ -25,7 +25,6 @@ package de.uniHannover.imes.igtIf.stateMachine.states;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
-import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
@@ -34,18 +33,16 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
-import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
 
 /**
  * In This State the LWR is moving to a specified position in Cartesian space.
  * Therefore, the stiffness is set to the maximum value.
- * 
- * @author Sebastian Tauscher
- * @version 0.1
  */
 public class LwrMoveToPose implements ILwrState {
+    
+    //**************************Constants**********************/
     /** Cartesian-rotational stiffness in Nm/rad. */
     private static final int CART_ROT_STIFFNESS = 300;
     /** Cartesian-translational stiffness in N/m. */
@@ -55,6 +52,7 @@ public class LwrMoveToPose implements ILwrState {
     /** Step length of movement in a cycle in mm. */
     private static final double LENGTH_OF_SINGLE_STEP = 10;
     
+    //**************************Components*********************/
     /** The logging object for logging output.*/
     private ITaskLogger log = new DummyLogger();
 
@@ -90,6 +88,8 @@ public class LwrMoveToPose implements ILwrState {
      */
     private Vector directionLine = null;
 
+    
+    //***************************Methods***********************/
     /**
      * In this function control mode parameters are set and the command pose are
      * calculated based on the current LWR State. During the MoveToPose State

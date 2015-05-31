@@ -11,6 +11,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Vector;
  */
 public final class KinematicsLwrUtil {
 
+    // **************************Constants**********************/
     /**
      * Represents the d parameter of the Denavit-Hartenberg robot
      * representation. It is the distance between on the perpendicular line of
@@ -18,7 +19,19 @@ public final class KinematicsLwrUtil {
      */
     private static final double[] DH_D_PARAMETER_LWRIIWA7 = new double[] { 160,
 	    180, 180, 220, 180, 220, 80, 50 };
-    //TODO do we have the parameters of iiwa 14?
+
+    // TODO do we have the parameters of iiwa 14?
+
+    // *************************Constructors********************/
+    /**
+     * Privatized constructor, because this utility-class shouldn't be
+     * instantiated.
+     */
+    private KinematicsLwrUtil() {
+	super();
+    }
+
+    // ***************************Methods***********************/
 
     /**
      * In this function the homogeneous Matrix-Transformation for each Joint is

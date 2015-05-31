@@ -126,6 +126,8 @@ public class VisualizationThread extends Thread {
     /** Timespan in ms the thread sleeps after periodic work. */
     private int sleepTime = SLICER_VISUAL_CYLCETIME_MS;
 
+
+    //*************************Constructors********************/
     /**
      * Constructor, which initializes this thread and its components.
      * 
@@ -162,6 +164,8 @@ public class VisualizationThread extends Thread {
 
     }
 
+    
+    //***************************Methods***********************/
     /**
      * Executes cyclic work as can be found in the work method. Optionally
      * conditional work will be executed. Furthermore loop timing statistics are

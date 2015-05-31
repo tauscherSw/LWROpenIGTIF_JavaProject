@@ -14,6 +14,7 @@ public class ExceptionHandlerComThreads implements UncaughtExceptionHandler {
     /** Logger for printing the exceptions. */
     private ITaskLogger log;
 
+    //*************************Constructors********************/
     /**
      * Creates an exception handler object.
      * 
@@ -29,7 +30,7 @@ public class ExceptionHandlerComThreads implements UncaughtExceptionHandler {
 	}
     }
 
- 
+    //***************************Methods***********************/
     @Override
     public final void uncaughtException(final Thread t, final Throwable e) {
 	log.error("An uncaught exception occured in the thread "

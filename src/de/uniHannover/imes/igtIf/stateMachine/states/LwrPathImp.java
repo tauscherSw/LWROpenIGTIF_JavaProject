@@ -42,11 +42,10 @@ import de.uniHannover.imes.igtIf.logging.DummyLogger;
  * pose of the robot at the beginning of this state (statemachine InitFlag
  * ==true) is used as the start pose.
  * 
- * @author Sebastian Tauscher
- * @version 0.1
  */
 public class LwrPathImp implements ILwrState {
 
+    //**************************Constants**********************/
     /** Cartesian rotational stiffness value in Nm/rad. */
     private static final int CART_ROT_STIFFNESS = 300;
 
@@ -55,16 +54,17 @@ public class LwrPathImp implements ILwrState {
 
     /** Maximum cartesian translational stiffness value in N/m. */
      private static final int CART_TRANSL_STIFFNESS_MAX = 5000;
+
+     /**
+      * Allowed euclidean distance from current robot position to the path from
+      * start to end pose in mm.
+      */
+     private static final double TOLERANCE = 10.0;
+
      
+     //**************************Components*********************/
      /** The logging object for logging output.*/
      private ITaskLogger log = new DummyLogger();
-
-
-    /**
-     * Allowed euclidean distance from current robot position to the path from
-     * start to end pose in mm.
-     */
-    private static final double TOLERANCE = 10.0;
 
     /**
      * vector to define the line path from start to End point. g: x= ap +
@@ -104,6 +104,9 @@ public class LwrPathImp implements ILwrState {
      */
     private Vector u = null;
 
+    
+    
+    //***************************Methods***********************/
     /**
      * In this Function control Mode Parameters are set and the commanded pose
      * are calculated due the current LWR State. During the PathImp State the

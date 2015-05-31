@@ -47,12 +47,11 @@ import de.uniHannover.imes.igtIf.logging.DummyLogger;
  * freely and in the third area the stiffness values are set to a maximum value
  * and the commanded Position is the closest point on the Fixture.
  * 
- * @author Sebastian Tauscher
- * @version 0.1
  */
 
 public class LwrVirtualFixtures implements ILwrState {
 
+    //**************************Constants**********************/
     /**
      * Enum for the virtual fixtures type {Cone, plane }.
      */
@@ -63,32 +62,8 @@ public class LwrVirtualFixtures implements ILwrState {
 	Cone,
     }
     
-    /** The logging object for logging output.*/
-    private ITaskLogger log = new DummyLogger();
-    
-    //TODO @Sebastian further use?
+  //TODO @Sebastian further use?
     private static final int CONE_TOLERANCE_ENDPOINT = 10;
-
-    /** Distance-parameter in millimeters for fixture calculation. */
-    private double awaredist = 20; // TODO initialize in init() method or as
-				   // constants.
-    /**
-     * Flag indicates if the robot is near the tip of the cone. Due to this
-     * variable the half sphere used as virtual fixture instead of the cone tip
-     * is used to avoid stability issues.
-     */
-    private boolean coneTip = false;
-
-    /** Represents the distance to a virtual fixture in millimeters. */
-    private double distance;
-    /** Flag indicating if the end point was reached. */
-    private boolean endPoint = false;
-    /** Flag indicating if robot position data is recommended in imagespace. */
-    private boolean imageSpace = false;
-    /**
-     * Distance to a virtual fixture in millimeters from the calculation before.
-     */
-    private double lastDistance = 0.0; 
 
     /**
      * Maximum cartesian-translational stiffness of the lwr in N/m.
@@ -98,6 +73,28 @@ public class LwrVirtualFixtures implements ILwrState {
     /** Number of vectors for mean calculation of force vector. */
     private static final int NUM_FORCE_NORM_VECTORS = 5;
 
+    
+    //**************************Flags**************************/
+    /**
+     * Flag indicates if the robot is near the tip of the cone. Due to this
+     * variable the half sphere used as virtual fixture instead of the cone tip
+     * is used to avoid stability issues.
+     */
+    private boolean coneTip = false;
+    
+    /** Flag indicating if the end point was reached. */
+    private boolean endPoint = false;
+    
+    /** Flag indicating if robot position data is recommended in imagespace. */
+    private boolean imageSpace = false;
+    
+  //**************************Components*********************/
+    /** Represents the distance to a virtual fixture in millimeters. */
+    private double distance;
+
+    /** The logging object for logging output.*/
+    private ITaskLogger log = new DummyLogger();
+    
     /**
      * Field containing the last NUM_FORCE_NORM_VECTORS norm vectors of the
      * direction of force. This field is used to average the force direction for
@@ -129,6 +126,17 @@ public class LwrVirtualFixtures implements ILwrState {
     /** Current //TODO @Sebastian comment on. */
     private Vector normVector = Vector.of(0, 0, 1);
 
+  //*************************Parameters**********************/
+    /** Distance-parameter in millimeters for fixture calculation. */
+    private double awaredist = 20; // TODO initialize in init() method or as
+				   // constants.
+    /**
+     * Distance to a virtual fixture in millimeters from the calculation before.
+     */
+    private double lastDistance = 0.0; 
+
+
+  //***************************Methods***********************/
     /**
      * In this Function control Mode Parameters are set and the commanded pose
      * are calculated due the current LWR State. During the VirtualFixtures

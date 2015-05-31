@@ -62,10 +62,11 @@ import de.uniHannover.imes.igtIf.logging.DummyLogger;
  * @see LwrVirtualFixtures
  * @see LwrMoveToPose
  * @see LwrPathImp
- * @author Sebastian Tauscher
+ *
  */
 public class LwrStatemachine {
 
+    //**************************Constants**********************/
     /**
      * Current enum for the State Machine status {IDLE, GravComp,
      * VirtualFixtures, PathImp, MovetoPose, Error}possible client states.
@@ -174,6 +175,8 @@ public class LwrStatemachine {
 	}
     }
 
+    
+    //**************************Components*********************/
     /**
      * ACknowledgement OpenIGTLink Message for the state machine Interface.
      */
@@ -284,7 +287,7 @@ public class LwrStatemachine {
     /**
      * Flag to identify if the Visualization should be started or not.
      */
-    public boolean StartVisual = false; // TODO design failure field is
+    public boolean startVisual = false; // TODO design failure field is
 					// accessed/written from the outside.
 
     /**
@@ -293,6 +296,8 @@ public class LwrStatemachine {
      */
     private boolean transformReceivedFlag = false;
 
+    
+    //*************************Constructors********************/
     /**
      * Constructor of LWRStatemachine. The Current state is set to the save
      * state Idle
@@ -314,7 +319,9 @@ public class LwrStatemachine {
 	ErrorCode = OpenIGTLinkErrorCode.Ok;
 
     }
+    
 
+    //***************************Methods***********************/
     /**
      * calls the CalcControlParam of the current LWR state.
      * 
@@ -559,8 +566,8 @@ public class LwrStatemachine {
 			this.stateChanged = false;
 		    } else {
 			if (cmdArray[1].contentEquals("true")
-				&& !this.StartVisual) {
-			    this.StartVisual = true;
+				&& !this.startVisual) {
+			    this.startVisual = true;
 			    if (cmdArray[2].contentEquals("jnt")) {
 				setVisualIfDatatype(VisualIFDatatypes.JOINTSPACE);
 			    } else if (cmdArray[1].contentEquals("rob")) {
@@ -572,8 +579,8 @@ public class LwrStatemachine {
 				    + getVisualIfDatatype()
 				    + "(1=img, 2=rob, 3=jnt)");
 			} else if (cmdArray[1].contentEquals("false")
-				&& this.StartVisual) {
-			    this.StartVisual = false;
+				&& this.startVisual) {
+			    this.startVisual = false;
 			    log.warn("StateMachine: Visual IF stopped!");
 			}
 			this.ErrorCode = OpenIGTLinkErrorCode.Ok;

@@ -7,6 +7,7 @@ package de.uniHannover.imes.igtIf.communication;
  */
 public class IGTLMsg implements IOpenIGTLMsg {
 
+    //**************************Components*********************/
     /**
      * The header of the message.
      */
@@ -16,7 +17,9 @@ public class IGTLMsg implements IOpenIGTLMsg {
      * The body of the message.
      */
     private byte[] bodyData;
+    
 
+    //***************************Methods***********************/
     @Override
     public final byte[] getHeader() {
 	return headerData;
