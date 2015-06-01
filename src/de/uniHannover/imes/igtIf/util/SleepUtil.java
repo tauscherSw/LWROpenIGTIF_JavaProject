@@ -44,33 +44,42 @@ import java.util.concurrent.TimeUnit;
  */
 public final class SleepUtil {
 
-	// ***************************Methods***********************/
-	/**
-	 * Sleeps for a specified period of time. It should be called every
-	 * iteration in the main loop. The time to sleep is calculated according to
-	 * the loop iteration duration. This method is used for stability
-	 * enhancement.
-	 * 
-	 * @param startTimeNanos
-	 *            the start time of the loop
-	 * @param cycleTimeToleranceMs
-	 *            the tolerance border. If {@code MS_TO_SLEEP} -
-	 *            {@code cycleTimeToleranceMs} is bigger than the loop-iteration
-	 *            runtime, then sleeping is necessary.
-	 * @param cycleTime
-	 *            the desired cycle time for a loop iteration in milliseconds.
-	 * @throws InterruptedException
-	 *             when sleeping of this thread was interrupted.
-	 */
-	public static final void cyclicSleep(final long startTimeNanos,
-			final int cycleTimeToleranceMs, final int cycleTime)
-			throws InterruptedException {
-		long runtime = (long) ((System.nanoTime() - startTimeNanos));
-		long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
-		if (runtimeMS < cycleTime - cycleTimeToleranceMs) {
-			Thread.sleep(cycleTime - cycleTimeToleranceMs - runtimeMS);
-	
-		}
+    // *************************Constructors********************/
+    /**
+     * Privatized constructor, because this utility-class shouldn't be
+     * instantiated.
+     */
+    private SleepUtil() {
+	super();
+    }
+
+    // ***************************Methods***********************/
+    /**
+     * Sleeps for a specified period of time. It should be called every
+     * iteration in the main loop. The time to sleep is calculated according to
+     * the loop iteration duration. This method is used for stability
+     * enhancement.
+     * 
+     * @param startTimeNanos
+     *            the start time of the loop
+     * @param cycleTimeToleranceMs
+     *            the tolerance border. If {@code MS_TO_SLEEP} -
+     *            {@code cycleTimeToleranceMs} is bigger than the loop-iteration
+     *            runtime, then sleeping is necessary.
+     * @param cycleTime
+     *            the desired cycle time for a loop iteration in milliseconds.
+     * @throws InterruptedException
+     *             when sleeping of this thread was interrupted.
+     */
+    public static void cyclicSleep(final long startTimeNanos,
+	    final int cycleTimeToleranceMs, final int cycleTime)
+	    throws InterruptedException {
+	long runtime = (long) ((System.nanoTime() - startTimeNanos));
+	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
+	if (runtimeMS < cycleTime - cycleTimeToleranceMs) {
+	    Thread.sleep(cycleTime - cycleTimeToleranceMs - runtimeMS);
+
 	}
+    }
 
 }
