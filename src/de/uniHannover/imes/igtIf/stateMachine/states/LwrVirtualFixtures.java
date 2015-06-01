@@ -142,8 +142,8 @@ public class LwrVirtualFixtures implements ILwrState {
 
   //*************************Parameters**********************/
     /** Distance-parameter in millimeters for fixture calculation. */
-    private double awaredist = 20; // TODO initialize in init() method or as
-				   // constants.
+    private double awaredist = 20; 
+    // TODO initialize in init() method or as constants.
     /**
      * Distance to a virtual fixture in millimeters from the calculation before.
      */
@@ -498,8 +498,7 @@ public class LwrVirtualFixtures implements ILwrState {
 	    }
 	    if (this.activeVirtualFixture == VirtualFixtureType.Cone) {
 
-		this.virtualFixturePhi = Math.toRadians(135.0); // TODO
-								// Constant?
+		this.virtualFixturePhi = Math.toRadians(135.0); // TODO @Sebastian constant?
 	    }
 	    System.out.println("Virtaul Fixture ( ap ="
 		    + this.virtualFixturePosition + ", n "

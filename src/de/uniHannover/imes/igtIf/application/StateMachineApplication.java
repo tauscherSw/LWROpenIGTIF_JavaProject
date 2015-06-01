@@ -39,10 +39,10 @@ package de.uniHannover.imes.igtIf.application;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.util.FileSystemUtil;
+import de.uniHannover.imes.igtIf.util.SleepUtil;
 import de.uniHannover.imes.igtIf.util.StatisticalTimer;
 import de.uniHannover.imes.igtIf.communication.ExceptionHandlerComThreads;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
@@ -52,6 +52,7 @@ import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread
 
 import com.kuka.common.ThreadUtil;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
+import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplicationState;
 
 import static com.kuka.roboticsAPI.motionModel.BasicMotions.ptp;
 
@@ -142,708 +143,667 @@ import com.kuka.roboticsAPI.userInterface.ServoMotionUtilities;
  */
 public class StateMachineApplication extends RoboticsAPIApplication {
 
-    // **************************Constants**********************/
-    /** Time in milliseconds for waiting for communication threads to end. */
-    private static final int JOIN_TIME_THREADS = 2500;
+	// **************************Constants**********************/
+	/** Time in milliseconds for waiting for communication threads to end. */
+	private static final int JOIN_TIME_THREADS = 2500;
 
-    /**
-     * Acceleration of robot movements during state-machine execution. Value in
-     * %.
-     */
-    private static final double ACC = 1;
-
-    /**
-     * Definition of the initial robot position before the state-machine starts
-     * working.
-     */
-    private static final JointPosition INITIAL_ROBOT_POSE = new JointPosition(
-	    0.0, Math.toRadians(30), 0., -Math.toRadians(60), 0.,
-	    Math.toRadians(90), 0.);
-    /**
-     * Maximum allowed deviation of the statistic timer of the main loop.
-     */
-    private static final int MAXIMUM_TIMING_DEVIATION_MS = 5;
-
-    /**
-     * Cyclic time of each loop of the main (state machine) thread.
-     */
-    private static final int MS_TO_SLEEP = 10;
-    /**
-     * number of loops to run with out any communication with the state control.
-     */
-    private static final int N_OF_RUNS = 500;
-
-    /**
-     * The nullspace stiffness (rotational), when the robot is moving in
-     * cartesian impedance mode. Value in Nm/rad.
-     */
-    private static final double NULLSP_STIFF = 200.;
-    /**
-     * The maximum path-orientation deviation in a-angle, when the robot is
-     * moving in cartesian impedance mode. Values in rad.
-     */
-    private static final double PATH_DEV_A = 10; // TODO check value
-
-    /**
-     * The maximum path-orientation deviation in b-angle, when the robot is
-     * moving in cartesian impedance mode. Values in rad.
-     */
-    private static final double PATH_DEV_B = 10; // TODO check value
-
-    /**
-     * The maximum path-orientation deviation in c-angle, when the robot is
-     * moving in cartesian impedance mode. Values in rad.
-     */
-    private static final double PATH_DEV_C = 10; // TODO check value
-
-    /**
-     * The maximum path deviation in x direction, when the robot is moving in
-     * cartesian impedance mode. Values in mm.
-     */
-    private static final double PATH_DEV_X = 500;
-
-    /**
-     * The maximum path deviation in y direction, when the robot is moving in
-     * cartesian impedance mode. Values in mm.
-     */
-    private static final double PATH_DEV_Y = 500;
-
-    /**
-     * The maximum path deviation in z direction, when the robot is moving in
-     * cartesian impedance mode. Values in mm.
-     */
-    private static final double PATH_DEV_Z = 500;
-
-    /**
-     * The rotational stiffness, when the robot is moving in cartesian impedance
-     * mode. Value in Nm/rad.
-     */
-    private static final double ROT_STIFF = 300;
-
-    /**
-     * Minimum trajectory execution time during state-machine execution. Value
-     * in seconds.
-     */
-    private static final double TRAJ_EXC_TIME = 5e-03;
-    /**
-     * The translational stiffness, when the robot is moving in cartesian
-     * impedance mode. Value in N/m.
-     */
-    private static final double TRANSL_STIFF = 2000;
-    /**
-     * Velocity of robot movements during state-machine execution. Value in %.
-     */
-    private static final double VEL = 1;
-
-    /**
-     * External swig library.
-     */
-    private static final String SWIG_DLL = "SWIGigtlutil.dll";
-
-    /**
-     * Relative dll path in jar.
-     */
-    private static final String SWIG_DLL_RELPATH = "OpenIGTLinkLib/";
-
-    /**
-     * Relative library path in project directory.
-     */
-    private static final String LIB_PATH_REL = File.separatorChar + "Libs"
-	    + File.separatorChar + "SWIG" + File.separatorChar
-	    + "SWIG_communication.jar";
-
-    // **************************Flags**************************/
-    // None
-
-    // **************************Components*********************/
-    /** Statistical timer for main loop. */
-    private StatisticalTimer timer;
-    /**
-     * Control mode for movements during state control.
-     */
-    private IMotionControlMode controlMode;
-
-    /** The robot object for controlling robot movements. */
-    private LBR imesLBR;
-
-    /**
-     * Object of the State machine class.
-     * 
-     * @see LwrStatemachine
-     */
-    private LwrStatemachine imesStatemachine;
-
-    /**
-     * The tool object describing the physical properties of the tool attached
-     * to the robot's flange.
-     */
-    // private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.4,
-    // MatrixTransformation.ofTranslation(-5,0,50), Inertia.ZERO));
-    // TODO dummy tool
-    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.0,
-	    MatrixTransformation.ofTranslation(0, 0, 0), Inertia.ZERO));
-
-    /**
-     * Object of the state machine interface class for the communication with a
-     * state control software using the OpenIGTLink protocol.
-     * 
-     * @see LWRStateMachineInterface
-     */
-    private ControlThread controlThread;
-
-    /**
-     * Logs the uncaught exceptions in the underlying threads (for
-     * communication).
-     */
-    private ExceptionHandlerComThreads threadExcHdl;
-
-    /**
-     * The provider for the communication data, exchanged with OpenIGTLink. This
-     * class provides access to all the commands, uids and so on received from
-     * an external OpenIGTLink client.
-     */
-    private CommunicationDataProvider comDataProvider;
-
-    /**
-     * Object of the visualization interface class for the communication with a
-     * visualization software using the OpenIGTLink protocol.
-     * 
-     * @see LWRVisualizationInterface
-     */
-    private VisualizationThread visualizationThread;
-
-    /** Sunrise specific interface to control the robot's movements. */
-    private ISmartServoRuntime smartServoRuntime;
-
-    /**
-     * Definition of the tool-center-point.
-     */
-    private final MatrixTransformation toolTCP = MatrixTransformation
-	    .ofTranslation(-40, 10, 207);
-
-    //***************************Methods***********************/
-    /**
-     * Load SWIG igtlutil library (Default Library folder is
-     * "..\OpenIGTLinkLib\swig\"
-     */
-    static {
-	/*
-	 * To load the correct swig library we need to extract the file. It is
-	 * packed by sunrise workbench to a jar-archive. The dll-file can be
-	 * found in another jar-archive.
+	/**
+	 * Acceleration of robot movements during state-machine execution. Value in
+	 * %.
 	 */
-	// Get path to jar
-	File projParentDir = new File(System.getProperty("user.dir")
-		+ File.separatorChar + "Git" + File.separatorChar);
-	File[] dirs = projParentDir.listFiles();
-	File projectDir = dirs[0];
-	File jarSrc = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
-	File jarDest = new File(projectDir.getAbsolutePath()
-		+ File.separatorChar + SWIG_DLL);
-	try {
-	    FileSystemUtil.extractFileFromJar(jarSrc, jarDest, SWIG_DLL_RELPATH
-		    + SWIG_DLL);
-	} catch (IOException e) {
-	    e.printStackTrace();
-	}
-	System.load(jarDest.getAbsolutePath());
-    }
+	private static final double ACC = 1;
 
-    /**
-     * Stops all running communication threads And stops the motion.
-     */
-    public final void dispose() {
-	
-	// Stop the motion
-	final boolean motionStopped = smartServoRuntime.stopMotion();
-	if (!motionStopped) {
-	    getLogger().error("Cannot stop motion of smartServoRuntime.");
-	}
-
-	// Stop all threads.
-	controlThread.interrupt();
-	visualizationThread.interrupt();
-	try {
-	    controlThread.join(JOIN_TIME_THREADS);
-	    visualizationThread.join(JOIN_TIME_THREADS);
-	} catch (InterruptedException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
-	}
-
-
-	
-	super.dispose();
-
-    }
-
-    /**
-     * In this function the robot, tool etc are initialized.
-     **/
-    @Override
-    public final void initialize() {
-
-	/* Init all robot-hardware corresponding objects. */
-	imesLBR = (LBR) ServoMotionUtilities.locateLBR(getContext());
-	getLogger().fine("robot object successfully created.");
-	imesTool.addDefaultMotionFrame("TCP", toolTCP);
-	getLogger().warn("No tool configured in this application");
-	imesTool.attachTo(imesLBR.getFlange());
-	getLogger().fine("Tool attached to the robot object.");
-
-	/* Reset Sunrise controller and ack possible errors. */
-	ServoMotionUtilities.resetControllerAndKILLALLMOTIONS(imesLBR);
-	ServoMotionUtilities.acknowledgeError(imesLBR);
-	getLogger().fine("Resetted sunrise controller and acked all errors.");
-
-	/*
-	 * Check load data and then move to initial position. User interaction
-	 * via the smartPad is needed therefore.
+	/**
+	 * Definition of the initial robot position before the state-machine starts
+	 * working.
 	 */
-	getLogger().fine("Checking load data...");
-	if (!SmartServo.validateForImpedanceMode(imesLBR)) {
-	    getLogger().error("Validation of load data failed.");
-	    throw new IllegalStateException("Load data is incorrect.");
-	} else {
-	    getLogger().info("Load data is validated succesfully.");
-	}
-
-	getLogger().fine("Show SmartPad dialog.");
-	final int answerOnDialog = this.getApplicationUI().displayModalDialog(
-		ApplicationDialogType.WARNING,
-		"Robot will move to initial joint position ("
-			+ INITIAL_ROBOT_POSE.toString() + ") if prompted!.",
-		"OK");
-	getLogger().fine("SmartPad dialog returned.");
-	if (answerOnDialog == 0) {
-	    getLogger().info("Dialog prompted by user.");
-	    imesTool.move(ptp(INITIAL_ROBOT_POSE));
-	    getLogger().info("Robot moved to initial position.");
-	} else {
-	    getLogger().error("SmartPad dialog cancelled.");
-	    throw new IllegalStateException(
-		    "Robot cannot move to intitial pose, "
-			    + "because user dialog was cancelled.");
-	}
-
-	/*
-	 * Define and parameterize the control mode for the state machine
-	 * execution.
+	private static final JointPosition INITIAL_ROBOT_POSE = new JointPosition(
+			0.0, Math.toRadians(30), 0., -Math.toRadians(60), 0.,
+			Math.toRadians(90), 0.);
+	/**
+	 * Maximum allowed deviation of the statistic timer of the main loop.
 	 */
-	getLogger().info("Parameterizing the control mode...");
-	controlMode = new CartesianImpedanceControlMode();
-	paramCartesianImpedanceMode(controlMode);
-	getLogger().info(
-		controlMode.getClass().getSimpleName()
-			+ " set for state machine.");
+	private static final int MAXIMUM_TIMING_DEVIATION_MS = 5;
 
-	/*
-	 * Set up all components for state machine execution.
+	/**
+	 * Cyclic time of each loop of the main (state machine) thread.
 	 */
-	threadExcHdl = new ExceptionHandlerComThreads(getLogger());
-	getLogger().info("Initializing smart servo...");
-	initSmartServo();
-	getLogger().info("Smart servo initialized.");
+	private static final int MS_TO_SLEEP = 10;
+	/**
+	 * number of loops to run with out any communication with the state control.
+	 */
+	private static final int N_OF_RUNS = 500;
 
-	getLogger().info(
-		"Initializing slicer control and slicer "
-			+ "visualization threads...");
-	try {
-	    initInterfaceThreads();
-	} catch (IOException e) {
-	    throw new IllegalStateException(
-		    "Cannot initialize interfacing threads. ", e);
+	/** Damping of the cartesian impedance control mode. */
+	private static final double DAMPING = 0.7;
+
+	/**
+	 * The nullspace stiffness (rotational), when the robot is moving in
+	 * cartesian impedance mode. Value in Nm/rad.
+	 */
+	private static final double NULLSP_STIFF = 200.;
+	/**
+	 * The maximum path-orientation deviation in a-angle, when the robot is
+	 * moving in cartesian impedance mode. Values in rad.
+	 */
+	private static final double PATH_DEV_A = 10; // TODO check value
+
+	/**
+	 * The maximum path-orientation deviation in b-angle, when the robot is
+	 * moving in cartesian impedance mode. Values in rad.
+	 */
+	private static final double PATH_DEV_B = 10; // TODO check value
+
+	/**
+	 * The maximum path-orientation deviation in c-angle, when the robot is
+	 * moving in cartesian impedance mode. Values in rad.
+	 */
+	private static final double PATH_DEV_C = 10; // TODO check value
+
+	/**
+	 * The maximum path deviation in x direction, when the robot is moving in
+	 * cartesian impedance mode. Values in mm.
+	 */
+	private static final double PATH_DEV_X = 500;
+
+	/**
+	 * The maximum path deviation in y direction, when the robot is moving in
+	 * cartesian impedance mode. Values in mm.
+	 */
+	private static final double PATH_DEV_Y = 500;
+
+	/**
+	 * The maximum path deviation in z direction, when the robot is moving in
+	 * cartesian impedance mode. Values in mm.
+	 */
+	private static final double PATH_DEV_Z = 500;
+
+	/**
+	 * The rotational stiffness, when the robot is moving in cartesian impedance
+	 * mode. Value in Nm/rad.
+	 */
+	private static final double ROT_STIFF = 300;
+
+	/**
+	 * Minimum trajectory execution time during state-machine execution. Value
+	 * in seconds.
+	 */
+	private static final double TRAJ_EXC_TIME = 5e-03;
+	/**
+	 * The translational stiffness, when the robot is moving in cartesian
+	 * impedance mode. Value in N/m.
+	 */
+	private static final double TRANSL_STIFF = 2000;
+	/**
+	 * Velocity of robot movements during state-machine execution. Value in %.
+	 */
+	private static final double VEL = 1;
+
+	// **************************Flags**************************/
+	/** Flag indicating if stateMachine is runnable. */
+	private boolean stateMachineRun = true;
+
+	// **************************Components*********************/
+	/** Statistical timer for main loop. */
+	private StatisticalTimer timer;
+	/**
+	 * Control mode for movements during state control.
+	 */
+	private IMotionControlMode controlMode;
+
+	/** The robot object for controlling robot movements. */
+	private LBR imesLBR;
+
+	/**
+	 * Object of the State machine class.
+	 * 
+	 * @see LwrStatemachine
+	 */
+	private LwrStatemachine imesStatemachine;
+
+	/**
+	 * The tool object describing the physical properties of the tool attached
+	 * to the robot's flange.
+	 */
+	// private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.4,
+	// MatrixTransformation.ofTranslation(-5,0,50), Inertia.ZERO));
+	// TODO dummy tool used for debugging
+	private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.0,
+			MatrixTransformation.ofTranslation(0, 0, 0), Inertia.ZERO));
+
+	/**
+	 * Object of the state machine interface class for the communication with a
+	 * state control software using the OpenIGTLink protocol.
+	 * 
+	 * @see LWRStateMachineInterface
+	 */
+	private ControlThread controlThread;
+
+	/**
+	 * Logs the uncaught exceptions in the underlying threads (for
+	 * communication).
+	 */
+	private ExceptionHandlerComThreads threadExcHdl;
+
+	/**
+	 * The provider for the communication data, exchanged with OpenIGTLink. This
+	 * class provides access to all the commands, uids and so on received from
+	 * an external OpenIGTLink client.
+	 */
+	private CommunicationDataProvider comDataProvider;
+
+	/**
+	 * Object of the visualization interface class for the communication with a
+	 * visualization software using the OpenIGTLink protocol.
+	 * 
+	 * @see LWRVisualizationInterface
+	 */
+	private VisualizationThread visualizationThread;
+
+	/** Sunrise specific interface to control the robot's movements. */
+	private ISmartServoRuntime smartServoRuntime;
+
+	/**
+	 * Definition of the tool-center-point.
+	 */
+	private final MatrixTransformation toolTCP = MatrixTransformation
+			.ofTranslation(-40, 10, 207);
+
+	// ***************************Methods***********************/
+
+	/**
+	 * Initializes the slicer control interface thread and the slicer
+	 * visualization interface thread.
+	 * 
+	 * @throws IOException
+	 *             when setup of network-communication fails.
+	 */
+	private void initInterfaceThreads() throws IOException {
+
+		controlThread = new ControlThread(imesStatemachine, comDataProvider,
+				getLogger());
+		controlThread.setUncaughtExceptionHandler(threadExcHdl);
+
+		visualizationThread = new VisualizationThread(comDataProvider,
+				getLogger());
+		visualizationThread.setUncaughtExceptionHandler(threadExcHdl);
+		visualizationThread.updateData();
+
 	}
-	getLogger().info(
-		"slicer control and slicer visualization threads initialized.");
 
-	getLogger().info("Initializing state machine...");
-	initStateMachine();
-	getLogger().info("state machine initialized.");
+	/**
+	 * Initializes the smart servo interface.
+	 */
+	private void initSmartServo() {
+		// Initializing the SmartServo
+		SmartServo aRealtimeMotion = new SmartServo(
+				imesLBR.getCurrentJointPosition());
+		aRealtimeMotion.useTrace(true);
 
-    }
+		// Set the motion properties of all robot motions during state machine
+		// execution.
+		aRealtimeMotion.setJointAccelerationRel(VEL);
+		aRealtimeMotion.setJointVelocityRel(ACC);
 
-    /**
-     * Initializes the slicer control interface thread and the slicer
-     * visualization interface thread.
-     * 
-     * @throws IOException
-     *             when setup of network-communication fails.
-     */
-    private void initInterfaceThreads() throws IOException {
-	comDataProvider = new CommunicationDataProvider(imesLBR);
-	controlThread = new ControlThread(imesStatemachine, comDataProvider,
-		getLogger());
-	controlThread.setUncaughtExceptionHandler(threadExcHdl);
+		getLogger().fine(
+				"Starting SmartServo Realtime Motion in "
+						+ controlMode.getClass().getSimpleName());
 
-	visualizationThread = new VisualizationThread(comDataProvider,
-		getLogger());
-	visualizationThread.setUncaughtExceptionHandler(threadExcHdl);
-	visualizationThread.updateData();
+		// Set the control mode as member of the realtime motion
+		imesTool.getDefaultMotionFrame().moveAsync(
+				aRealtimeMotion.setMode(controlMode));
 
-    }
+		// Fetch the Runtime of the Motion part
+		// NOTE: the Runtime will exist AFTER motion command was issued
+		smartServoRuntime = aRealtimeMotion.getRuntime();
+		smartServoRuntime.setMinimumTrajectoryExecutionTime(TRAJ_EXC_TIME);
 
-    /**
-     * Initializes the smart servo interface.
-     */
-    private void initSmartServo() {
-	// Initializing the SmartServo
-	SmartServo aRealtimeMotion = new SmartServo(
-		imesLBR.getCurrentJointPosition());
-	aRealtimeMotion.useTrace(true);
-
-	// Set the motion properties of all robot motions during state machine
-	// execution.
-	aRealtimeMotion.setJointAccelerationRel(VEL);
-	aRealtimeMotion.setJointVelocityRel(ACC);
-
-	getLogger().info(
-		"Starting SmartServo Realtime Motion in "
-			+ controlMode.getClass().getSimpleName());
-
-	// Set the control mode as member of the realtime motion
-	imesTool.getDefaultMotionFrame().moveAsync(
-		aRealtimeMotion.setMode(controlMode));
-
-	// Fetch the Runtime of the Motion part
-	// NOTE: the Runtime will exist AFTER motion command was issued
-	smartServoRuntime = aRealtimeMotion.getRuntime();
-	smartServoRuntime.setMinimumTrajectoryExecutionTime(TRAJ_EXC_TIME);
-
-	// Reading the current a couple of times for safety reasons
-	smartServoRuntime.updateWithRealtimeSystem();
-	ThreadUtil.milliSleep(MS_TO_SLEEP);
-	smartServoRuntime.updateWithRealtimeSystem();
-	ThreadUtil.milliSleep(MS_TO_SLEEP);
-    }
-
-    /**
-     * Initializes the state machine.
-     */
-    private void initStateMachine() {
-	imesStatemachine = new LwrStatemachine(comDataProvider);
-	imesStatemachine.startVisual = true;
-
-	comDataProvider.readNewRobotData();
-	imesStatemachine.cmdPose = comDataProvider.getCurRobotDataSet()
-		.getCurPose();
-	imesStatemachine.controlMode = controlMode;
-	imesStatemachine.setVisualIfDatatype(VisualIFDatatypes.ROBOTBASE);
-
-    }
-
-    /**
-     * Parametrizes the cartesian control mode according to the defined
-     * constants.
-     * 
-     * @param mode
-     *            The control-mode-object, which has to be parameterized.
-     */
-    private void paramCartesianImpedanceMode(final IMotionControlMode mode) {
-	((CartesianImpedanceControlMode) mode).parametrize(CartDOF.TRANSL)
-		.setStiffness(TRANSL_STIFF);
-	((CartesianImpedanceControlMode) controlMode).parametrize(CartDOF.ROT)
-		.setStiffness(ROT_STIFF);
-	((CartesianImpedanceControlMode) mode)
-		.setNullSpaceStiffness(NULLSP_STIFF);
-	((CartesianImpedanceControlMode) mode).setMaxPathDeviation(PATH_DEV_X,
-		PATH_DEV_Y, PATH_DEV_Z, PATH_DEV_A, PATH_DEV_B, PATH_DEV_C);
-    }
-
-    /**
-     * Prints timing statistics and communication parameters.
-     * 
-     */
-    private void printFinalInfos() {
-	// Print the timing statistics
-	getLogger().info(
-		"Displaying final states after loop "
-			+ controlMode.getClass().getName());
-	smartServoRuntime.setDetailedOutput(1);
-	getLogger().info(timer.getOverallStatistics());
-
-	if (timer.getMeanTimeMillis() > MS_TO_SLEEP
-		+ MAXIMUM_TIMING_DEVIATION_MS) {
-	    getLogger().info(
-		    "Statistic Timing is unexpected slow, "
-			    + "you should try to optimize TCP/IP Transfer");
-	    getLogger()
-		    .info("Under Windows, you should play with the registry, "
-			    + "see the e.g. the RealtimePTP Class javaDoc for details");
+		// Reading the current a couple of times for safety reasons
+		smartServoRuntime.updateWithRealtimeSystem();
+		ThreadUtil.milliSleep(MS_TO_SLEEP);
+		smartServoRuntime.updateWithRealtimeSystem();
+		ThreadUtil.milliSleep(MS_TO_SLEEP);
 	}
-    }
 
-    /**
-     * In this function the communication with the robot via RealTimePTP, the
-     * communication with the Visualization and Control Software (e.g. 3D
-     * Slicer, Matlab) and the State machine itself are operated.
-     */
-    @Override
-    public final void run() {
-	try {
-	    String lastPrintedError = "";
-	    String errMsg = "";
-	    boolean stateMachineRun = true;
-	    int i = 0;
+	/**
+	 * Initializes the state machine.
+	 */
+	private void initStateMachine() {
+		imesStatemachine = new LwrStatemachine(comDataProvider);
+		imesStatemachine.startVisual = true;
 
-	    timer = new StatisticalTimer(MS_TO_SLEEP); // timing statistics for
-						       // following loop.
-	    long startTimeStamp;
+		comDataProvider.readNewRobotData();
+		imesStatemachine.cmdPose = comDataProvider.getCurRobotDataSet()
+				.getCurPose();
+		imesStatemachine.controlMode = controlMode;
+		imesStatemachine.setVisualIfDatatype(VisualIFDatatypes.ROBOTBASE);
 
-	    getLogger()
-		    .info("Starting Thread for state control communication.");
-	    controlThread.start();
-	    getLogger().info(
-		    "Starting Thread for visualization communication, "
-			    + "but yet not enabled to send data.");
-	    visualizationThread.start();
+	}
 
+	/**
+	 * Parametrizes the cartesian control mode according to the defined
+	 * constants.
+	 * 
+	 * @param mode
+	 *            The control-mode-object, which has to be parameterized.
+	 */
+	private void paramCartesianImpedanceMode(final IMotionControlMode mode) {
+		((CartesianImpedanceControlMode) mode).parametrize(CartDOF.TRANSL)
+				.setStiffness(TRANSL_STIFF);
+		((CartesianImpedanceControlMode) controlMode).parametrize(CartDOF.ROT)
+				.setStiffness(ROT_STIFF);
+		((CartesianImpedanceControlMode) mode)
+				.setNullSpaceStiffness(NULLSP_STIFF);
+		((CartesianImpedanceControlMode) mode).parametrize(CartDOF.ALL)
+				.setDamping(DAMPING);
+		((CartesianImpedanceControlMode) mode).setMaxPathDeviation(PATH_DEV_X,
+				PATH_DEV_Y, PATH_DEV_Z, PATH_DEV_A, PATH_DEV_B, PATH_DEV_C);
+	}
 
-	    // Main loop
-	    getLogger().info(
-		    this.getClass().getName() + " is entering the main loop");
-
-	    while (stateMachineRun && i < N_OF_RUNS) {
-
+	/**
+	 * Prints timing statistics and communication parameters.
+	 * 
+	 */
+	private void printFinalInfos() {
+		// Print the timing statistics
 		getLogger().info(
-			this.getClass().getName() + " begins the main loop");
-		try {
+				"Displaying final states after loop "
+						+ controlMode.getClass().getName());
+		smartServoRuntime.setDetailedOutput(1);
+		getLogger().info(timer.getOverallStatistics());
 
-		    /*
-		     * Start timer and statistic timer.
-		     */
-		    startTimeStamp = System.nanoTime();
-		    timer.loopBegin();
-
-		    /* Update with controller of LWR. */
-		    try {
+		if (timer.getMeanTimeMillis() > MS_TO_SLEEP
+				+ MAXIMUM_TIMING_DEVIATION_MS) {
 			getLogger().info(
-				this.getClass().getName()
-					+ " updates the smart servo runtime.");
-			smartServoRuntime.updateWithRealtimeSystem();
-			ThreadUtil.milliSleep(MS_TO_SLEEP);
-			smartServoRuntime.updateWithRealtimeSystem();
-			ThreadUtil.milliSleep(MS_TO_SLEEP);
+					"Statistic Timing is unexpected slow, "
+							+ "you should try to optimize TCP/IP Transfer");
 			getLogger()
-				.info(this.getClass().getName()
-					+ " induces an update of the current robot data.");
-			comDataProvider.readNewRobotData();
-		    } catch (Exception e) {
-			getLogger()
-				.error(this.getClass().getName()
-					+ " failed to update the smart servo runtime.");
-			initSmartServo();
-			// TODO exception concept.
-		    }
+					.info("Under Windows, you should play with the registry, "
+							+ "see the e.g. the RealtimePTP Class javaDoc for details");
+		}
+	}
 
-		    if (visualizationThread.getCondWork()) {
+	/**
+	 * In this function the robot, tool etc are initialized.
+	 **/
+	@Override
+	public final void initialize() {
 
-			getLogger().info(
-				this.getClass().getName()
-					+ " induces an update of the data of "
-					+ visualizationThread.getClass()
-						.getName() + " thread.");
-			visualizationThread.setSenderConfiguration(null, true);
-			visualizationThread.updateData();
-		    }
+		/* Load swig library. */
+		FileSystemUtil.loadSwigDll();
 
-		    /*
-		     * Control the sending of the visualization data by the
-		     * visualization thread.
-		     */
-		    if (imesStatemachine.startVisual) {
+		/* Init all robot-hardware corresponding objects. */
+		imesLBR = (LBR) ServoMotionUtilities.locateLBR(getContext());
+		getLogger().fine("robot object successfully created.");
+		imesTool.addDefaultMotionFrame("TCP", toolTCP);
+		getLogger().warn("No tool configured in this application");
+		imesTool.attachTo(imesLBR.getFlange());
+		getLogger().fine("Tool attached to the robot object.");
 
-			getLogger().info(
-				this.getClass().getName()
-					+ " enables the "
-					+ visualizationThread.getClass()
-						.getName() + " thread.");
+		/* Reset Sunrise controller and ack possible errors. */
+		ServoMotionUtilities.resetControllerAndKILLALLMOTIONS(imesLBR);
+		ServoMotionUtilities.acknowledgeError(imesLBR);
+		getLogger().fine("Resetted sunrise controller and acked all errors.");
 
-			visualizationThread.setCondWork(true);
-
-		    } else {
-			getLogger().info(
-				this.getClass().getName()
-					+ " disables the "
-					+ visualizationThread.getClass()
-						.getName() + " thread.");
-			visualizationThread.setCondWork(false);
-		    }
-
-		    // If SlicerControl Interface Thread is running...
-		    if (controlThread.isAlive()) {
-
-			// update the data in the state machine and reset error
-			// counter.
-			getLogger()
-				.info(this.getClass().getName()
-					+ " induces a update of the statemachine data.");
-			i = 0;
-			imesStatemachine.updateStateControlData();
-
-		    } else { // if it is not to Error handling
-			imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
-			getLogger()
-				.error(this.getClass().getName()
-					+ " has detected, that the communication in "
-					+ controlThread.getClass().getName()
-					+ " isnt running."
-					+ "Slicer Control Interface not Alive...");
-			i++;
-		    }
-		    // Check if there is a Transition Request and in that case
-		    // Change the state and interpret the command parameters by
-		    // calling the function InterpretCommandString of the
-		    // Current
-		    // State
-
-		    getLogger()
-			    .info(this.getClass().getName()
-				    + " induces a check of a transition request"
-				    + " in the state machine.");
-		    imesStatemachine.checkTransitionRequest(); // TODO check
-		    // should
-		    // return a boolean
-
-		    // If the State has changed print the new State
-		    if (imesStatemachine.stateChanged) {
-			getLogger().info(
-				"Robot State has Changed to:"
-					+ imesStatemachine.RobotState.name());
-
-		    }
-
-		    // Check on Communication Quality
-		    // if (slicerControlIf.ErrorCode ==
-		    // OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
-		    // imesStatemachine.ErrorMessage =
-		    // "ERROR: State Control Interface "
-		    // +
-		    // "Bad Communication quality setting robot State to IDLE";
-		    // imesStatemachine.ErrorFlag = true;
-		    // slicerControlIf.ErrorCode = OpenIGTLinkErrorCode.Ok;
-		    //
-		    // }
-
-		    // Print Error messages if there where any Errors
-		    imesStatemachine.errHandler(true);
-
-		    // Calculating the new control Param and Change the
-		    // parameters
-		    getLogger().info("Calculating new control parameters");
-		    imesStatemachine.updateCtrlParam();
-
-		    // Change the control mode settings of the robot and send a
-		    // new
-		    // Destination pose
-		    try {
-			getLogger().info(
-				"Changing control mode settings to "
-					+ imesStatemachine.controlMode
-						.toString());
-			smartServoRuntime
-				.changeControlModeSettings(imesStatemachine.controlMode);
-			getLogger().info(
-				"Commanding new robot-pose "
-					+ imesStatemachine.cmdPose.toString());
-			smartServoRuntime
-				.setDestination(imesStatemachine.cmdPose);
-		    } catch (Exception e) {
-			errMsg = "Error: Failed to change Realtime Settings!!";
-			// TODO exception concept
-		    }
-
-		    // Defining the Acknowledgement String for Control Interface
-		    getLogger()
-			    .fine(this.getClass().getName()
-				    + "aquires the acknowledgement packet from the state machine.");
-		    imesStatemachine.setAckPacket();
-
-		    if (controlThread.isAlive()) {
-			// try to update the ACK String for the ControlIF Thread
-			getLogger().fine("Sending acknowledgement message");
-		    }
-
-		    if (!errMsg.equals(lastPrintedError)) {
-			getLogger().error(errMsg);
-			lastPrintedError = errMsg;
-		    }
-
-		    // sleep for a specified time (according to the loops
-		    // iteration
-		    // time).
-		    cyclicSleep(startTimeStamp, 2, MS_TO_SLEEP);
-
-		    // Overall timing end
-		    timer.loopEnd();
-		    if (imesStatemachine.End) {
-			getLogger().info(
-				"State machine was stopped, ending main loop.");
-			stateMachineRun = false;
-
-		    }
-		} catch (InterruptedException e) {
-
-		    getLogger().error(
-			    this.getClass().getName()
-				    + " was interrupted in its main loop. "
-				    + "All connections will be closed.", e);
-
-		    controlThread.setCondWork(false);
+		/*
+		 * Check load data and then move to initial position. User interaction
+		 * via the smartPad is needed therefore.
+		 */
+		getLogger().fine("Checking load data...");
+		if (!SmartServo.validateForImpedanceMode(imesLBR)) {
+			getLogger().error("Validation of load data failed.");
+			throw new IllegalStateException("Load data is incorrect.");
+		} else {
+			getLogger().info("Load data is validated succesfully.");
 		}
 
-	    } // end while
+		getLogger().fine("Show SmartPad dialog.");
+		final int answerOnDialog = this.getApplicationUI().displayModalDialog(
+				ApplicationDialogType.WARNING,
+				"Robot will move to initial joint position ("
+						+ INITIAL_ROBOT_POSE.toString() + ") if prompted!.",
+				"OK");
+		getLogger().fine("SmartPad dialog returned.");
+		if (answerOnDialog == 0) {
+			getLogger().info("Dialog prompted by user.");
+			imesTool.move(ptp(INITIAL_ROBOT_POSE));
+			getLogger().info("Robot moved to initial position.");
+		} else {
+			getLogger().error("SmartPad dialog cancelled.");
+			throw new IllegalStateException(
+					"Robot cannot move to intitial pose, "
+							+ "because user dialog was cancelled.");
+		}
 
-	    printFinalInfos();
-	} finally {
-	    /*
-	     * quit all threads and then communication handler.
-	     */
-	    this.dispose();
+		/*
+		 * Define and parameterize the control mode for the state machine
+		 * execution.
+		 */
+		getLogger().info("Parameterizing the control mode...");
+		controlMode = new CartesianImpedanceControlMode();
+		paramCartesianImpedanceMode(controlMode);
+		getLogger().info(
+				controlMode.getClass().getSimpleName()
+						+ " set for state machine.");
+
+		/*
+		 * Set up all components for state machine execution.
+		 */
+		getLogger().info("Initializing communication data provider...");
+		comDataProvider = new CommunicationDataProvider(imesLBR, getLogger());
+		getLogger().info("Communication data provider initialized.");
+
+		getLogger().info("Initializing state machine...");
+		initStateMachine();
+		getLogger().info("state machine initialized.");
+
+		threadExcHdl = new ExceptionHandlerComThreads(getLogger());
+		getLogger().info("Initializing smart servo...");
+		initSmartServo();
+		getLogger().info("Smart servo initialized.");
+
+		getLogger().info(
+				"Initializing slicer control and slicer "
+						+ "visualization threads...");
+		try {
+			initInterfaceThreads();
+		} catch (IOException e) {
+			throw new IllegalStateException(
+					"Cannot initialize interfacing threads. ", e);
+		}
+		getLogger().info(
+				"slicer control and slicer visualization threads initialized.");
+
 	}
 
-    }
+	/**
+	 * In this function the communication with the robot via RealTimePTP, the
+	 * communication with the Visualization and Control Software (e.g. 3D
+	 * Slicer, Matlab) and the State machine itself are operated.
+	 */
+	@Override
+	public final void run() {
+		try {
+			// String lastPrintedError = "";
+			// String errMsg = "";
 
-    /**
-     * Sleeps for a specified period of time. It should be called every
-     * iteration in the main loop. The time to sleep is calculated according to
-     * the loop iteration duration. This method is used for stability
-     * enhancement. TODO method should be moved to utility class.
-     * 
-     * @param startTimeNanos
-     *            the start time of the loop
-     * @param cycleTimeToleranceMs
-     *            the tolerance border. If {@code MS_TO_SLEEP} -
-     *            {@code cycleTimeToleranceMs} is bigger than the loop-iteration
-     *            runtime, then sleeping is necessary.
-     * @param cycleTime
-     *            the desired cycle time for a loop iteration in milliseconds.
-     * @throws InterruptedException
-     *             when sleeping of this thread was interrupted.
-     */
-    public static final void cyclicSleep(final long startTimeNanos,
-	    final int cycleTimeToleranceMs, final int cycleTime)
-	    throws InterruptedException {
-	long runtime = (long) ((System.nanoTime() - startTimeNanos));
-	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
-	long runtimeNanoS = TimeUnit.NANOSECONDS.toNanos(runtime);
-	final long sleepRangeNanosMax = 999999;
-	if (runtimeMS < cycleTime - cycleTimeToleranceMs) {
-	    Thread.sleep(cycleTime - cycleTimeToleranceMs - runtimeMS,
-		    (int) (sleepRangeNanosMax - runtimeNanoS));
+			int i = 0;
+
+			timer = new StatisticalTimer(MS_TO_SLEEP); // timing statistics for
+			// following loop.
+			long startTimeStamp;
+
+			getLogger()
+					.info("Starting Thread for state control communication.");
+			controlThread.start();
+			getLogger().info(
+					"Starting Thread for visualization communication, "
+							+ "but yet not enabled to send data.");
+			visualizationThread.start();
+
+			// Main loop
+			getLogger().info(
+					this.getClass().getName() + " is entering the main loop");
+
+			while (stateMachineRun && i < N_OF_RUNS) {
+
+				getLogger().fine(
+						this.getClass().getName() + " begins the main loop");
+				try {
+
+					/*
+					 * Start timer and statistic timer.
+					 */
+					startTimeStamp = System.nanoTime();
+					timer.loopBegin();
+
+					/* Update with controller of LWR. */
+					try {
+						getLogger().fine(
+								this.getClass().getName()
+										+ " updates the smart servo runtime.");
+						ThreadUtil.milliSleep(MS_TO_SLEEP);
+						smartServoRuntime.updateWithRealtimeSystem();
+
+
+					} catch (Exception e) {
+
+						getLogger()
+								.fine(this.getClass().getName()
+										+ " failed to update the smart servo runtime." + e.getMessage());
+						initSmartServo();
+					}
+					getLogger()
+							.fine(this.getClass().getName()
+									+ " induces an update of the current robot data.");
+					comDataProvider.readNewRobotData();
+
+					if (visualizationThread.getCondWork()) {
+
+						getLogger().fine(
+								this.getClass().getName()
+										+ " induces an update of the data of "
+										+ visualizationThread.getClass()
+												.getName() + " thread.");
+						visualizationThread.setSenderConfiguration(null, true);
+						visualizationThread.updateData();
+					}
+
+					/*
+					 * Control the sending of the visualization data by the
+					 * visualization thread.
+					 */
+					if (imesStatemachine.startVisual) {
+
+						getLogger().fine(
+								this.getClass().getName()
+										+ " enables the "
+										+ visualizationThread.getClass()
+												.getName() + " thread.");
+
+						visualizationThread.setCondWork(true);
+
+					} else {
+						getLogger().fine(
+								this.getClass().getName()
+										+ " disables the "
+										+ visualizationThread.getClass()
+												.getName() + " thread.");
+						visualizationThread.setCondWork(false);
+					}
+
+					// If SlicerControl Interface Thread is running...
+					if (controlThread.isAlive()) {
+
+						// update the data in the state machine and reset error
+						// counter.
+						getLogger()
+								.fine(this.getClass().getName()
+										+ " induces a update of the statemachine data.");
+						i = 0;
+						imesStatemachine.updateStateControlData();
+
+					} else {
+						// control thread wasn't alive -> restarting
+						imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
+						getLogger()
+								.error(this.getClass().getName()
+										+ " has detected, that the communication in "
+										+ controlThread.getClass().getName()
+										+ " isnt running."
+										+ "Slicer Control Interface not Alive...");
+						i++;
+						if (stateMachineRun) {
+							getLogger().warn(
+									this.getClass().getName()
+											+ " has to be restarted.");
+							try {
+								controlThread = new ControlThread(
+										imesStatemachine, comDataProvider,
+										getLogger());
+							} catch (IOException e) {
+								getLogger()
+										.error(this.getClass().getName()
+												+ " cannot restart "
+												+ controlThread.getClass()
+														.getSimpleName()
+												+ " and thus terminates the statemachine.");
+								stateMachineRun = false;
+							}
+							controlThread.start();
+						}
+
+					}
+
+					/*
+					 * Check if there is a Transition Request and in that case
+					 * Change the state and interpret the command parameters by
+					 * calling the function InterpretCommandString of the
+					 * current state.
+					 */
+					getLogger()
+							.fine(this.getClass().getName()
+									+ " induces a check of a transition request"
+									+ " in the state machine.");
+					imesStatemachine.checkTransitionRequest();
+					// If the State has changed print the new State
+					if (imesStatemachine.stateChanged) {
+						getLogger().info(
+								"Robot State has Changed to:"
+										+ imesStatemachine.RobotState.name());
+
+					}
+
+					// Print Error messages if there where any Errors
+					imesStatemachine.errHandler(true);
+
+					/*
+					 * Calculating the new control Param and Change the
+					 * parameters.
+					 */
+					getLogger().fine("Calculating new control parameters");
+					imesStatemachine.updateCtrlParam();
+
+					/*
+					 * Change the control mode settings of the robot and send a
+					 * new Destination pose.
+					 */
+					try {
+						getLogger().fine(
+								"Changing control mode settings to "
+										+ imesStatemachine.controlMode
+												.toString());
+						smartServoRuntime
+								.changeControlModeSettings(imesStatemachine.controlMode);
+						getLogger().fine(
+								"Commanding new robot-pose "
+										+ imesStatemachine.cmdPose.toString());
+						smartServoRuntime
+								.setDestination(imesStatemachine.cmdPose);
+
+					} catch (Exception e) {
+						getLogger()
+								.error("Cannot change control mode settings or command a new pose.",
+										e);
+					}
+
+					// Defining the acknowledgment String for Control Interface
+					getLogger()
+							.fine(this.getClass().getName()
+									+ "aquires the acknowledgement packet from the state machine.");
+					imesStatemachine.setAckPacket();
+
+					if (controlThread.isAlive()) {
+						// try to update the ACK String for the ControlIF Thread
+						getLogger().fine("Sending acknowledgement message");
+					}
+
+					/*
+					 * sleep for a specified time (according to the loops
+					 * iteration time).
+					 */
+					SleepUtil.cyclicSleep(startTimeStamp, 2, MS_TO_SLEEP);
+
+					// Overall timing end
+					timer.loopEnd();
+					if (imesStatemachine.End) {
+						getLogger().info(
+								"State machine was stopped, ending main loop.");
+						stateMachineRun = false;
+
+					}
+				} catch (InterruptedException e) {
+
+					getLogger().error(
+							this.getClass().getName()
+									+ " was interrupted in its main loop. "
+									+ "All connections will be closed.", e);
+
+					controlThread.setCondWork(false);
+				}
+
+			} // end while
+
+		} finally {
+			// Print final infos.
+			printFinalInfos();
+
+		}
 
 	}
-    }
 
-    /**
-     * Auto-generated method stub. Do not modify the contents of this method.
-     * 
-     * @param args
-     *            unused arguments.
-     */
-    public static void main(final String[] args) {
-	StateMachineApplication app = new StateMachineApplication();
-	app.runApplication();
-    }
+	/**
+	 * Stops all running communication threads And stops the motion.
+	 */
+	public final void dispose() {
+
+		// Stop the motion
+		final boolean motionStopped = smartServoRuntime.stopMotion();
+		if (!motionStopped) {
+			getLogger().error("Cannot stop motion of smartServoRuntime.");
+		}
+
+		// Stop all threads.
+		controlThread.interrupt();
+		visualizationThread.interrupt();
+		try {
+			controlThread.join(JOIN_TIME_THREADS);
+			visualizationThread.join(JOIN_TIME_THREADS);
+		} catch (InterruptedException e) {
+			getLogger()
+					.error("Waiting for the ending of the communication threads was interrupted.",
+							e);
+		}
+
+		getLogger().info(
+				this.getClass().getSimpleName() + " was disposed properly.");
+		super.dispose();
+
+	}
+
+	/**
+	 * Method is invoked by application server, when the state of this robotic
+	 * application changed. When state changed to stopping, the execution of the
+	 * main loop is interrupted.
+	 */
+	public void onApplicationStateChanged(RoboticsAPIApplicationState state) {
+
+		switch (state) {
+		case STOPPING:
+			stateMachineRun = false;
+		}
+
+	}
+
+	/**
+	 * Auto-generated method stub. Do not modify the contents of this method.
+	 * 
+	 * @param args
+	 *            unused arguments.
+	 */
+	public static void main(final String[] args) {
+		StateMachineApplication app = new StateMachineApplication();
+		app.runApplication();
+	}
 
 }

@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Program:   ExceptionHandlerComThreads
+  Program:   StateMachineApplication
   Language:  java
   Web page: http://www.slicer.org/slicerWiki/index.php/Documentation
   		/Nightly/Extensions/LightWeightRobotIGT
@@ -35,45 +35,42 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	=========================================================================*/
 
-package de.uniHannover.imes.igtIf.communication;
+package de.uniHannover.imes.igtIf.util;
 
-import java.lang.Thread.UncaughtExceptionHandler;
-
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Exception handler for the igtl-communication threads. It's purpose is just to
- * print all uncaugth exceptions from the according threads.
+ * This class holds static method(s) for project specific sleeping.
  */
-public class ExceptionHandlerComThreads implements UncaughtExceptionHandler {
+public final class SleepUtil {
 
-    // **************************Components*********************/
-    /** Logger for printing the exceptions. */
-    private ITaskLogger log;
-
-    //*************************Constructors********************/
-    /**
-     * Creates an exception handler object.
-     * 
-     * @param logger
-     *            the logger, used for printing the exception caught in the
-     *            according threads.
-     */
-    public ExceptionHandlerComThreads(final ITaskLogger logger) {
-	if (null == logger) {
-	    throw new NullPointerException("Argument is null");
-	} else {
-	    log = logger;
-	}
-    }
-
-    //***************************Methods***********************/
-    @Override
-    public final void uncaughtException(final Thread t, final Throwable e) {
-	log.error("An uncaught exception occured in the thread "
-		+ t.getClass().getSimpleName(), e);
+	// ***************************Methods***********************/
+	/**
+	 * Sleeps for a specified period of time. It should be called every
+	 * iteration in the main loop. The time to sleep is calculated according to
+	 * the loop iteration duration. This method is used for stability
+	 * enhancement.
+	 * 
+	 * @param startTimeNanos
+	 *            the start time of the loop
+	 * @param cycleTimeToleranceMs
+	 *            the tolerance border. If {@code MS_TO_SLEEP} -
+	 *            {@code cycleTimeToleranceMs} is bigger than the loop-iteration
+	 *            runtime, then sleeping is necessary.
+	 * @param cycleTime
+	 *            the desired cycle time for a loop iteration in milliseconds.
+	 * @throws InterruptedException
+	 *             when sleeping of this thread was interrupted.
+	 */
+	public static final void cyclicSleep(final long startTimeNanos,
+			final int cycleTimeToleranceMs, final int cycleTime)
+			throws InterruptedException {
+		long runtime = (long) ((System.nanoTime() - startTimeNanos));
+		long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
+		if (runtimeMS < cycleTime - cycleTimeToleranceMs) {
+			Thread.sleep(cycleTime - cycleTimeToleranceMs - runtimeMS);
 	
-
-    }
+		}
+	}
 
 }

@@ -57,7 +57,7 @@ public final class KinematicsLwrUtil {
     private static final double[] DH_D_PARAMETER_LWRIIWA7 = new double[] { 160,
 	    180, 180, 220, 180, 220, 80, 50 };
 
-    // TODO do we have the parameters of iiwa 14?
+    // TODO @Sebastian do we have the parameters of iiwa 14?
 
     // *************************Constructors********************/
     /**

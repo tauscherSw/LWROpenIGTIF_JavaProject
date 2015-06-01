@@ -49,6 +49,24 @@ import java.util.jar.JarFile;
  * controller.
  */
 public final class FileSystemUtil {
+	
+	// **************************Constants**********************/
+	/**
+	 * External swig library.
+	 */
+	private static final String SWIG_DLL = "SWIGigtlutil.dll";
+
+	/**
+	 * Relative dll path in jar.
+	 */
+	private static final String SWIG_DLL_RELPATH = "OpenIGTLinkLib/";
+
+	/**
+	 * Relative library path in project directory.
+	 */
+	private static final String LIB_PATH_REL = File.separatorChar + "Libs"
+			+ File.separatorChar + "SWIG" + File.separatorChar
+			+ "SWIG_communication.jar";
 
     // *************************Constructors********************/
     /** Privatized constructor, because this class shouldn't be instantiated. */
@@ -145,6 +163,35 @@ public final class FileSystemUtil {
 	    }
 	    destinationFile.setWritable(true);
 	}
+
+    }
+    
+    /**
+     * Loads the swig library used for openIgtl communication.
+     */
+    public static void loadSwigDll(){
+
+    		/*
+    		 * To load the correct swig library we need to extract the file. It is
+    		 * packed by sunrise workbench to a jar-archive. The dll-file can be
+    		 * found in another jar-archive.
+    		 */
+    		// Get path to jar
+    		File projParentDir = new File(System.getProperty("user.dir")
+    				+ File.separatorChar + "Git" + File.separatorChar);
+    		File[] dirs = projParentDir.listFiles();
+    		File projectDir = dirs[0];
+    		File jarSrc = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
+    		File jarDest = new File(projectDir.getAbsolutePath()
+    				+ File.separatorChar + SWIG_DLL);
+    		try {
+    			FileSystemUtil.extractFileFromJar(jarSrc, jarDest, SWIG_DLL_RELPATH
+    					+ SWIG_DLL);
+    		} catch (IOException e) {
+    			e.printStackTrace();
+    		}
+    		System.load(jarDest.getAbsolutePath());
+
 
     }
 }
