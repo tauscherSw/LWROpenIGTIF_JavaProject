@@ -62,268 +62,271 @@ import de.uniHannover.imes.igtIf.util.StatisticalTimer;
  */
 public class ControlThread extends Thread {
 
-	// **************************Constants**********************/
-	/** The port for the slicer-control-thread. */
-	public static final int SLICER_CONTROL_COM_PORT = 49001;
-	/**
-	 * The cycle time of the slicer-control-thread in milliseconds.
-	 */
-	private static final int SLICER_CONTROL_CYLCETIME_MS = 20;
-	// **************************Flags**************************/
-	/**
-	 * Flag indicating if conditional part of the thread's work is executed. Can
-	 * be set via the corresponding setter.
-	 */
-	private boolean condWorkActive = false;
+    // **************************Constants**********************/
+    /** The port for the slicer-control-thread. */
+    public static final int SLICER_CONTROL_COM_PORT = 49001;
+    /**
+     * The cycle time of the slicer-control-thread in milliseconds.
+     */
+    private static final int SLICER_CONTROL_CYLCETIME_MS = 20;
+    // **************************Flags**************************/
+    /**
+     * Flag indicating if conditional part of the thread's work is executed. Can
+     * be set via the corresponding setter.
+     */
+    private boolean condWorkActive = false;
 
-	// **************************Components*********************/
-	/**
-	 * Provider for command data received via another openIGTL channel.
-	 */
-	private CommunicationDataProvider internalDataProvider;
+    // **************************Components*********************/
+    /**
+     * Provider for command data received via another openIGTL channel.
+     */
+    private CommunicationDataProvider internalDataProvider;
 
-	/** Logger for logging comments. */
-	private ITaskLogger log;
+    /** Logger for logging comments on the smartPAD. */
+    private ITaskLogger log;
 
-	/** IGTL communication for state machine control. */
-	private IGTLComPort port;
+    /** IGTL communication for state machine control. */
+    private IGTLComPort port;
 
-	/** Statistical timer for main loop. */
-	private StatisticalTimer timer;
+    /** Statistical timer for main loop. */
+    private StatisticalTimer timer;
 
-	/** The state machine. */
-	private LwrStatemachine stateMachine;
+    /** The state machine. */
+    private LwrStatemachine stateMachine;
 
-	// *************************Parameters**********************/
-	/** Timespan in ms the thread sleeps after periodic work. */
-	private int sleepTime = SLICER_CONTROL_CYLCETIME_MS;
+    // *************************Parameters**********************/
+    /** Timespan in ms the thread sleeps after periodic work. */
+    private int sleepTime = SLICER_CONTROL_CYLCETIME_MS;
 
-	/**
-	 * Constructor, which initializes this thread and its components.
-	 * 
-	 * @param lwrStateMachine
-	 *            the lwr statemachine
-	 * @param comDataProvider
-	 *            provider for command data received via another IGTL channel.
-	 * @param extLogger
-	 *            an external logger which collects the logging output of this
-	 *            class.
-	 * @throws IOException
-	 *             when setup of communication fails.
-	 */
-	public ControlThread(final LwrStatemachine lwrStateMachine,
-			final CommunicationDataProvider comDataProvider,
-			final ITaskLogger extLogger) throws IOException {
+    /**
+     * Constructor, which initializes this thread and its components.
+     * 
+     * @param lwrStateMachine
+     *            the lwr statemachine
+     * @param comDataProvider
+     *            provider for command data received via another IGTL channel.
+     * @param extLogger
+     *            an external logger which collects the logging output of this
+     *            class.
+     * @throws IOException
+     *             when setup of communication fails.
+     */
+    public ControlThread(final LwrStatemachine lwrStateMachine,
+	    final CommunicationDataProvider comDataProvider,
+	    final ITaskLogger extLogger) throws IOException {
 
-		/* Process arguments */
-		if (null == lwrStateMachine) {
-			throw new IllegalArgumentException("Arument "
-					+ LwrStatemachine.class.getSimpleName() + " is null.");
-		}
-		stateMachine = lwrStateMachine;
+	/* Process arguments */
+	if (null == lwrStateMachine) {
+	    throw new IllegalArgumentException("Arument "
+		    + LwrStatemachine.class.getSimpleName() + " is null.");
+	}
+	stateMachine = lwrStateMachine;
 
-		if (null == comDataProvider) {
-			throw new IllegalArgumentException("Arument "
-					+ CommunicationDataProvider.class.getSimpleName()
-					+ " is null.");
-
-		}
-		internalDataProvider = comDataProvider;
-
-		if (null == extLogger) {
-			log = new DummyLogger();
-		} else {
-			log = extLogger;
-		}
-
-		/* Construct all components */
-		port = new IGTLComPort(SLICER_CONTROL_COM_PORT, 0, log);
-		timer = new StatisticalTimer(SLICER_CONTROL_CYLCETIME_MS);
+	if (null == comDataProvider) {
+	    throw new IllegalArgumentException("Arument "
+		    + CommunicationDataProvider.class.getSimpleName()
+		    + " is null.");
 
 	}
+	internalDataProvider = comDataProvider;
 
-	/**
-	 * Executes cyclic work as can be found in the work method. Optionally
-	 * conditional work will be executed. Furthermore loop timing statistics are
-	 * collected.
-	 */
-	public final void run() {
-		// Definition of variables here´
-		RuntimeException exc = null;
+	if (null == extLogger) {
+	    log = new DummyLogger();
+	} else {
+	    log = extLogger;
+	}
 
+	/* Construct all components */
+	port = new IGTLComPort(SLICER_CONTROL_COM_PORT, 0, log);
+	timer = new StatisticalTimer(SLICER_CONTROL_CYLCETIME_MS);
+
+    }
+
+    /**
+     * Executes cyclic work as can be found in the work method. Optionally
+     * conditional work will be executed. Furthermore loop timing statistics are
+     * collected.
+     */
+    public final void run() {
+	// Definition of variables here´
+	RuntimeException exc = null;
+
+	try {
+	    // Initialize functions here
+	    log.info(this.getClass().getSimpleName()
+		    + " is setting up its communication.");
+	    setup();
+
+	    // Main loop until thread is interrupted from the outside
+	    log.info(this.getClass().getSimpleName()
+		    + " is entering it's main loop.");
+	    while (!this.isInterrupted()) {
+		// Statistics
+		timer.loopBegin();
+		// used for cyclic sleep method.
+		long startTimeStamp = (long) (System.nanoTime());
 		try {
-			// Initialize functions here
-			log.info(this.getClass().getSimpleName()
-					+ " is setting up its communication.");
-			setup();
+		    // Do all working stuff here
+		    work();
+		    conditionalWork();
 
-			// Main loop until thread is interrupted from the outside
-			log.info(this.getClass().getSimpleName()
-					+ " is entering its main loop.");
-			while (!this.isInterrupted()) {
-				// Statistics
-				timer.loopBegin();
-				// used for cyclic sleep method.
-				long startTimeStamp = (long) (System.nanoTime());
-				try {
-					// Do all working stuff here
-					work();
-					conditionalWork();
+		    // and fell asleep
+		    SleepUtil.cyclicSleep(startTimeStamp, 2, sleepTime);
 
-					// and fell asleep
-					SleepUtil.cyclicSleep(startTimeStamp, 2, sleepTime);
+		} catch (RuntimeException e) {
+		    /*
+		     * Catches all exceptions, which occur during thread
+		     * execution except Interrupted exceptions. These caught
+		     * exceptions are thrown again in the finally block and have
+		     * to be handled via an external Uncaught exception handler.
+		     */
+		    log.error("Runtime exception detected in "
+			    + this.getClass().getSimpleName(), e);
+		    log.warn(this.getClass().getSimpleName()
+			    + " will be interrupted because it detected a "
+			    + "runtime exception.");
 
-				} catch (RuntimeException e) {
-					/*
-					 * Catches all exceptions, which occur during thread
-					 * execution except Interrupted exceptions. These caught
-					 * exceptions are thrown again in the finally block and have
-					 * to be handled via an external Uncaught exception handler.
-					 */
-					log.error("Runtime exception detected in "
-							+ this.getClass().getSimpleName(), e);
-					log.warn(this.getClass().getSimpleName()
-							+ " will be interrupted because it detected a "
-							+ "runtime exception.");
+		    exc = e;
+		    this.interrupt();
+		} catch (InterruptedException e) {
+		    log.warn(this.getClass().getSimpleName()
+			    + " will be interrupted because it detected an "
+			    + "interrupted exception.");
 
-					exc = e;
-					this.interrupt();
-				} catch (InterruptedException e) {
-					log.warn(this.getClass().getSimpleName()
-							+ " will be interrupted because it detected an "
-							+ "interrupted exception.");
-
-					this.interrupt();
-				}
-
-				// Statistics
-				timer.loopEnd();
-				String curStatistics = timer.printOpenIGTLStatistics();
-				if (null != curStatistics) {
-					// log.warn(curStatistics); 
-					// TODO @Tobi check why
-					// statistics always bad.
-				}
-			}
-		} catch (Exception e) {
-			exc = new IllegalThreadStateException(e.getMessage());
-		} finally {
-			// Clean up thread.
-			dispose();
-
-			// throw any runtime exceptions except interrupted exception.
-			if (null != exc) {
-				throw exc;
-			}
-
+		    this.interrupt();
 		}
 
-	}
-
-	/**
-	 * Method for adjusting the sleep time the thread sleeps after periodic
-	 * work.
-	 * 
-	 * @param sleepTimeMs
-	 *            the new desired sleep time in milliseconds.
-	 */
-	public final void setSleepTime(final int sleepTimeMs) {
-		sleepTime = sleepTimeMs;
-	}
-
-	/**
-	 * Alternative starting method for the thread but with integrated delay.
-	 * 
-	 * @param delayMs
-	 *            the delay in milliseconds.
-	 * @throws InterruptedException
-	 *             when delay will be interrupted.
-	 */
-	public final void start(final int delayMs) throws InterruptedException {
-		super.start();
-		sleep(delayMs);
-	}
-
-	// **************BEGINNING OF USER-DEFINED-FUNCTIONS******************
-
-	/**
-	 * Setup all components and start them immediately.
-	 * 
-	 * @throws IOException
-	 *             when setup of the igtl-communication fails.
-	 */
-	private void setup() throws IOException {
-
-		port.setup();
-
-	}
-
-	/**
-	 * Can only throw runtime exceptions all others will be caught and
-	 * transformed as runtime-exception.
-	 * 
-	 * @throws IOException
-	 *             when no message can be received.
-	 * @throws InterruptedException
-	 *             when sleeping between invalid messages is interrupted.
-	 */
-	private void work() throws IOException, InterruptedException {
-
-		/*
-		 * Wait for incoming messages and write it to the internal data
-		 * provider. Skip invalid messages.
-		 */
-		IOpenIGTLMsg receivedMsg = null;
-
-		log.fine(this.getClass().getSimpleName() + " is waiting for messages.");
-		do {
-
-			receivedMsg = port.receiveMsg();
-			sleep(5);
-
-		} while (!internalDataProvider.readNewCmdMessage(receivedMsg));
-		log.fine("Received a new message with "
-				+ (receivedMsg.getBody().length
-						+ receivedMsg.getHeader().length + " bytes."));
-
-		/*
-		 * Send answer to current uid. First acquire uid from the internal data
-		 * provider, then acquire the acknowledgement-message from the
-		 * statemachine. Then send it via the communication port.
-		 */
-		long currentUid = internalDataProvider.getCurrentCmdPacket().getUid();
-		String ackString = stateMachine.getAckIgtMsg() + currentUid + ";";
-		port.sendIGTStringMessage(ackString);
-		log.fine(this.getClass().getSimpleName() + " is sending the ack: "
-				+ ackString);
-
-	}
-
-	private void conditionalWork() {
-		if (condWorkActive) {
-			// no conditionals programmed yet
+		// Statistics
+		timer.loopEnd();
+		String curStatistics = timer.printOpenIGTLStatistics();
+		if (null != curStatistics) {
+		    // log.warn(curStatistics);
+		    // TODO @Tobi check why
+		    // statistics always bad.
 		}
+	    }
+	} catch (Exception e) {
+	    exc = new IllegalThreadStateException(e.getMessage());
+	} finally {
+	    // Clean up thread.
+	    dispose();
+
+	    // throw any runtime exceptions except interrupted exception.
+	    if (null != exc) {
+		throw exc;
+	    }
+
 	}
 
-	public void setCondWork(final boolean setting) {
-		condWorkActive = setting;
-	}
+    }
 
-	/**
-	 * Disposes all components of this thread. Should be called after thread is
-	 * interrupted and its main while loop ended.
+    /**
+     * Method for adjusting the sleep time the thread sleeps after periodic
+     * work.
+     * 
+     * @param sleepTimeMs
+     *            the new desired sleep time in milliseconds.
+     */
+    public final void setSleepTime(final int sleepTimeMs) {
+	sleepTime = sleepTimeMs;
+    }
+
+    /**
+     * Alternative starting method for the thread but with integrated delay.
+     * 
+     * @param delayMs
+     *            the delay in milliseconds.
+     * @throws InterruptedException
+     *             when delay will be interrupted.
+     */
+    public final void start(final int delayMs) throws InterruptedException {
+	super.start();
+	sleep(delayMs);
+    }
+
+    // **************BEGINNING OF USER-DEFINED-FUNCTIONS******************
+
+    /**
+     * Setup all components and start them immediately.
+     * 
+     * @throws IOException
+     *             when setup of the igtl-communication fails.
+     */
+    private void setup() throws IOException {
+
+	port.setup();
+
+    }
+
+    /**
+     * Can only throw runtime exceptions all others will be caught and
+     * transformed as runtime-exception.
+     * 
+     * @throws IOException
+     *             when no message can be received.
+     * @throws InterruptedException
+     *             when sleeping between invalid messages is interrupted.
+     */
+    private void work() throws IOException, InterruptedException {
+
+	/*
+	 * Wait for incoming messages and write it to the internal data
+	 * provider. Skip invalid messages.
 	 */
-	private void dispose() {
-		if (null != port) {
-			try {
-				port.dispose();
-				log.info(this.getClass().getSimpleName()
-						+ " was properly disposed.");
-			} catch (IOException e) {
-				log.error("Disposing of a igtl communication channel failed.",
-						e);
-			}
-		}
+	IOpenIGTLMsg receivedMsg = null;
+
+	log.fine(this.getClass().getSimpleName() + " is waiting for messages.");
+
+	// Try to receive a new message. If no msg is in the in-buffer a null
+	// message will be returned.
+	receivedMsg = port.receiveMsg();
+
+	// Read the new message. Null messages will be skipped.
+	if (null != receivedMsg) {
+	    internalDataProvider.readNewCmdMessage(receivedMsg);
+	    log.fine("Received a new message with "
+		    + (receivedMsg.getBody().length
+			    + receivedMsg.getHeader().length + " bytes."));
+	    /*
+	     * Send answer to current uid. First acquire uid from the internal
+	     * data provider, then acquire the acknowledgement-message from the
+	     * statemachine. Then send it via the communication port.
+	     */
+	    long currentUid = internalDataProvider.getCurrentCmdPacket()
+		    .getUid();
+	    String ackString = stateMachine.getAckIgtMsg() + currentUid + ";";
+	    port.sendIGTStringMessage(ackString);
+	    log.fine(this.getClass().getSimpleName() + " is sending the ack: "
+		    + ackString);
 	}
+
+    }
+
+    private void conditionalWork() {
+	if (condWorkActive) {
+	    // no conditionals programmed yet
+	}
+    }
+
+    public void setCondWork(final boolean setting) {
+	condWorkActive = setting;
+    }
+
+    /**
+     * Disposes all components of this thread. Should be called after thread is
+     * interrupted and its main while loop ended.
+     */
+    private void dispose() {
+	if (null != port) {
+	    try {
+		port.dispose();
+		log.info(this.getClass().getSimpleName()
+			+ " was properly disposed.");
+	    } catch (IOException e) {
+		log.error("Disposing of a igtl communication channel failed.",
+			e);
+	    }
+	}
+    }
 
 }

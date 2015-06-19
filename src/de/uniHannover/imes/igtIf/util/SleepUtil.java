@@ -75,9 +75,21 @@ public final class SleepUtil {
 	    final int cycleTimeToleranceMs, final int cycleTime)
 	    throws InterruptedException {
 	long runtime = (long) ((System.nanoTime() - startTimeNanos));
-	long runtimeMS = TimeUnit.NANOSECONDS.toMillis(runtime);
-	if (runtimeMS < cycleTime - cycleTimeToleranceMs) {
-	    Thread.sleep(cycleTime - cycleTimeToleranceMs - runtimeMS);
+	long maxAllowedCycleTime = TimeUnit.MILLISECONDS.toNanos(cycleTime
+		- cycleTimeToleranceMs);
+
+	if (runtime < maxAllowedCycleTime) {
+
+	    long sleepTimeMs = Math.round(Math
+		    .floor((maxAllowedCycleTime - runtime) * 10e-7));
+	    int sleepTimeNano;
+	    if (sleepTimeMs != 0) {
+		sleepTimeNano = (int) (maxAllowedCycleTime - runtime - TimeUnit.MILLISECONDS
+			.toNanos(sleepTimeMs));
+	    } else {
+		sleepTimeNano = 0;
+	    }
+	    Thread.sleep(sleepTimeMs, sleepTimeNano);
 
 	}
     }

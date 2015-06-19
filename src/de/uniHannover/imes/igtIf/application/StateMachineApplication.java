@@ -37,7 +37,6 @@
 
 package de.uniHannover.imes.igtIf.application;
 
-import java.io.File;
 import java.io.IOException;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
