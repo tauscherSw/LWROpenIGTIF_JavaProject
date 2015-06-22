@@ -523,9 +523,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	@Override
 	public final void run() {
 		try {
-			// String lastPrintedError = "";
-			// String errMsg = "";
-
 			int i = 0;
 
 			timer = new StatisticalTimer(MS_TO_SLEEP); // timing statistics for

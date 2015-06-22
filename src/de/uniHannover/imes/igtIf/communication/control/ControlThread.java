@@ -255,6 +255,7 @@ public class ControlThread extends Thread {
     private void setup() throws IOException {
 
 	port.setup();
+	Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 
     }
 
