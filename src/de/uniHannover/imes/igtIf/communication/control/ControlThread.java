@@ -198,12 +198,6 @@ public class ControlThread extends Thread {
 
 		// Statistics
 		timer.loopEnd();
-		String curStatistics = timer.printOpenIGTLStatistics();
-		if (null != curStatistics) {
-		    // log.warn(curStatistics);
-		    // TODO @Tobi check why
-		    // statistics always bad.
-		}
 	    }
 	} catch (Exception e) {
 	    exc = new IllegalThreadStateException(e.getMessage());
@@ -284,10 +278,15 @@ public class ControlThread extends Thread {
 
 	// Read the new message. Null messages will be skipped.
 	if (null != receivedMsg) {
-	    internalDataProvider.readNewCmdMessage(receivedMsg);
+		log.fine("Current uid of statemachine: " + internalDataProvider.getCurrentCmdPacket()
+			    .getUid());
 	    log.fine("Received a new message with "
-		    + (receivedMsg.getBody().length
-			    + receivedMsg.getHeader().length + " bytes."));
+			    + (receivedMsg.getBody().length
+				    + receivedMsg.getHeader().length + " bytes."));
+	    
+	    
+	    internalDataProvider.readNewCmdMessage(receivedMsg);
+
 	    /*
 	     * Send answer to current uid. First acquire uid from the internal
 	     * data provider, then acquire the acknowledgement-message from the
@@ -327,6 +326,10 @@ public class ControlThread extends Thread {
 		log.error("Disposing of a igtl communication channel failed.",
 			e);
 	    }
+	}
+	if(null != timer){
+	log.info("Final statistics of " + this.getClass().getSimpleName());
+	log.info(timer.getOverallStatistics());
 	}
     }
 

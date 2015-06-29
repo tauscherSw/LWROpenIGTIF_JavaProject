@@ -215,11 +215,7 @@ public class VisualizationThread extends Thread {
 
 				// Statistics
 				timer.loopEnd();
-				String curStatistics = timer.printOpenIGTLStatistics();
-				if (null != curStatistics) {
-					// TODO @Tobi check why statistics always bad.
-					// log.warn(curStatistics);
-				}
+
 			}
 		} catch (Exception e) {
 			exc = new IllegalThreadStateException(e.getMessage());
@@ -284,7 +280,7 @@ public class VisualizationThread extends Thread {
 	 *             when sleeping between invalid messages is interrupted.
 	 */
 	private void work() throws IOException, InterruptedException {
-		//nothing programmed yet
+		// nothing programmed yet
 	}
 
 	/**
@@ -341,6 +337,11 @@ public class VisualizationThread extends Thread {
 				log.error("Disposing of a igtl communication channel failed.",
 						e);
 			}
+		}
+
+		if (null != timer) {
+			log.info("Final statistics of " + this.getClass().getSimpleName());
+			log.info(timer.getOverallStatistics());
 		}
 	}
 

@@ -593,7 +593,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 						getLogger().fine(
 								this.getClass().getName()
-										+ " enables the "
+										+ " enables t	he "
 										+ visualizationThread.getClass()
 												.getName() + " thread.");
 
@@ -691,16 +691,21 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 												.toString());
 						smartServoRuntime
 								.changeControlModeSettings(imesStatemachine.controlMode);
+						ThreadUtil.milliSleep(3);
 						getLogger().fine(
 								"Commanding new robot-pose "
 										+ imesStatemachine.cmdPose.toString());
+
 						smartServoRuntime
 								.setDestination(imesStatemachine.cmdPose);
 
 					} catch (Exception e) {
-						getLogger()
-								.error("Cannot change control mode settings or command a new pose.",
-										e);
+//						getLogger()
+//								.error("Cannot change control mode settings or command a new pose. Resetting smart servo",
+//										e);
+//						ServoMotionUtilities.resetControllerAndKILLALLMOTIONS(imesLBR);
+//						ServoMotionUtilities.acknowledgeError(imesLBR);
+//						initSmartServo();
 					}
 
 					// Defining the acknowledgment String for Control Interface
@@ -742,6 +747,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		} finally {
 			// Print final infos.
+			getLogger().info("Statistics for loop of main thread: ");
 			printFinalInfos();
 
 		}
