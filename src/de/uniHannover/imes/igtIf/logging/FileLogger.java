@@ -12,7 +12,8 @@ import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 /**
  * This class is used for logging into a file. It is especially helpfull if high
  * frequent logging output will slow down the igtl loop runtime, when logging is
- * sent to be displayed on the smartPad of the lwrIiwa controller.
+ * sent to be displayed on the smartPad of the lwrIiwa controller. Call
+ * dispose() after usage.
  *
  */
 public class FileLogger implements ITaskLogger {
@@ -31,7 +32,7 @@ public class FileLogger implements ITaskLogger {
     private Logger logger;
 
     /**
-     * Privatized constructor.
+     * Intentionally privatized constructor.
      * 
      */
     private FileLogger() {
@@ -91,9 +92,9 @@ public class FileLogger implements ITaskLogger {
 	if (null == name) {
 	    throw new NullPointerException("Arugment name is null");
 	}
-	if (!logFile.isFile()) {
-	    throw new IllegalArgumentException("Argument "
-		    + logFile.getAbsolutePath() + " is no file.");
+	if (null == logFile) {
+	    throw new NullPointerException(
+		    "Argument logfile is null is no file.");
 	}
 
 	// Initialize members
@@ -125,9 +126,12 @@ public class FileLogger implements ITaskLogger {
      */
     private void setup(final boolean append) throws IOException {
 	logFileHandler = new FileHandler(curLogFile.getAbsolutePath(), append);
-	logger.addHandler(logFileHandler);
+	logger.addHandler(logFileHandler); //add file handler
 	SimpleFormatter formatter = new SimpleFormatter();
 	logFileHandler.setFormatter(formatter);
+	logger.setUseParentHandlers(false); //remove console handler
+	
+
     }
 
     @Override
@@ -164,5 +168,23 @@ public class FileLogger implements ITaskLogger {
     public final void warn(final String arg0, final Throwable arg1) {
 	logger.log(Level.WARNING, arg0, arg1);
 
+    }
+
+    /**
+     * Getter for the logfile used by this logger.
+     * 
+     * @return the logfile.
+     */
+    public final File getLogfile() {
+	return curLogFile;
+    }
+
+    /**
+     * Disposes the logger.
+     */
+    public final void close() {
+	if (null != logFileHandler) {
+	    logFileHandler.close();
+	}
     }
 }
