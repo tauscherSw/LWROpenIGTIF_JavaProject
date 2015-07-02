@@ -37,9 +37,13 @@
 
 package de.uniHannover.imes.igtIf.stateMachine;
 
+import java.util.Arrays;
+
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
+import com.kuka.roboticsAPI.geometricModel.math.XyzAbcTransformation;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
+
 import de.uniHannover.imes.igtIf.stateMachine.states.ILwrState;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrGravComp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrIdle;
@@ -779,12 +783,16 @@ public class LwrStatemachine {
     /**
      * For debugging purposes.
      */
-    private final void printCtrlParameters() {
+    private void printCtrlParameters() {
 	StringBuilder toBePrinted = new StringBuilder();
-	toBePrinted.append("Commanded pose: " + this.cmdPose + "\n");
+	toBePrinted.append("Current state: "
+		+ this.getCurrentState().getClass().getSimpleName() + "\n");
+	XyzAbcTransformation cartPose = XyzAbcTransformation.of(
+		this.cmdPose.getTranslation(), this.cmdPose.getRotation());
+	toBePrinted.append("Commanded pose: " + cartPose.toString() + "\n");
 	toBePrinted.append("Control mode: " + this.controlMode + "\n");
 	toBePrinted.append("Stiffness param: "
-		+ this.curCartStiffness.toString() + "\n");
+		+ Arrays.toString(this.curCartStiffness) + "\n");
 	log.info("Overview new Ctrl parameters after Update from "
 		+ this.getClass().getSimpleName() + ":\n"
 		+ toBePrinted.toString());
