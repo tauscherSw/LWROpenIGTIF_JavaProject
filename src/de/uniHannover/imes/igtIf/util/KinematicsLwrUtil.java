@@ -55,7 +55,7 @@ public final class KinematicsLwrUtil {
      * two joints in millimeters.
      */
     private static final double[] DH_D_PARAMETER_LWRIIWA7 = new double[] { 160,
-	    180, 180, 220, 180, 220, 80, 50 };
+	    200, 200, 220, 180, 220, 76, 50 };
 
     // TODO @Sebastian do we have the parameters of iiwa 14?
 
