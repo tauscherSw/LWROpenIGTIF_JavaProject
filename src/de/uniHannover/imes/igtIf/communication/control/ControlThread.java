@@ -107,7 +107,7 @@ public class ControlThread extends Thread {
      *            provider for command data received via another IGTL channel.
      * @param extLogger
      *            an external logger which collects the logging output of this
-     *            class.
+     *            class. 
      * @throws IOException
      *             when setup of communication fails.
      */
@@ -130,11 +130,13 @@ public class ControlThread extends Thread {
 	}
 	internalDataProvider = comDataProvider;
 
-	if (null == extLogger) {
-	    log = new DummyLogger();
-	} else {
-	    log = extLogger;
-	}
+	// Assign correct logging mechanism. 
+	    if (null == extLogger) {
+		log = new DummyLogger();
+	    } else {
+		log = extLogger;
+	    }
+	
 
 	/* Construct all components */
 	port = new IGTLComPort(SLICER_CONTROL_COM_PORT, 0, log);
@@ -276,15 +278,14 @@ public class ControlThread extends Thread {
 	// message will be returned.
 	receivedMsg = port.receiveMsg();
 
-	// Read the new message. Null messages will be skipped.
+	// Read the new message. Null messages (no message) will be skipped.
 	if (null != receivedMsg) {
-		log.fine("Current uid of statemachine: " + internalDataProvider.getCurrentCmdPacket()
-			    .getUid());
+	    log.fine("Current uid of statemachine: "
+		    + internalDataProvider.getCurrentCmdPacket().getUid());
 	    log.fine("Received a new message with "
-			    + (receivedMsg.getBody().length
-				    + receivedMsg.getHeader().length + " bytes."));
-	    
-	    
+		    + (receivedMsg.getBody().length
+			    + receivedMsg.getHeader().length + " bytes."));
+
 	    internalDataProvider.readNewCmdMessage(receivedMsg);
 
 	    /*
@@ -327,9 +328,9 @@ public class ControlThread extends Thread {
 			e);
 	    }
 	}
-	if(null != timer){
-	log.info("Final statistics of " + this.getClass().getSimpleName());
-	log.info(timer.getOverallStatistics());
+	if (null != timer) {
+	    log.info("Final statistics of " + this.getClass().getSimpleName());
+	    log.info(timer.getOverallStatistics());
 	}
     }
 

@@ -37,6 +37,7 @@
 
 package de.uniHannover.imes.igtIf.stateMachine;
 
+import java.io.File;
 import java.util.Arrays;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
@@ -73,6 +74,7 @@ import de.uniHannover.imes.igtIf.logging.DummyLogger;
 public class LwrStatemachine {
 
     // **************************Constants**********************/
+
     /**
      * Current enum for the State Machine status {IDLE, GravComp,
      * VirtualFixtures, PathImp, MovetoPose, Error}possible client states.
@@ -188,7 +190,7 @@ public class LwrStatemachine {
     private String ackIgtMsg = null;
 
     /** The logging object for logging output. */
-    private ITaskLogger log = new DummyLogger();
+    private ITaskLogger log;
 
     /**
      * The command pose in Cartesian space of the LWR in robot coordinates.
@@ -308,8 +310,12 @@ public class LwrStatemachine {
      * @param dataProvider
      *            the data provider for the cyclically sent data from the
      *            openIGTL client.
+     * @param extLogger
+     *            an external logger which collects the logging output of this
+     *            class.
      */
-    public LwrStatemachine(final CommunicationDataProvider dataProvider) {
+    public LwrStatemachine(final CommunicationDataProvider dataProvider,
+	    final ITaskLogger extLogger) {
 	if (null == dataProvider) {
 	    throw new NullPointerException(
 		    "Communication data provider argument is null");
@@ -320,6 +326,13 @@ public class LwrStatemachine {
 	stateChanged = true;
 	transformReceivedFlag = false;
 	ErrorCode = OpenIGTLinkErrorCode.Ok;
+
+	// Assign correct logging mechanism.
+	if (null == extLogger) {
+	    log = new DummyLogger();
+	} else {
+	    log = extLogger;
+	}
 
     }
 
@@ -378,6 +391,7 @@ public class LwrStatemachine {
      * </pre>
      */
     public void checkTransitionRequest() {
+	log.fine("Checking transition request.");
 	// First Check if the received OpenIGTLink was a String
 	if (this.igtlDatatype.equals("STRING")) {
 	    // this.InitFlag = false;
@@ -793,7 +807,7 @@ public class LwrStatemachine {
 	toBePrinted.append("Control mode: " + this.controlMode + "\n");
 	toBePrinted.append("Stiffness param: "
 		+ Arrays.toString(this.curCartStiffness) + "\n");
-	log.info("Overview new Ctrl parameters after Update from "
+	log.fine("Overview new Ctrl parameters after update from "
 		+ this.getClass().getSimpleName() + ":\n"
 		+ toBePrinted.toString());
 

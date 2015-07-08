@@ -52,68 +52,108 @@ import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider
  */
 public class CommandPacket {
 
-	/** The command string. */
-	private final String cmdString;
+    /** The command string. */
+    private final String cmdString;
+    /**
+     * The type of the igtl message as specified in {@linkplain IgtlMsgType}.
+     */
+    private final IgtlMsgType msgType;
+    /** The unified ID of the corresponding command. */
+    private final long uId;
+    /** The transformation matrix which is part of the igtl-packet. */
+    private final MatrixTransformation trafo;
+    /** A flag which indicates if a transfor was received. */
+    private final boolean transformReceived;
 
-	private final IgtlMsgType msgType;
-	/** The unified ID of the corresponding command. */
-	private final long uId;
-	private final MatrixTransformation trafo;
-	private final boolean transformReceived;
+    /**
+     * Constructs a new command packet and initializes it with the given
+     * arguments.
+     * 
+     * @param currentCmdString
+     *            the command string
+     * @param currentMsgType
+     *            the message type
+     * @param currentUid
+     *            the uid of the message
+     * @param currentExternalTrafo
+     *            the external transformation matrix
+     * @param curTransformReceived
+     *            the flag for indication if transform was received.
+     */
+    public CommandPacket(final String currentCmdString,
+	    final IgtlMsgType currentMsgType, final long currentUid,
+	    final MatrixTransformation currentExternalTrafo,
+	    final boolean curTransformReceived) {
+	cmdString = currentCmdString;
+	msgType = currentMsgType;
+	uId = currentUid;
+	trafo = currentExternalTrafo;
+	transformReceived = curTransformReceived;
 
-	public CommandPacket(final String currentCmdString,
-			final IgtlMsgType currentMsgType, final long currentUid,
-			final MatrixTransformation currentExternalTrafo,
-			final boolean curTransformReceived) {
-		cmdString = currentCmdString;
-		msgType = currentMsgType;
-		uId = currentUid;
-		trafo = currentExternalTrafo;
-		transformReceived = curTransformReceived;
+    }
 
+    /**
+     * Getter for the unified id of this command object.
+     * 
+     * @return the unified id of this command object.
+     */
+    public final long getUid() {
+	return uId;
+    }
+
+    /**
+     * Getter of the command string of this command object.
+     * 
+     * @return the command string.
+     */
+    public final String getCmdString() {
+	return cmdString;
+    }
+
+    /**
+     * Getter for the message type.
+     * 
+     * @return the message type.
+     */
+    public final IgtlMsgType getMsgType() {
+	return msgType;
+    }
+
+    /**
+     * Getter for the matrix transformation.
+     * 
+     * @return the matrix transformation.
+     */
+    public final MatrixTransformation getTrafo() {
+	return trafo;
+    }
+
+    /**
+     * Getter for the transform-received flag.
+     * 
+     * @return the transform-received flag.
+     */
+    public final boolean isTransformReceived() {
+	return transformReceived;
+    }
+
+    /**
+     * A printer function which returns all details of this command packet in
+     * one string.
+     * 
+     * @return the details as a string.
+     */
+    public final String printDetails() {
+	if (null != trafo) {
+	    return "MessageType: " + msgType + "\n" + "Command String: "
+		    + cmdString + "\n" + "UID: " + uId + "\n" + "Trafo: "
+		    + trafo.toString() + "\n" + "Transform received: "
+		    + transformReceived + "\n";
+	} else {
+	    return "MessageType: " + msgType + "\n" + "Command String: "
+		    + cmdString + "\n" + "UID: " + uId + "\n"
+		    + "Transform received: " + transformReceived + "\n";
 	}
-
-	/**
-	 * Getter for the unified id of this command object.
-	 * 
-	 * @return the unified id of this command object.
-	 */
-	public final long getUid() {
-		return uId;
-	}
-
-	/**
-	 * Getter of the command string of this command object.
-	 * 
-	 * @return the command string.
-	 */
-	public final String getCmdString() {
-		return cmdString;
-	}
-
-	public final IgtlMsgType getMsgType() {
-		return msgType;
-	}
-
-	public final MatrixTransformation getTrafo() {
-		return trafo;
-	}
-
-	public final boolean isTransformReceived() {
-		return transformReceived;
-	}
-
-	public final String printDetails() {
-		if (null != trafo) {
-			return "MessageType: " + msgType + "\n" + "Command String: "
-					+ cmdString + "\n" + "UID: " + uId + "\n" + "Trafo: "
-					+ trafo.toString() + "\n" + "Transform received: "
-					+ transformReceived + "\n";
-		} else {
-			return "MessageType: " + msgType + "\n" + "Command String: "
-					+ cmdString + "\n" + "UID: " + uId + "\n"
-					+ "Transform received: " + transformReceived + "\n";
-		}
-	}
+    }
 
 }

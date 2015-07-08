@@ -42,9 +42,11 @@ import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLComPort;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
+import de.uniHannover.imes.igtIf.logging.DebugLogger;
 import de.uniHannover.imes.igtIf.logging.DummyLogger;
 import de.uniHannover.imes.igtIf.util.KinematicsLwrUtil;
 import de.uniHannover.imes.igtIf.util.SleepUtil;
@@ -144,11 +146,13 @@ public class VisualizationThread extends Thread {
 		}
 		internalDataProvider = comDataProvider;
 
-		if (null == extLogger) {
+		// Assign correct logging mechanism.
+		    if (null == extLogger) {
 			log = new DummyLogger();
-		} else {
+		    } else {
 			log = extLogger;
-		}
+		    }
+		
 
 		/* Construct all components */
 		port = new IGTLComPort(SLICER_VISUAL_COM_PORT, 0, log);

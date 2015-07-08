@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+import java.util.logging.XMLFormatter;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
@@ -23,7 +23,7 @@ public class FileLogger implements ITaskLogger {
      * choosen.
      */
     private static final String TMP_LOGFILE_NAME = FileLogger.class
-	    .getSimpleName() + ".log";
+	    .getSimpleName() + ".xml";
     /** The current logging file. */
     private File curLogFile;
     /** the file handler for the logfile. */
@@ -127,7 +127,8 @@ public class FileLogger implements ITaskLogger {
     private void setup(final boolean append) throws IOException {
 	logFileHandler = new FileHandler(curLogFile.getAbsolutePath(), append);
 	logger.addHandler(logFileHandler); //add file handler
-	SimpleFormatter formatter = new SimpleFormatter();
+	XMLFormatter formatter = new XMLFormatter();
+//	SimpleFormatter formatter = new SimpleFormatter();
 	logFileHandler.setFormatter(formatter);
 	logger.setUseParentHandlers(false); //remove console handler
 	
