@@ -37,7 +37,6 @@
 
 package de.uniHannover.imes.igtIf.stateMachine;
 
-import java.io.File;
 import java.util.Arrays;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
@@ -320,6 +319,14 @@ public class LwrStatemachine {
 	    throw new NullPointerException(
 		    "Communication data provider argument is null");
 	}
+	// Assign correct logging mechanism.
+	if (null == extLogger) {
+	    log = new DummyLogger();
+	} else {
+	    log = extLogger;
+	}
+
+	
 	dataSink = dataProvider;
 	setNewState(new LwrIdle());
 	ackIgtMsg = "IDLE;";
@@ -327,12 +334,6 @@ public class LwrStatemachine {
 	transformReceivedFlag = false;
 	ErrorCode = OpenIGTLinkErrorCode.Ok;
 
-	// Assign correct logging mechanism.
-	if (null == extLogger) {
-	    log = new DummyLogger();
-	} else {
-	    log = extLogger;
-	}
 
     }
 

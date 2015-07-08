@@ -18,8 +18,8 @@ public final class DebugLogger implements ITaskLogger {
 
     /** File object where debug logging output is saved in. */
     public static final File DEBUG_LOGFILE = new File(
-	    System.getProperty("user.home") + File.pathSeparator
-		    + IGTIF_DEBUG_LOGGER + ".log");
+	    System.getProperty("user.dir") + File.separator + "logs"
+		    + File.separator + IGTIF_DEBUG_LOGGER + ".log");
 
     /** Instance of the logger as singleton pattern. */
     private static ITaskLogger instance;

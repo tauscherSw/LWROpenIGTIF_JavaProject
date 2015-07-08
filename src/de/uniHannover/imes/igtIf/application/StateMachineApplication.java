@@ -390,7 +390,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * Initializes the state machine.
      */
     private void initStateMachine() {
-	imesStatemachine = new LwrStatemachine(comDataProvider,log);
+	imesStatemachine = new LwrStatemachine(comDataProvider, log);
 	imesStatemachine.startVisual = true;
 
 	comDataProvider.readNewRobotData();
