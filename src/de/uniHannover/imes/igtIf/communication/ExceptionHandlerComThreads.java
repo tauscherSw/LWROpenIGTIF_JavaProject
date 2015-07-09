@@ -41,7 +41,6 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 
 /**
