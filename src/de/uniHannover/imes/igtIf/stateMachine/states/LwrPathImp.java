@@ -37,7 +37,8 @@
 
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+import java.util.logging.Logger;
+
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
@@ -48,7 +49,7 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCo
 import de.uniHannover.imes.igtIf.util.MathUtil;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtIf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 
 /**
  * In This State the LWR can be moved along a linear Path in one direction to a
@@ -78,8 +79,13 @@ public class LwrPathImp implements ILwrState {
 
      
      //**************************Components*********************/
-     /** The logging object for logging output.*/
-     private ITaskLogger log = new DummyLogger();
+     /**
+      * Logging mechanism provided by jdk. In case if debug flag is active, all
+      * logging output will be directed to a logfile. Otherwise logging output
+      * will be displayed on the smartpad.
+      */
+     private Logger logger = Logger
+ 	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
 
     /**
      * vector to define the line path from start to End point. g: x= ap +
@@ -170,7 +176,7 @@ public class LwrPathImp implements ILwrState {
 		lwrStatemachine.cmdPose = MatrixTransformation
 			.of(targetOrientation.withTranslation(targetPosition));
 		if (!endOfPath) {
-		    log.info("Path Impedance: Reached End of path ("
+		    logger.info("Path Impedance: Reached End of path ("
 			    + targetPosition + ")");
 		}
 		endOfPath = true;
@@ -296,7 +302,7 @@ public class LwrPathImp implements ILwrState {
 	    String[] cmdArray = cmdString.split(";");
 	    if (cmdArray[1].contentEquals("img")) {
 		this.imageSpace = true;
-		log.info("Image space is set to true...");
+		logger.info("Image space is set to true...");
 	    } else if (cmdArray[1].contentEquals("rob")) {
 		this.imageSpace = false;
 	    } else {
@@ -306,7 +312,7 @@ public class LwrPathImp implements ILwrState {
 	    this.targetPosition = Vector.of(Double.parseDouble(cmdArray[2]),
 		    Double.parseDouble(cmdArray[3]),
 		    Double.parseDouble(cmdArray[4]));
-	    log.info("Targetposition...: " + this.targetPosition);
+	    logger.info("Targetposition...: " + this.targetPosition);
 
 	    if (this.imageSpace && cmdPacket.isTransformReceived()) {
 		Vector tmp;
@@ -316,7 +322,7 @@ public class LwrPathImp implements ILwrState {
 			.add(cmdPacket.getTrafo().invert()
 				.getTranslation());
 		this.targetPosition = tmp;
-		log.info("After Transformation...: "
+		logger.info("After Transformation...: "
 			+ this.targetPosition);
 
 	    }
@@ -362,13 +368,5 @@ public class LwrPathImp implements ILwrState {
 	lwrStatemachine.setAckIgtMsg(ack);
     }
     
-    @Override
-    public final void setLogger(final ITaskLogger extlogger) {
-	if (null == extlogger) {
-	    throw new NullPointerException("External logger is null");
-	}
-	log = extlogger;
-
-    }
 
 }

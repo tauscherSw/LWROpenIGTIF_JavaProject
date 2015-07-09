@@ -38,20 +38,18 @@
 package de.uniHannover.imes.igtIf.communication.control;
 
 import java.nio.ByteBuffer;
+import java.util.logging.Logger;
 
 import OpenIGTLink.swig.IGTLheader;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
 import com.kuka.roboticsAPI.deviceModel.LBR;
 import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
-import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
-import de.uniHannover.imes.igtIf.logging.DebugLogger;
-import de.uniHannover.imes.igtIf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 
 /**
  * This class represents the communication data, which is exchanged via the
@@ -111,8 +109,13 @@ public class CommunicationDataProvider {
      */
     private static final int MAX_EQUAL_UIDS = 4;
 
-    /** Logging object. */
-    private ITaskLogger logger;
+    /**
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
+     */
+    private Logger logger = Logger
+	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
 
     /** the current and newest command received via openIGTL. */
     private CommandPacket curPacket = null;
@@ -165,21 +168,11 @@ public class CommunicationDataProvider {
      * 
      * @param dataSink
      *            the robot object, which gains access to cyclic robot data.
-     * @param extLogger
-     *            an external logger which collects the logging output of this
-     *            class. 
      */
-    public CommunicationDataProvider(final LBR dataSink,
-	    final ITaskLogger extLogger) {
+    public CommunicationDataProvider(final LBR dataSink) {
 	robotDataSink = dataSink;
 	poseUid = 0;
-	// Assign correct logging mechanism. 
-	    if (null == extLogger) {
-		logger = new DummyLogger();
-	    } else {
-		logger = extLogger;
-	    }
-	
+
     }
 
     /**
@@ -313,12 +306,12 @@ public class CommunicationDataProvider {
 		uidRepeatMax = uidRepeat;
 	    }
 	    if (uidRepeat >= MAX_EQUAL_UIDS) {
-		logger.error("State machine interface: UID has not changed for the "
+		logger.severe("State machine interface: UID has not changed for the "
 			+ uidRepeat + ". time!! Check state control!");
 	    }
 	} else if (uidDelay > 1) {
 	    uidMiss = uidMiss + uidDelay - 1;
-	    logger.error("State machine interface: missed UID!!(miss count: "
+	    logger.severe("State machine interface: missed UID!!(miss count: "
 		    + uidMiss + ")");
 
 	} else if (uidDelay == 1) {

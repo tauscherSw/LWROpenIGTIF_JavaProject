@@ -36,7 +36,8 @@
 	=========================================================================*/
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+import java.util.logging.Logger;
+
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
@@ -44,7 +45,7 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtIf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 
 /**
  * In this state the LWR is holding its position with a maximum stiffness. This
@@ -80,8 +81,13 @@ public class LwrIdle implements ILwrState {
 
 
     //**************************Components*********************/
-    /** The logging object for logging output.*/
-    private ITaskLogger log = new DummyLogger();
+    /**
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
+     */
+    private Logger logger = Logger
+	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
 
     //***************************Methods***********************/
     /**
@@ -235,13 +241,5 @@ public class LwrIdle implements ILwrState {
 	}
     }
     
-    @Override
-    public final void setLogger(final ITaskLogger extlogger) {
-	if (null == extlogger) {
-	    throw new NullPointerException("External logger is null");
-	}
-	log = extlogger;
-
-    }
 
 }

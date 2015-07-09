@@ -38,12 +38,15 @@
 package de.uniHannover.imes.igtIf.communication.control;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLComPort;
 import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
-import de.uniHannover.imes.igtIf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.util.SleepUtil;
 import de.uniHannover.imes.igtIf.util.StatisticalTimer;
@@ -82,8 +85,13 @@ public class ControlThread extends Thread {
      */
     private CommunicationDataProvider internalDataProvider;
 
-    /** Logger for logging comments on the smartPAD. */
-    private ITaskLogger log;
+    /**
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
+     */
+    private Logger logger = Logger
+	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
 
     /** IGTL communication for state machine control. */
     private IGTLComPort port;
@@ -105,15 +113,11 @@ public class ControlThread extends Thread {
      *            the lwr statemachine
      * @param comDataProvider
      *            provider for command data received via another IGTL channel.
-     * @param extLogger
-     *            an external logger which collects the logging output of this
-     *            class. 
      * @throws IOException
      *             when setup of communication fails.
      */
     public ControlThread(final LwrStatemachine lwrStateMachine,
-	    final CommunicationDataProvider comDataProvider,
-	    final ITaskLogger extLogger) throws IOException {
+	    final CommunicationDataProvider comDataProvider) throws IOException {
 
 	/* Process arguments */
 	if (null == lwrStateMachine) {
@@ -130,16 +134,8 @@ public class ControlThread extends Thread {
 	}
 	internalDataProvider = comDataProvider;
 
-	// Assign correct logging mechanism. 
-	    if (null == extLogger) {
-		log = new DummyLogger();
-	    } else {
-		log = extLogger;
-	    }
-	
-
 	/* Construct all components */
-	port = new IGTLComPort(SLICER_CONTROL_COM_PORT, 0, log);
+	port = new IGTLComPort(SLICER_CONTROL_COM_PORT, 0);
 	timer = new StatisticalTimer(SLICER_CONTROL_CYLCETIME_MS);
 
     }
@@ -155,12 +151,12 @@ public class ControlThread extends Thread {
 
 	try {
 	    // Initialize functions here
-	    log.info(this.getClass().getSimpleName()
+	    logger.info(this.getClass().getSimpleName()
 		    + " is setting up its communication.");
 	    setup();
 
 	    // Main loop until thread is interrupted from the outside
-	    log.info(this.getClass().getSimpleName()
+	    logger.info(this.getClass().getSimpleName()
 		    + " is entering it's main loop.");
 	    while (!this.isInterrupted()) {
 		// Statistics
@@ -182,16 +178,15 @@ public class ControlThread extends Thread {
 		     * exceptions are thrown again in the finally block and have
 		     * to be handled via an external Uncaught exception handler.
 		     */
-		    log.error("Runtime exception detected in "
-			    + this.getClass().getSimpleName(), e);
-		    log.warn(this.getClass().getSimpleName()
+		    logger.log(Level.SEVERE, "Runtime exception detected", e);
+		    logger.warning(this.getClass().getSimpleName()
 			    + " will be interrupted because it detected a "
 			    + "runtime exception.");
 
 		    exc = e;
 		    this.interrupt();
 		} catch (InterruptedException e) {
-		    log.warn(this.getClass().getSimpleName()
+		    logger.warning(this.getClass().getSimpleName()
 			    + " will be interrupted because it detected an "
 			    + "interrupted exception.");
 
@@ -272,7 +267,8 @@ public class ControlThread extends Thread {
 	 */
 	IOpenIGTLMsg receivedMsg = null;
 
-	log.fine(this.getClass().getSimpleName() + " is waiting for messages.");
+	logger.fine(this.getClass().getSimpleName()
+		+ " is waiting for messages.");
 
 	// Try to receive a new message. If no msg is in the in-buffer a null
 	// message will be returned.
@@ -280,9 +276,9 @@ public class ControlThread extends Thread {
 
 	// Read the new message. Null messages (no message) will be skipped.
 	if (null != receivedMsg) {
-	    log.fine("Current uid of statemachine: "
+	    logger.fine("Current uid of statemachine: "
 		    + internalDataProvider.getCurrentCmdPacket().getUid());
-	    log.fine("Received a new message with "
+	    logger.fine("Received a new message with "
 		    + (receivedMsg.getBody().length
 			    + receivedMsg.getHeader().length + " bytes."));
 
@@ -297,8 +293,8 @@ public class ControlThread extends Thread {
 		    .getUid();
 	    String ackString = stateMachine.getAckIgtMsg() + currentUid + ";";
 	    port.sendIGTStringMessage(ackString);
-	    log.fine(this.getClass().getSimpleName() + " is sending the ack: "
-		    + ackString);
+	    logger.fine(this.getClass().getSimpleName()
+		    + " is sending the ack: " + ackString);
 	}
 
     }
@@ -321,16 +317,15 @@ public class ControlThread extends Thread {
 	if (null != port) {
 	    try {
 		port.dispose();
-		log.info(this.getClass().getSimpleName()
+		logger.info(this.getClass().getSimpleName()
 			+ " was properly disposed.");
 	    } catch (IOException e) {
-		log.error("Disposing of a igtl communication channel failed.",
-			e);
+		logger.log(Level.SEVERE,
+			"Disposing of a igtl communication channel failed.", e);
 	    }
 	}
 	if (null != timer) {
-	    log.info("Final statistics of " + this.getClass().getSimpleName());
-	    log.info(timer.getOverallStatistics());
+	    logger.info("Final statistics: \n" + timer.getOverallStatistics());
 	}
     }
 

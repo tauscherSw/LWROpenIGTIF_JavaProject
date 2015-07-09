@@ -37,8 +37,6 @@
 
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
-
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
@@ -124,9 +122,4 @@ public interface ILwrState {
     void setAckPacket(LwrStatemachine lwrStatemachine);
     
     
-    /**
-     * Connects an external logger to the states.
-     * @param extlogger the external logger.
-     */
-    void setLogger(ITaskLogger extlogger);
 }

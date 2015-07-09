@@ -38,22 +38,24 @@
 package de.uniHannover.imes.igtIf.stateMachine;
 
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.XyzAbcTransformation;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
 
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 import de.uniHannover.imes.igtIf.stateMachine.states.ILwrState;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrGravComp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrIdle;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrMoveToPose;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrPathImp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrVirtualFixtures;
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread.VisualIFDatatypes;
-import de.uniHannover.imes.igtIf.logging.DummyLogger;
 
 /**
  * State machine class using the LWRState interface and its sub class/states.
@@ -188,8 +190,13 @@ public class LwrStatemachine {
      */
     private String ackIgtMsg = null;
 
-    /** The logging object for logging output. */
-    private ITaskLogger log;
+    /**
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
+     */
+    private Logger logger = Logger
+	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
 
     /**
      * The command pose in Cartesian space of the LWR in robot coordinates.
@@ -309,31 +316,19 @@ public class LwrStatemachine {
      * @param dataProvider
      *            the data provider for the cyclically sent data from the
      *            openIGTL client.
-     * @param extLogger
-     *            an external logger which collects the logging output of this
-     *            class.
      */
-    public LwrStatemachine(final CommunicationDataProvider dataProvider,
-	    final ITaskLogger extLogger) {
+    public LwrStatemachine(final CommunicationDataProvider dataProvider) {
 	if (null == dataProvider) {
 	    throw new NullPointerException(
 		    "Communication data provider argument is null");
 	}
-	// Assign correct logging mechanism.
-	if (null == extLogger) {
-	    log = new DummyLogger();
-	} else {
-	    log = extLogger;
-	}
 
-	
 	dataSink = dataProvider;
 	setNewState(new LwrIdle());
 	ackIgtMsg = "IDLE;";
 	stateChanged = true;
 	transformReceivedFlag = false;
 	ErrorCode = OpenIGTLinkErrorCode.Ok;
-
 
     }
 
@@ -392,7 +387,7 @@ public class LwrStatemachine {
      * </pre>
      */
     public void checkTransitionRequest() {
-	log.fine("Checking transition request.");
+	logger.fine("Checking transition request.");
 	// First Check if the received OpenIGTLink was a String
 	if (this.igtlDatatype.equals("STRING")) {
 	    // this.InitFlag = false;
@@ -595,13 +590,13 @@ public class LwrStatemachine {
 			    } else if (cmdArray[2].contentEquals("img")) {
 				setVisualIfDatatype(VisualIFDatatypes.IMAGESPACE);
 			    }
-			    log.info("StateMachine: Visual IF started with  datatype "
+			    logger.info("StateMachine: Visual IF started with  datatype "
 				    + getVisualIfDatatype()
 				    + "(1=img, 2=rob, 3=jnt)");
 			} else if (cmdArray[1].contentEquals("false")
 				&& this.startVisual) {
 			    this.startVisual = false;
-			    log.warn("StateMachine: Visual IF stopped!");
+			    logger.warning("StateMachine: Visual IF stopped!");
 			}
 			this.ErrorCode = OpenIGTLinkErrorCode.Ok;
 			this.stateChanged = false;
@@ -657,7 +652,7 @@ public class LwrStatemachine {
 	    if (!this.lastPrintedErr.equals(ErrorMessage)) {
 		// Print the new ErrorMessage
 		if (debugInfo) {
-		    log.error(this.ErrorMessage);
+		    logger.severe(this.ErrorMessage);
 		}
 		// If necessary change robot state to LWRError
 		if (ErrorCode == OpenIGTLinkErrorCode.HardwareOrCommunicationFailure) {
@@ -783,7 +778,6 @@ public class LwrStatemachine {
      */
     public final void setNewState(final ILwrState newState) {
 	mCurrentState = newState;
-	newState.setLogger(log);
     }
 
     /**
@@ -808,7 +802,7 @@ public class LwrStatemachine {
 	toBePrinted.append("Control mode: " + this.controlMode + "\n");
 	toBePrinted.append("Stiffness param: "
 		+ Arrays.toString(this.curCartStiffness) + "\n");
-	log.fine("Overview new Ctrl parameters after update from "
+	logger.fine("Overview new Ctrl parameters after update from "
 		+ this.getClass().getSimpleName() + ":\n"
 		+ toBePrinted.toString());
 

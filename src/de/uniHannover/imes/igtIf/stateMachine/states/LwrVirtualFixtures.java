@@ -37,7 +37,8 @@
 
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+import java.util.logging.Logger;
+
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
@@ -48,11 +49,11 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtIf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 
 /**
- * In this State two different kinds of Virtuall Fixtures, a plane and a cone
- * are definied and the Stiffness and Damping values are calculated due to there
+ * In this State two different kinds of Virtual Fixtures, a plane and a cone
+ * are defined and the Stiffness and Damping values are calculated due to there
  * distance to the defined Fixtures. This is one of the States defined for the
  * LWRStatemachine see LWRState. There are three different areas defined: the
  * Awareness area, the free area and the forbidden area. In the first area the
@@ -106,8 +107,13 @@ public class LwrVirtualFixtures implements ILwrState {
     /** Represents the distance to a virtual fixture in millimeters. */
     private double distance;
 
-    /** The logging object for logging output.*/
-    private ITaskLogger log = new DummyLogger();
+    /**
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
+     */
+    private Logger logger = Logger
+	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
     
     /**
      * Field containing the last NUM_FORCE_NORM_VECTORS norm vectors of the
@@ -546,13 +552,5 @@ public class LwrVirtualFixtures implements ILwrState {
 	lwrStatemachine.setAckIgtMsg(ack);
     }
     
-    @Override
-    public final void setLogger(final ITaskLogger extlogger) {
-	if (null == extlogger) {
-	    throw new NullPointerException("External logger is null");
-	}
-	log = extlogger;
-
-    }
 
 }

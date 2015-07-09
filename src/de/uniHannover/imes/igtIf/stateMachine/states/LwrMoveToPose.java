@@ -37,7 +37,8 @@
 
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+import java.util.logging.Logger;
+
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
@@ -48,7 +49,7 @@ import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtIf.logging.DummyLogger;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 
 /**
  * In This State the LWR is moving to a specified position in Cartesian space.
@@ -67,8 +68,13 @@ public class LwrMoveToPose implements ILwrState {
     private static final double LENGTH_OF_SINGLE_STEP = 10;
     
     //**************************Components*********************/
-    /** The logging object for logging output.*/
-    private ITaskLogger log = new DummyLogger();
+    /**
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
+     */
+    private Logger logger = Logger
+	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
 
     /** Current point on the linear path which is closest to the robot position */
     private Vector currentPointLine = null;
@@ -265,13 +271,5 @@ public class LwrMoveToPose implements ILwrState {
 	lwrStatemachine.setAckIgtMsg(ack);
     }
     
-    @Override
-    public final void setLogger(final ITaskLogger extlogger) {
-	if (null == extlogger) {
-	    throw new NullPointerException("External logger is null");
-	}
-	log = extlogger;
-
-    }
 
 }

@@ -38,8 +38,11 @@
 package de.uniHannover.imes.igtIf.communication;
 
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 
 /**
  * Exception handler for the igtl-communication threads. It's purpose is just to
@@ -48,31 +51,19 @@ import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 public class ExceptionHandlerComThreads implements UncaughtExceptionHandler {
 
     // **************************Components*********************/
-    /** Logger for printing the exceptions. */
-    private ITaskLogger log;
-
-    //*************************Constructors********************/
     /**
-     * Creates an exception handler object.
-     * 
-     * @param logger
-     *            the logger, used for printing the exception caught in the
-     *            according threads.
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
      */
-    public ExceptionHandlerComThreads(final ITaskLogger logger) {
-	if (null == logger) {
-	    throw new NullPointerException("Argument is null");
-	} else {
-	    log = logger;
-	}
-    }
+    private Logger logger = Logger
+	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
 
-    //***************************Methods***********************/
+    // ***************************Methods***********************/
     @Override
     public final void uncaughtException(final Thread t, final Throwable e) {
-	log.error("An uncaught exception occured in the thread "
+	logger.log(Level.SEVERE, "An uncaught exception occured in the thread "
 		+ t.getClass().getSimpleName(), e);
-	
 
     }
 

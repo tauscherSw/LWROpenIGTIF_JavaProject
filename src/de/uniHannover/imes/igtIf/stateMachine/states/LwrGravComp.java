@@ -37,14 +37,16 @@
 
 package de.uniHannover.imes.igtIf.stateMachine.states;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
+import java.util.logging.Logger;
+
 import com.kuka.roboticsAPI.geometricModel.CartDOF;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceControlMode;
 
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
-import de.uniHannover.imes.igtIf.logging.DummyLogger;
 
 /**
  * In this state the LWR is set to gravitation Compensation mode so that robot
@@ -61,8 +63,13 @@ public class LwrGravComp implements ILwrState {
     private static final int MAX_TRANSLATION = 100;
 
     //**************************Components*********************/
-    /** The logging object for logging output. */
-    private ITaskLogger log = new DummyLogger();
+    /**
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
+     */
+    private Logger logger = Logger
+	    .getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
 
 
     //***************************Methods***********************/
@@ -100,7 +107,7 @@ public class LwrGravComp implements ILwrState {
 		.subtract(currentRobotDataSet.getCurPose().getTranslation())
 		.length() > MAX_TRANSLATION) {
 
-	    log.warn("Difference between command and current cartesian"
+	    logger.warning("Difference between command and current cartesian"
 	    	+ " tcp position is greater than "
 		    + MAX_TRANSLATION + "mm.");
 	}
@@ -148,12 +155,5 @@ public class LwrGravComp implements ILwrState {
 
     }
 
-    @Override
-    public final void setLogger(final ITaskLogger extlogger) {
-	if (null == extlogger) {
-	    throw new NullPointerException("External logger is null");
-	}
-	log = extlogger;
-
     }
-}
+

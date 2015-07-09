@@ -37,20 +37,11 @@
 
 package de.uniHannover.imes.igtIf.application;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-
-import de.uniHannover.imes.igtIf.logging.DebugLogger;
-/*AUFGABEN:
- -Globaler DebugLoggingMechanismus zu unübersichtlich? Mglkt. unterschiedliche Klassen/Logfiles bilden.
- -Übergabe des Loggers im kompletten igtif Packet unnötig weil über java.util global erreichbar. Alternative überlegen. z.b. Erlaubnis zum loggen über flag 
- -Globale Erlaubnis debug zu loggen über ein Flag schlecht. besser gezielt einstellen, oder guten log viewer suchen.
- -log output anschließend überarbeiten.
- -GitHub Dokumentation -> Projektpage
- -Unit Test für Schnittstellen IGTL
- */
-import de.uniHannover.imes.igtIf.logging.FileLogger;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.util.FileSystemUtil;
@@ -256,16 +247,27 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     // **************************Flags**************************/
     /** Flag indicating if stateMachine is runnable. */
     private boolean stateMachineRun = true;
-    
+
     /**
      * Turn this flag to true if debugging should be enabled. A debug-Logging
      * output will be saved in a File-Logger in user.home.
      */
     public static final boolean DEBUG_MODE = true;
 
+    /** Flag to indicate if main loop is active. */
+    private boolean mainLoopActive = false;
+
     // **************************Components*********************/
-    /** Debug File logger. */
-    private ITaskLogger log;
+
+    /**
+     * Logging mechanism provided by jdk. In case if debug flag is active, all
+     * logging output will be directed to a logfile. Otherwise logging output
+     * will be displayed on the smartpad.
+     */
+    private Logger logger;
+
+    /** Configures a global accessible logger. */
+    private LwrIgtlLogConfigurator logConfig;
 
     /** Statistical timer for main loop. */
     private StatisticalTimer timer;
@@ -343,11 +345,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     private void initInterfaceThreads() throws IOException {
 
-	controlThread = new ControlThread(imesStatemachine, comDataProvider,
-		log);
+	controlThread = new ControlThread(imesStatemachine, comDataProvider);
 	controlThread.setUncaughtExceptionHandler(threadExcHdl);
 
-	visualizationThread = new VisualizationThread(comDataProvider, log);
+	visualizationThread = new VisualizationThread(comDataProvider);
 	visualizationThread.setUncaughtExceptionHandler(threadExcHdl);
 	visualizationThread.updateData();
 
@@ -367,7 +368,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	aRealtimeMotion.setJointAccelerationRel(VEL);
 	aRealtimeMotion.setJointVelocityRel(ACC);
 
-	log.fine("Starting SmartServo Realtime Motion in "
+	logger.fine("Starting SmartServo Realtime Motion in "
 		+ controlMode.getClass().getSimpleName());
 
 	// Set the control mode as member of the realtime motion
@@ -390,7 +391,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * Initializes the state machine.
      */
     private void initStateMachine() {
-	imesStatemachine = new LwrStatemachine(comDataProvider, log);
+	imesStatemachine = new LwrStatemachine(comDataProvider);
 	imesStatemachine.startVisual = true;
 
 	comDataProvider.readNewRobotData();
@@ -427,16 +428,16 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     private void printFinalInfos() {
 	// Print the timing statistics
-	log.info("Displaying final states after loop "
+	logger.info("Displaying final states after loop "
 		+ controlMode.getClass().getName());
 	smartServoRuntime.setDetailedOutput(1);
-	log.info(timer.getOverallStatistics());
+	logger.info(timer.getOverallStatistics());
 
 	if (timer.getMeanTimeMillis() > MS_TO_SLEEP
 		+ MAXIMUM_TIMING_DEVIATION_MS) {
-	    log.info("Statistic Timing is unexpected slow, "
+	    logger.info("Statistic Timing is unexpected slow, "
 		    + "you should try to optimize TCP/IP Transfer");
-	    log.info("Under Windows, you should play with the registry, "
+	    logger.info("Under Windows, you should play with the registry, "
 		    + "see the e.g. the RealtimePTP Class javaDoc for details");
 	}
     }
@@ -449,56 +450,65 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 	/* Initialize debug logger if needed. */
 	if (DEBUG_MODE) {
-	    log = DebugLogger.getInstance();
 	    getLogger().warn(
-		    "DEBUG LOGGER is enabled. All logging-output will be "
+		    "DEBUG LOGGER is enabled. All logging-output "
+			    + "(all log-levels) will be "
 			    + "directed to the file: "
-			    + DebugLogger.DEBUG_LOGFILE.getAbsolutePath());
-	} else {
-	    log = getLogger();
+			    + LwrIgtlLogConfigurator.LOGGERS_NAME
+			    + " additionally to the smartPad console output.");
+	}
+	// Parameterize project logging mechanism
+	logConfig = LwrIgtlLogConfigurator.getInstance();
+	try {
+	    logConfig.setup(DEBUG_MODE, getLogger());
+	} catch (IOException e) {
+	    getLogger().error("Setup of global logger failed.", e);
 	}
 
+	// get logger for this class
+	logger = Logger.getLogger(LwrIgtlLogConfigurator.LOGGERS_NAME);
+	
 	/* Load swig library. */
 	FileSystemUtil.loadSwigDll();
 
 	/* Init all robot-hardware corresponding objects. */
 	imesLBR = (LBR) ServoMotionUtilities.locateLBR(getContext());
-	log.fine("robot object successfully created.");
+	logger.fine("robot object successfully created.");
 	imesTool.addDefaultMotionFrame("TCP", toolTCP);
-	log.warn("No tool configured in this application");
+	logger.warning("No tool configured in this application");
 	imesTool.attachTo(imesLBR.getFlange());
-	log.fine("Tool attached to the robot object.");
+	logger.fine("Tool attached to the robot object.");
 
 	/* Reset Sunrise controller and ack possible errors. */
 	ServoMotionUtilities.resetControllerAndKILLALLMOTIONS(imesLBR);
 	ServoMotionUtilities.acknowledgeError(imesLBR);
-	log.fine("Resetted sunrise controller and acked all errors.");
+	logger.fine("Resetted sunrise controller and acked all errors.");
 
 	/*
 	 * Check load data and then move to initial position. User interaction
 	 * via the smartPad is needed therefore.
 	 */
-	log.fine("Checking load data...");
+	logger.fine("Checking load data...");
 	if (!SmartServo.validateForImpedanceMode(imesLBR)) {
-	    log.error("Validation of load data failed.");
+	    logger.severe("Validation of load data failed.");
 	    throw new IllegalStateException("Load data is incorrect.");
 	} else {
-	    log.info("Load data is validated succesfully.");
+	    logger.info("Load data is validated succesfully.");
 	}
 
-	log.fine("Show SmartPad dialog.");
+	logger.fine("Show SmartPad dialog.");
 	final int answerOnDialog = this.getApplicationUI().displayModalDialog(
 		ApplicationDialogType.WARNING,
 		"Robot will move to initial joint position ("
 			+ INITIAL_ROBOT_POSE.toString() + ") if prompted!.",
 		"OK");
-	log.fine("SmartPad dialog returned.");
+	logger.fine("SmartPad dialog returned.");
 	if (answerOnDialog == 0) {
-	    log.info("Dialog prompted by user.");
+	    logger.info("Dialog prompted by user.");
 	    imesTool.move(ptp(INITIAL_ROBOT_POSE));
-	    log.info("Robot moved to initial position.");
+	    logger.info("Robot moved to initial position.");
 	} else {
-	    log.error("SmartPad dialog cancelled.");
+	    logger.severe("SmartPad dialog cancelled.");
 	    throw new IllegalStateException(
 		    "Robot cannot move to intitial pose, "
 			    + "because user dialog was cancelled.");
@@ -508,29 +518,29 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	 * Define and parameterize the control mode for the state machine
 	 * execution.
 	 */
-	log.info("Parameterizing the control mode...");
+	logger.info("Parameterizing the control mode...");
 	controlMode = new CartesianImpedanceControlMode();
 	paramCartesianImpedanceMode(controlMode);
-	log.info(controlMode.getClass().getSimpleName()
+	logger.info(controlMode.getClass().getSimpleName()
 		+ " set for state machine.");
 
 	/*
 	 * Set up all components for state machine execution.
 	 */
-	log.info("Initializing communication data provider...");
-	comDataProvider = new CommunicationDataProvider(imesLBR, log);
-	log.info("Communication data provider initialized.");
+	logger.info("Initializing communication data provider...");
+	comDataProvider = new CommunicationDataProvider(imesLBR);
+	logger.info("Communication data provider initialized.");
 
-	log.info("Initializing state machine...");
+	logger.info("Initializing state machine...");
 	initStateMachine();
-	log.info("state machine initialized.");
+	logger.info("state machine initialized.");
 
-	threadExcHdl = new ExceptionHandlerComThreads(log);
-	log.info("Initializing smart servo...");
+	threadExcHdl = new ExceptionHandlerComThreads();
+	logger.info("Initializing smart servo...");
 	initSmartServo();
-	log.info("Smart servo initialized.");
+	logger.info("Smart servo initialized.");
 
-	log.info("Initializing slicer control and slicer "
+	logger.info("Initializing slicer control and slicer "
 		+ "visualization threads...");
 	try {
 	    initInterfaceThreads();
@@ -538,7 +548,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	    throw new IllegalStateException(
 		    "Cannot initialize interfacing threads. ", e);
 	}
-	log.info("slicer control and slicer visualization threads initialized.");
+	logger.info("slicer control and slicer visualization threads initialized.");
 
     }
 
@@ -556,18 +566,20 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	    // following loop.
 	    long startTimeStamp;
 
-	    log.info("Starting Thread for state control communication.");
+	    logger.info("Starting Thread for state control communication.");
 	    controlThread.start();
-	    log.info("Starting Thread for visualization communication, "
+	    logger.info("Starting Thread for visualization communication, "
 		    + "but yet not enabled to send data.");
 	    visualizationThread.start();
 
 	    // Main loop
-	    log.info(this.getClass().getName() + " is entering the main loop");
+	    logger.info(this.getClass().getName()
+		    + " is entering the main loop");
+	    mainLoopActive = true;
 
 	    while (stateMachineRun && i < N_OF_RUNS) {
 
-		log.fine(this.getClass().getName() + " begins the main loop");
+		logger.fine(this.getClass().getName() + " begins the main loop");
 		try {
 
 		    /*
@@ -578,25 +590,25 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		    /* Update with controller of LWR. */
 		    try {
-			log.fine(this.getClass().getName()
+			logger.fine(this.getClass().getName()
 				+ " updates the smart servo runtime.");
 			ThreadUtil.milliSleep(MS_TO_SLEEP);
 			smartServoRuntime.updateWithRealtimeSystem();
 
 		    } catch (Exception e) {
 
-			log.warn(this.getClass().getName()
-				+ " failed to update the smart servo runtime. "
-				+ "Reinitializing smartServo...", e);
+			logger.log(Level.WARNING,
+				"Failed to update the smart servo runtime. "
+					+ "Reinitializing smartServo...", e);
 			initSmartServo();
 		    }
-		    log.fine(this.getClass().getName()
+		    logger.fine(this.getClass().getName()
 			    + " induces an update of the current robot data.");
 		    comDataProvider.readNewRobotData();
 
 		    if (visualizationThread.getCondWork()) {
 
-			log.fine(this.getClass().getName()
+			logger.fine(this.getClass().getName()
 				+ " induces an update of the data of "
 				+ visualizationThread.getClass().getName()
 				+ " thread.");
@@ -611,7 +623,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    if (imesStatemachine.startVisual
 			    && !visualizationThread.isAlive()) {
 
-			log.fine(this.getClass().getName() + " enables the "
+			logger.fine(this.getClass().getName() + " enables the "
 				+ visualizationThread.getClass().getName()
 				+ " thread.");
 
@@ -619,7 +631,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		    } else if (!imesStatemachine.startVisual
 			    && visualizationThread.isAlive()) {
-			log.fine(this.getClass().getName() + " disables the "
+			logger.fine(this.getClass().getName()
+				+ " disables the "
 				+ visualizationThread.getClass().getName()
 				+ " thread.");
 			visualizationThread.setCondWork(false);
@@ -630,7 +643,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 			// update the data in the state machine and reset error
 			// counter.
-			log.fine(this.getClass().getName()
+			logger.fine(this.getClass().getName()
 				+ " induces a update of the statemachine data.");
 			i = 0;
 			imesStatemachine.updateStateControlData();
@@ -638,21 +651,16 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    } else {
 			// control thread wasn't alive -> restarting
 			imesStatemachine.ErrorCode = OpenIGTLinkErrorCode.UnknownError;
-			log.error(this.getClass().getName()
-				+ " has detected, that the communication in "
-				+ controlThread.getClass().getName()
-				+ " isnt running."
-				+ "Slicer Control Interface not Alive...");
+			logger.severe("Slicer Control Interface not Alive...");
 			i++;
 			if (stateMachineRun) {
-			    log.warn(this.getClass().getName()
+			    logger.warning(this.getClass().getName()
 				    + " has to be restarted.");
 			    try {
 				controlThread = new ControlThread(
-					imesStatemachine, comDataProvider, log);
+					imesStatemachine, comDataProvider);
 			    } catch (IOException e) {
-				log.error(this.getClass().getName()
-					+ " cannot restart "
+				logger.severe("Cannot restart "
 					+ controlThread.getClass()
 						.getSimpleName()
 					+ " and thus terminates the statemachine.");
@@ -669,7 +677,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		     * calling the function InterpretCommandString of the
 		     * current state.
 		     */
-		    log.fine(this.getClass().getName()
+		    logger.fine(this.getClass().getName()
 			    + " induces a check of a transition request"
 			    + " in the state machine.");
 		    String oldState = imesStatemachine.getCurrentState()
@@ -677,7 +685,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    imesStatemachine.checkTransitionRequest();
 		    // If the State has changed print the new State
 		    if (imesStatemachine.stateChanged) {
-			log.info("Robot State has changed from "
+			logger.info("Robot State has changed from "
 				+ oldState
 				+ " to "
 				+ imesStatemachine.getCurrentState().getClass()
@@ -692,7 +700,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		     * Calculating the new control Param and Change the
 		     * parameters.
 		     */
-		    log.fine("Calculating new control parameters");
+		    logger.fine("Calculating new control parameters");
 		    imesStatemachine.updateCtrlParam();
 
 		    /*
@@ -700,12 +708,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		     * new Destination pose.
 		     */
 		    try {
-			log.fine("Setting control mode settings to "
+			logger.fine("Setting control mode settings to "
 				+ imesStatemachine.controlMode.toString());
 			smartServoRuntime
 				.changeControlModeSettings(imesStatemachine.controlMode);
 			ThreadUtil.milliSleep(3);
-			log.fine("Commanding new robot-pose "
+			logger.fine("Commanding new robot-pose "
 				+ imesStatemachine.cmdPose.toString());
 
 			smartServoRuntime
@@ -721,13 +729,13 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    }
 
 		    // Defining the acknowledgment String for Control Interface
-		    log.fine(this.getClass().getName()
+		    logger.fine(this.getClass().getName()
 			    + "aquires the acknowledgement packet from the state machine.");
 		    imesStatemachine.setAckPacket();
 
 		    if (controlThread.isAlive()) {
 			// try to update the ACK String for the ControlIF Thread
-			log.fine("Sending acknowledgement message");
+			logger.fine("Sending acknowledgement message");
 		    }
 
 		    /*
@@ -739,16 +747,14 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    // Overall timing end
 		    timer.loopEnd();
 		    if (imesStatemachine.End) {
-			log.info("State machine was stopped, ending main loop.");
+			logger.info("State machine was stopped, ending main loop.");
 			stateMachineRun = false;
 
 		    }
 		} catch (InterruptedException e) {
 
-		    log.error(this.getClass().getName()
-			    + " was interrupted in its main loop. "
+		    logger.log(Level.SEVERE, "Interruption during main loop."
 			    + "All connections will be closed.", e);
-
 		    controlThread.setCondWork(false);
 		}
 
@@ -756,9 +762,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 	} finally {
 	    // Print final infos.
-	    log.info("Statistics for loop of main thread: ");
+	    logger.info("Statistics for loop of main thread: ");
 	    printFinalInfos();
-
+	    mainLoopActive = false;
 	}
 
     }
@@ -771,7 +777,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	// Stop the motion
 	final boolean motionStopped = smartServoRuntime.stopMotion();
 	if (!motionStopped) {
-	    log.error("Cannot stop motion of smartServoRuntime.");
+	    logger.severe("Cannot stop motion of smartServoRuntime.");
 	}
 
 	// Stop all threads.
@@ -781,12 +787,14 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	    controlThread.join(JOIN_TIME_THREADS);
 	    visualizationThread.join(JOIN_TIME_THREADS);
 	} catch (InterruptedException e) {
-	    log.error(
+	    logger.log(
+		    Level.SEVERE,
 		    "Waiting for the ending of the communication threads was interrupted.",
 		    e);
 	}
 
-	log.info(this.getClass().getSimpleName() + " was disposed properly.");
+	logger.info(this.getClass().getSimpleName() + " was disposed properly.");
+	logConfig.dispose();
 	super.dispose();
 
     }
@@ -811,16 +819,22 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	     * Check if user wants to abort the statemachine via the smartpad by
 	     * an ui-dialog.
 	     */
-	    log.fine("Show SmartPad dialog if abortion is desired.");
+	    logger.fine("Show SmartPad dialog if abortion is desired.");
 	    final int answerOnDialog = this.getApplicationUI()
 		    .displayModalDialog(ApplicationDialogType.QUESTION,
 			    "Abort the state machine?", "Yes", "No");
-	    log.fine("SmartPad dialog returned.");
+	    logger.fine("SmartPad dialog returned.");
 	    if (answerOnDialog == 0) {
-		log.info("Aborting statemachine.");
+		logger.info("Aborting statemachine.");
 		stateMachineRun = false;
+		while (mainLoopActive) {
+		    ThreadUtil.milliSleep(MS_TO_SLEEP);
+		}
+		dispose();
+		System.out.println("Disposed");
+
 	    } else {
-		log.info("Continuing statemachine.");
+		logger.info("Continuing statemachine.");
 	    }
 	default:
 	    break;
