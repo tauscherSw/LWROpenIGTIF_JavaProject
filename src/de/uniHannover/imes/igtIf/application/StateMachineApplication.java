@@ -56,8 +56,6 @@ import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread
 import com.kuka.common.ThreadUtil;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplicationState;
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
-
 import static com.kuka.roboticsAPI.motionModel.BasicMotions.ptp;
 
 import com.kuka.roboticsAPI.deviceModel.JointPosition;

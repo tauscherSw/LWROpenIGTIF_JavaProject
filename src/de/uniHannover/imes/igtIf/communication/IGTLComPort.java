@@ -45,13 +45,11 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ServerSocketFactory;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
-
-import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 import OpenIGTLink.swig.ByteArr;
 import OpenIGTLink.swig.IGTLheader;
@@ -135,12 +133,14 @@ public final class IGTLComPort {
      *            the initial socket timeout in milliseconds.
      */
     public IGTLComPort(final int port, final int socketTimeout) {
+	logger.entering(this.getClass().getName(), "constructor(...)");
 	if (port <= MAXIMUM_PORT_NUMBER && port >= MINIMUM_PORT_NUMBER) {
 	    serverPort = port;
 	} else {
 	    throw new IllegalArgumentException("Supported ports are "
 		    + MINIMUM_PORT_NUMBER + " to " + MAXIMUM_PORT_NUMBER);
 	}
+	logger.exiting(this.getClass().getName(), "constructor(...)");
 
     }
 
@@ -155,39 +155,43 @@ public final class IGTLComPort {
      */
     public void setup() throws IOException {
 
+	logger.entering(this.getClass().getName(), "setup()");
 	try {
-	    logger.info(this.getClass().getSimpleName()
-		    + " is setting up connection to port " + serverPort);
 
 	    openIGTServer = ServerSocketFactory.getDefault()
 		    .createServerSocket(serverPort);
 	    openIGTServer.setReuseAddress(true);
+	    logger.finest("Server with port " + serverPort + " installed.");
 
 	    // Set up client connection
-	    logger.info(this.getClass().getSimpleName()
-		    + " is waiting for incoming connections at port "
-		    + serverPort);
 	    openIGTClient = openIGTServer.accept();
 	    openIGTClient.setSoTimeout(curSocketTimeout);
 	    openIGTClient.setTcpNoDelay(true);
+	    logger.finest("Client with port " + serverPort + " installed.");
 
 	    // Connect input and output stream, to send and receive messages
 	    logger.info(this.getClass().getSimpleName()
 		    + " is connecting the in- and outputstreams");
 	    outStream = openIGTClient.getOutputStream();
 	    inStream = openIGTClient.getInputStream();
+	    logger.finest("I/O Streams connected.");
 
 	    // Reset flag, which indicates if this connection has been closed.
 	    wasClosed = false;
 	    setupSuccess = true;
-	    logger.info("Connection to the server with the ip "
+	    logger.info("IGTL-connection to the server with the ip "
 		    + openIGTClient.getInetAddress().toString()
 		    + " and the port " + serverPort
 		    + " was successfully established.");
+	    logger.fine("Setup finished.");
 	} catch (Exception e) {
+	    logger.log(Level.SEVERE, "Exception caught during setup of "
+		    + this.getClass().getSimpleName()
+		    + ". Disposing port and throwing new exception.", e);
 	    dispose();
 	    throw new IllegalStateException(e);
 	}
+	logger.exiting(this.getClass().getName(), "setup()");
 
     }
 
@@ -198,9 +202,11 @@ public final class IGTLComPort {
      *             when closing fails.
      */
     public void dispose() throws IOException {
+	logger.entering(this.getClass().getName(), "dispose()");
 	if (null != inStream) {
 	    try {
 		inStream.close();
+		logger.finest("Instream closed.");
 
 	    } catch (IOException e) {
 		logger.severe("Cannot close instream.");
@@ -209,6 +215,7 @@ public final class IGTLComPort {
 	if (null != outStream) {
 	    try {
 		outStream.close();
+		logger.finest("Outstream closed.");
 
 	    } catch (IOException e) {
 		logger.severe("Cannot close outstream.");
@@ -218,16 +225,21 @@ public final class IGTLComPort {
 	if (null != openIGTServer) {
 	    if (!openIGTServer.isClosed()) {
 		openIGTServer.close();
+		logger.finest("Server closed.");
 	    }
 	    openIGTServer = null;
 	}
 	if (null != openIGTClient) {
 	    if (!openIGTClient.isClosed()) {
 		openIGTClient.close();
+		logger.finest("Client closed.");
 	    }
 	    openIGTClient = null;
 	}
 	wasClosed = true;
+	logger.fine("Disposing finished.");
+
+	logger.exiting(this.getClass().getName(), "dispose()");
     }
 
     //
@@ -273,6 +285,7 @@ public final class IGTLComPort {
 		    "Paket, which has to be send has either a null header "
 			    + "or a null body");
 	}
+
     }
 
     /**
@@ -285,6 +298,7 @@ public final class IGTLComPort {
      *             when sending of the message fails.
      */
     public void sendIGTStringMessage(final String message) throws IOException {
+	logger.entering(this.getClass().getName(), "sendIGTStringMessage(...)");
 
 	IGTLMsg currentMsg;
 
@@ -319,9 +333,10 @@ public final class IGTLComPort {
 
 	currentMsg = new IGTLMsg();
 	currentMsg.init(headerByte, bodyByte);
-
+	logger.fine("IGTL message constructed.");
 	sendMsg(currentMsg);
-
+	logger.fine("IGTL message sent.");
+	logger.exiting(this.getClass().getName(), "sendIGTStringMessage(...)");
     }
 
     /**
@@ -332,6 +347,7 @@ public final class IGTLComPort {
      *             reading of input stream fails.
      */
     public synchronized IOpenIGTLMsg receiveMsg() throws IOException {
+	logger.entering(this.getClass().getName(), "receiveMsg(...)");
 	// Header bytes
 	byte[] headerRead = new byte[IGTLheader.IGTL_HEADER_SIZE];
 	// Body bytes
@@ -347,7 +363,9 @@ public final class IGTLComPort {
 	 */
 	if (inStream.available() >= IGTLheader.IGTL_HEADER_SIZE) {
 	    inStream.read(headerRead);
+	    logger.finest("Message-header received.");
 	} else { // no data is available
+	    logger.exiting(this.getClass().getName(), "receiveMsg(...)");
 	    return null;
 	}
 	/*
@@ -357,6 +375,8 @@ public final class IGTLComPort {
 	bodyRead = new byte[sizeBody];
 	if (inStream.available() >= sizeBody) {
 	    inStream.read(bodyRead);
+	    logger.finest("Message-body received.");
+
 	} else {
 	    throw new IllegalStateException("Connection error. Data was lost!");
 	}
@@ -366,6 +386,10 @@ public final class IGTLComPort {
 	 */
 	IOpenIGTLMsg response = new IGTLMsg();
 	response.init(headerRead, bodyRead);
+	logger.finest("IGTL-message constructed from received bytes.");
+	logger.fine("IGTL-message received of " + headerRead.length
+		+ bodyRead.length + " bytes.");
+	logger.exiting(this.getClass().getName(), "receiveMsg(...)");
 	return response;
 
     }
@@ -396,6 +420,7 @@ public final class IGTLComPort {
      * @return the size of the body in bytes.
      */
     public static int extractBodySize(final byte[] header) {
+
 	// Field in the header which tells how big body is.
 	byte[] bodySizeField = new byte[SIZE_OF_BODYSIZE_FIELD];
 	/*
@@ -435,6 +460,7 @@ public final class IGTLComPort {
      */
     public void sendIGTLTransform(final String deviceName,
 	    final float[] transform) throws IOException {
+	logger.entering(this.getClass().getName(), "sendIGTLTransform(...)");
 	IGTLMsg currentMessage = new IGTLMsg();
 	byte[] bodyByte = new byte[IGTLtransform.IGTL_TRANSFORM_SIZE];
 	byte[] headerByte = new byte[IGTLheader.IGTL_HEADER_SIZE];
@@ -467,6 +493,9 @@ public final class IGTLComPort {
 
 	currentMessage.init(headerByte, bodyByte);
 	sendMsg(currentMessage);
+	logger.fine("IGTL-message sent of " + headerByte.length
+		+ bodyByte.length + " bytes.");
+	logger.exiting(this.getClass().getName(), "sendIGTLTransform(...)");
 
     }
 
