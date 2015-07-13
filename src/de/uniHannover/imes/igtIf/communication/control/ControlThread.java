@@ -41,9 +41,6 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
-
-import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLComPort;
 import de.uniHannover.imes.igtIf.communication.IIGTLMsgInterface;
 import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
@@ -118,6 +115,7 @@ public class ControlThread extends Thread {
      */
     public ControlThread(final LwrStatemachine lwrStateMachine,
 	    final CommunicationDataProvider comDataProvider) throws IOException {
+	logger.entering(this.getClass().getName(), "Constructor(...)");
 
 	/* Process arguments */
 	if (null == lwrStateMachine) {
@@ -138,6 +136,7 @@ public class ControlThread extends Thread {
 	port = new IGTLComPort(SLICER_CONTROL_COM_PORT, 0);
 	timer = new StatisticalTimer(SLICER_CONTROL_CYLCETIME_MS);
 
+	logger.exiting(this.getClass().getName(), "Constructor(...)");
     }
 
     /**
@@ -146,18 +145,18 @@ public class ControlThread extends Thread {
      * collected.
      */
     public final void run() {
+	logger.entering(this.getClass().getName(), "run()");
+
 	// Definition of variables here´
 	RuntimeException exc = null;
 
 	try {
 	    // Initialize functions here
-	    logger.info(this.getClass().getSimpleName()
-		    + " is setting up its communication.");
 	    setup();
+	    logger.info("Initialization done");
 
 	    // Main loop until thread is interrupted from the outside
-	    logger.info(this.getClass().getSimpleName()
-		    + " is entering it's main loop.");
+	    logger.info("Entering main loop.");
 	    while (!this.isInterrupted()) {
 		// Statistics
 		timer.loopBegin();
@@ -204,11 +203,12 @@ public class ControlThread extends Thread {
 
 	    // throw any runtime exceptions except interrupted exception.
 	    if (null != exc) {
+		logger.exiting(this.getClass().getName(), "run()");
 		throw exc;
 	    }
 
 	}
-
+	logger.exiting(this.getClass().getName(), "run()");
     }
 
     /**
@@ -244,10 +244,10 @@ public class ControlThread extends Thread {
      *             when setup of the igtl-communication fails.
      */
     private void setup() throws IOException {
-
+	logger.entering(this.getClass().getName(), "setup()");
 	port.setup();
 	Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
-
+	logger.exiting(this.getClass().getName(), "setup()");
     }
 
     /**
@@ -260,6 +260,7 @@ public class ControlThread extends Thread {
      *             when sleeping between invalid messages is interrupted.
      */
     private void work() throws IOException, InterruptedException {
+	logger.entering(this.getClass().getName(), "work()");
 
 	/*
 	 * Wait for incoming messages and write it to the internal data
@@ -267,17 +268,13 @@ public class ControlThread extends Thread {
 	 */
 	IIGTLMsgInterface receivedMsg = null;
 
-	logger.fine(this.getClass().getSimpleName()
-		+ " is waiting for messages.");
-
 	// Try to receive a new message. If no msg is in the in-buffer a null
 	// message will be returned.
+	logger.info("Waiting for a new message...");
 	receivedMsg = port.receiveMsg();
 
 	// Read the new message. Null messages (no message) will be skipped.
 	if (null != receivedMsg) {
-	    logger.fine("Current uid of statemachine: "
-		    + internalDataProvider.getCurrentCmdPacket().getUid());
 	    logger.fine("Received a new message with "
 		    + (receivedMsg.getBody().length
 			    + receivedMsg.getHeader().length + " bytes."));
@@ -293,9 +290,12 @@ public class ControlThread extends Thread {
 		    .getUid();
 	    String ackString = stateMachine.getAckIgtMsg() + currentUid + ";";
 	    port.sendIGTStringMessage(ackString);
-	    logger.fine(this.getClass().getSimpleName()
-		    + " is sending the ack: " + ackString);
+	    logger.fine("Acknowledgement sent with content: "
+		    + stateMachine.getAckIgtMsg() + " for UID "
+		    + internalDataProvider.getCurrentCmdPacket().getUid());
 	}
+
+	logger.exiting(this.getClass().getName(), "work()");
 
     }
 
@@ -314,19 +314,23 @@ public class ControlThread extends Thread {
      * interrupted and its main while loop ended.
      */
     private void dispose() {
+	logger.entering(this.getClass().getName(), "dispose()");
+	if (null != timer) {
+	    logger.fine("Final timer statistics: \n"
+		    + timer.getOverallStatistics());
+	}
+
 	if (null != port) {
 	    try {
 		port.dispose();
-		logger.info(this.getClass().getSimpleName()
-			+ " was properly disposed.");
+		logger.info("Disposed properly.");
 	    } catch (IOException e) {
 		logger.log(Level.SEVERE,
 			"Disposing of a igtl communication channel failed.", e);
 	    }
 	}
-	if (null != timer) {
-	    logger.info("Final statistics: \n" + timer.getOverallStatistics());
-	}
+
+	logger.exiting(this.getClass().getName(), "dispose()");
     }
 
 }
