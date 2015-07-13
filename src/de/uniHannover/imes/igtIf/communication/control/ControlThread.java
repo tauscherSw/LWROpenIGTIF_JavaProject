@@ -45,7 +45,7 @@ import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
 import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLComPort;
-import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
+import de.uniHannover.imes.igtIf.communication.IIGTLMsgInterface;
 import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.util.SleepUtil;
@@ -265,7 +265,7 @@ public class ControlThread extends Thread {
 	 * Wait for incoming messages and write it to the internal data
 	 * provider. Skip invalid messages.
 	 */
-	IOpenIGTLMsg receivedMsg = null;
+	IIGTLMsgInterface receivedMsg = null;
 
 	logger.fine(this.getClass().getSimpleName()
 		+ " is waiting for messages.");

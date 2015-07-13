@@ -42,7 +42,7 @@ package de.uniHannover.imes.igtIf.communication;
 /**
  * This class represents a message in the IGTL protocol.
  */
-public class IGTLMsg implements IOpenIGTLMsg {
+public class IGTLMsg implements IIGTLMsgInterface {
 
     //**************************Components*********************/
     /**

@@ -6,6 +6,7 @@ import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import java.util.logging.SocketHandler;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
@@ -23,6 +24,16 @@ import de.uniHannover.imes.igtIf.application.StateMachineApplication;
  */
 public final class LwrIgtlLogConfigurator {
 
+    /**
+     * Enum which indicates how log records are processed.
+     */
+    public enum LogForwardType {
+	/** Log records are send to a file. */
+	File,
+	/** Log records are send to a network host. */
+	Network;
+    }
+
     /** File object where debug logging output is saved in. */
     public static final File DEBUG_LOGFILE = new File(
 	    System.getProperty("user.dir") + File.separator + "logs"
@@ -34,17 +45,25 @@ public final class LwrIgtlLogConfigurator {
     public static final String LOGGERS_NAME = StateMachineApplication.class
 	    .getSimpleName();
 
+    /** IP of the machine, which runs a Logging-Viewer (for example otros). */
+    public static final String DEBUG_VIEWER_IP = "172.31.1.1";
+    /** Port of the Logging-Viewer (for example otros). */
+    public static final int DEBUG_VIEWER_PORT = 20000;
     /** Singleton instance. */
     private static LwrIgtlLogConfigurator instance;
-
     /** The current logging file. */
     private File curLogFile;
     /** the file handler for logging output. */
-    private FileHandler debugLogHandler;
+    private FileHandler debugFileHandler;
+    /** Debug socket-handler. */
+    private SocketHandler debugSocketHandler;
     /** the handler for smartPad console output. */
-    private SmartPadLogHandler smartPadLogHandler;
+    private SmartPadLogHandler normalSmartPadHandler;
     /** the logging object. */
     private Logger logger;
+
+    /** the log forwarding type used here. */
+    private LogForwardType forwardType;
 
     /**
      * Intentionally privatized constructor.
@@ -67,35 +86,67 @@ public final class LwrIgtlLogConfigurator {
 
     /**
      * Sets up the loggers for the LWRopenIGTL project. Depending
-     * 
-     * @param debugModeEnabled
-     *            flag that can enable debug-logging
      * @param smartPadLogger
      *            the Sunrise-Logging-mechanism
+     * @param debugModeEnabled
+     *            flag that can enable debug-logging
+     * @param type
+     *            the type how log records are processed.
+     * 
      * @throws IOException
      *             if log-filehandler setup fails.
      */
-    public void setup(final boolean debugModeEnabled,
-	    final ITaskLogger smartPadLogger) throws IOException {
+    public void setup(final ITaskLogger smartPadLogger,
+	    final boolean debugModeEnabled, final LogForwardType type)
+	    throws IOException {
+
 	logger = Logger.getLogger(LOGGERS_NAME);
 	logger.setUseParentHandlers(false); // remove console handler
+	SimpleFormatter formatter = new SimpleFormatter();
 
 	// Add smartpadLogHandler as default log handler.
-	smartPadLogHandler = new SmartPadLogHandler(smartPadLogger);
-	smartPadLogHandler.setLevel(Level.INFO);
-	logger.addHandler(smartPadLogHandler); // add file handler
+	normalSmartPadHandler = new SmartPadLogHandler(smartPadLogger);
+	normalSmartPadHandler.setLevel(Level.INFO);
+	normalSmartPadHandler.setFormatter(formatter);
+	logger.addHandler(normalSmartPadHandler); // add file handler
 
 	// If debug mode is enabled add additional debug logger
 	if (debugModeEnabled) {
-	    debugLogHandler = new FileHandler(curLogFile.getAbsolutePath(),
-		    false);
-	    debugLogHandler.setLevel(Level.ALL);
-	    logger.addHandler(debugLogHandler); // add file handler
-	}
+	    switch (type) {
 
-	SimpleFormatter formatter = new SimpleFormatter();
-	debugLogHandler.setFormatter(formatter);
-	smartPadLogHandler.setFormatter(formatter);
+	    case File:
+		smartPadLogger
+			.warn("DEBUG LOGGER is enabled. All logging-output "
+				+ "(all log-levels) will be "
+				+ "directed to the file: "
+				+ LOGGERS_NAME
+				+ " additionally to the smartPad console output.");
+		debugFileHandler = new FileHandler(
+			curLogFile.getAbsolutePath(), false);
+		debugFileHandler.setLevel(Level.ALL);
+		debugFileHandler.setFormatter(formatter);
+		logger.addHandler(debugFileHandler); // add file handler
+		break;
+	    case Network:
+		smartPadLogger
+			.warn("DEBUG LOGGER is enabled. All logging-output "
+				+ "(all log-levels) will be "
+				+ "directed to the network address: "
+				+ LwrIgtlLogConfigurator.DEBUG_VIEWER_IP
+				+ " with the port "
+				+ LwrIgtlLogConfigurator.DEBUG_VIEWER_PORT
+				+ " additionally to the smartPad console output.");
+		debugSocketHandler = new SocketHandler(DEBUG_VIEWER_IP,
+			DEBUG_VIEWER_PORT);
+		debugSocketHandler.setLevel(Level.ALL);
+		debugSocketHandler.setFormatter(formatter);
+		logger.addHandler(debugSocketHandler);
+		break;
+	    default:
+		break;
+
+	    }
+	}
 
     }
 
@@ -103,12 +154,14 @@ public final class LwrIgtlLogConfigurator {
      * Closes all log-handlers.
      */
     public void dispose() {
-	if (null != debugLogHandler) {
-	    debugLogHandler.close();
-
+	if (null != debugFileHandler) {
+	    debugFileHandler.close();
 	}
-	if (null != smartPadLogHandler) {
-	    smartPadLogHandler.close();
+	if (null != normalSmartPadHandler) {
+	    normalSmartPadHandler.close();
+	}
+	if (null != debugSocketHandler) {
+	    debugSocketHandler.close();
 	}
     }
 

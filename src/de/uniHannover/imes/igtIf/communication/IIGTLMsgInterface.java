@@ -42,7 +42,7 @@ package de.uniHannover.imes.igtIf.communication;
  * access to both fields and gives methods for setup of a message.
  *
  */
-public interface IOpenIGTLMsg {
+public interface IIGTLMsgInterface {
 
     //***************************Methods***********************/
     /**

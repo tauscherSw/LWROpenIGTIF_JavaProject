@@ -269,14 +269,14 @@ public final class IGTLComPort {
     // }
 
     /**
-     * Sends a message to an IGT client {@linkplain IOpenIGTLMsg}.
+     * Sends a message to an IGT client {@linkplain IIGTLMsgInterface}.
      * 
      * @param packet
      *            the packet to be send.
      * @throws IOException
      *             when sending failed.
      */
-    public void sendMsg(final IOpenIGTLMsg packet) throws IOException {
+    public void sendMsg(final IIGTLMsgInterface packet) throws IOException {
 	if (packet.getHeader() != null && packet.getBody() != null) {
 	    sendBytes(packet.getHeader());
 	    sendBytes(packet.getBody());
@@ -290,7 +290,7 @@ public final class IGTLComPort {
 
     /**
      * Sends an OpenIGTlink String message. Takes the textual arguments,
-     * constructs an {@linkplain IOpenIGTLMsg} and sends it.
+     * constructs an {@linkplain IIGTLMsgInterface} and sends it.
      * 
      * @param message
      *            the message text
@@ -346,7 +346,7 @@ public final class IGTLComPort {
      * @throws IOException
      *             reading of input stream fails.
      */
-    public synchronized IOpenIGTLMsg receiveMsg() throws IOException {
+    public synchronized IIGTLMsgInterface receiveMsg() throws IOException {
 	logger.entering(this.getClass().getName(), "receiveMsg(...)");
 	// Header bytes
 	byte[] headerRead = new byte[IGTLheader.IGTL_HEADER_SIZE];
@@ -384,7 +384,7 @@ public final class IGTLComPort {
 	/*
 	 * Construct the returned object as a IGTL response.
 	 */
-	IOpenIGTLMsg response = new IGTLMsg();
+	IIGTLMsgInterface response = new IGTLMsg();
 	response.init(headerRead, bodyRead);
 	logger.finest("IGTL-message constructed from received bytes.");
 	logger.fine("IGTL-message received of " + headerRead.length

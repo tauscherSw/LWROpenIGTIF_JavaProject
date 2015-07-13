@@ -42,6 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
+import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator.LogForwardType;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine.OpenIGTLinkErrorCode;
 import de.uniHannover.imes.igtIf.util.FileSystemUtil;
@@ -56,6 +57,7 @@ import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread
 import com.kuka.common.ThreadUtil;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplicationState;
+
 import static com.kuka.roboticsAPI.motionModel.BasicMotions.ptp;
 
 import com.kuka.roboticsAPI.deviceModel.JointPosition;
@@ -252,6 +254,11 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      */
     public static final boolean DEBUG_MODE = true;
 
+    /**
+     * Defines how log messages are processed.
+     */
+    public static final LogForwardType DEBUG_LOG_FORWARD_TYPE = LogForwardType.Network;
+
     /** Flag to indicate if main loop is active. */
     private boolean mainLoopActive = false;
 
@@ -334,111 +341,9 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
     // ***************************Methods***********************/
 
-    /**
-     * Initializes the slicer control interface thread and the slicer
-     * visualization interface thread.
-     * 
-     * @throws IOException
-     *             when setup of network-communication fails.
-     */
-    private void initInterfaceThreads() throws IOException {
 
-	controlThread = new ControlThread(imesStatemachine, comDataProvider);
-	controlThread.setUncaughtExceptionHandler(threadExcHdl);
 
-	visualizationThread = new VisualizationThread(comDataProvider);
-	visualizationThread.setUncaughtExceptionHandler(threadExcHdl);
-	visualizationThread.updateData();
 
-    }
-
-    /**
-     * Initializes the smart servo interface.
-     */
-    private void initSmartServo() {
-	// Initializing the SmartServo
-	SmartServo aRealtimeMotion = new SmartServo(
-		imesLBR.getCurrentJointPosition());
-	aRealtimeMotion.useTrace(true);
-
-	// Set the motion properties of all robot motions during state machine
-	// execution.
-	aRealtimeMotion.setJointAccelerationRel(VEL);
-	aRealtimeMotion.setJointVelocityRel(ACC);
-
-	logger.fine("Starting SmartServo Realtime Motion in "
-		+ controlMode.getClass().getSimpleName());
-
-	// Set the control mode as member of the realtime motion
-	imesTool.getDefaultMotionFrame().moveAsync(
-		aRealtimeMotion.setMode(controlMode));
-
-	// Fetch the Runtime of the Motion part
-	// NOTE: the Runtime will exist AFTER motion command was issued
-	smartServoRuntime = aRealtimeMotion.getRuntime();
-	smartServoRuntime.setMinimumTrajectoryExecutionTime(TRAJ_EXC_TIME);
-
-	// Reading the current a couple of times for safety reasons
-	smartServoRuntime.updateWithRealtimeSystem();
-	ThreadUtil.milliSleep(MS_TO_SLEEP);
-	smartServoRuntime.updateWithRealtimeSystem();
-	ThreadUtil.milliSleep(MS_TO_SLEEP);
-    }
-
-    /**
-     * Initializes the state machine.
-     */
-    private void initStateMachine() {
-	imesStatemachine = new LwrStatemachine(comDataProvider);
-	imesStatemachine.startVisual = true;
-
-	comDataProvider.readNewRobotData();
-	imesStatemachine.cmdPose = comDataProvider.getCurRobotDataSet()
-		.getCurPose();
-	imesStatemachine.controlMode = controlMode;
-	imesStatemachine.setVisualIfDatatype(VisualIFDatatypes.ROBOTBASE);
-
-    }
-
-    /**
-     * Parametrizes the cartesian control mode according to the defined
-     * constants.
-     * 
-     * @param mode
-     *            The control-mode-object, which has to be parameterized.
-     */
-    private void paramCartesianImpedanceMode(final IMotionControlMode mode) {
-	((CartesianImpedanceControlMode) mode).parametrize(CartDOF.TRANSL)
-		.setStiffness(TRANSL_STIFF);
-	((CartesianImpedanceControlMode) controlMode).parametrize(CartDOF.ROT)
-		.setStiffness(ROT_STIFF);
-	((CartesianImpedanceControlMode) mode)
-		.setNullSpaceStiffness(NULLSP_STIFF);
-	((CartesianImpedanceControlMode) mode).parametrize(CartDOF.ALL)
-		.setDamping(DAMPING);
-	((CartesianImpedanceControlMode) mode).setMaxPathDeviation(PATH_DEV_X,
-		PATH_DEV_Y, PATH_DEV_Z, PATH_DEV_A, PATH_DEV_B, PATH_DEV_C);
-    }
-
-    /**
-     * Prints timing statistics and communication parameters.
-     * 
-     */
-    private void printFinalInfos() {
-	// Print the timing statistics
-	logger.info("Displaying final states after loop "
-		+ controlMode.getClass().getName());
-	smartServoRuntime.setDetailedOutput(1);
-	logger.info(timer.getOverallStatistics());
-
-	if (timer.getMeanTimeMillis() > MS_TO_SLEEP
-		+ MAXIMUM_TIMING_DEVIATION_MS) {
-	    logger.info("Statistic Timing is unexpected slow, "
-		    + "you should try to optimize TCP/IP Transfer");
-	    logger.info("Under Windows, you should play with the registry, "
-		    + "see the e.g. the RealtimePTP Class javaDoc for details");
-	}
-    }
 
     /**
      * In this function the robot, tool etc are initialized.
@@ -446,19 +351,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     @Override
     public final void initialize() {
 
-	/* Initialize debug logger if needed. */
-	if (DEBUG_MODE) {
-	    getLogger().warn(
-		    "DEBUG LOGGER is enabled. All logging-output "
-			    + "(all log-levels) will be "
-			    + "directed to the file: "
-			    + LwrIgtlLogConfigurator.LOGGERS_NAME
-			    + " additionally to the smartPad console output.");
-	}
 	// Parameterize project logging mechanism
 	logConfig = LwrIgtlLogConfigurator.getInstance();
 	try {
-	    logConfig.setup(DEBUG_MODE, getLogger());
+	    logConfig.setup(getLogger(), DEBUG_MODE, DEBUG_LOG_FORWARD_TYPE);
 	} catch (IOException e) {
 	    getLogger().error("Setup of global logger failed.", e);
 	}
@@ -551,6 +447,94 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	logger.exiting(this.getClass().getName(), "initialize()");
 
     }
+    
+    /**
+     * Initializes the slicer control interface thread and the slicer
+     * visualization interface thread.
+     * 
+     * @throws IOException
+     *             when setup of network-communication fails.
+     */
+    private void initInterfaceThreads() throws IOException {
+
+	controlThread = new ControlThread(imesStatemachine, comDataProvider);
+	controlThread.setUncaughtExceptionHandler(threadExcHdl);
+
+	visualizationThread = new VisualizationThread(comDataProvider);
+	visualizationThread.setUncaughtExceptionHandler(threadExcHdl);
+	visualizationThread.updateData();
+
+    }
+
+    /**
+     * Initializes the smart servo interface.
+     */
+    private void initSmartServo() {
+	// Initializing the SmartServo
+	SmartServo aRealtimeMotion = new SmartServo(
+		imesLBR.getCurrentJointPosition());
+	aRealtimeMotion.useTrace(true);
+
+	// Set the motion properties of all robot motions during state machine
+	// execution.
+	aRealtimeMotion.setJointAccelerationRel(VEL);
+	aRealtimeMotion.setJointVelocityRel(ACC);
+
+	logger.fine("Starting SmartServo Realtime Motion in "
+		+ controlMode.getClass().getSimpleName());
+
+	// Set the control mode as member of the realtime motion
+	imesTool.getDefaultMotionFrame().moveAsync(
+		aRealtimeMotion.setMode(controlMode));
+
+	// Fetch the Runtime of the Motion part
+	// NOTE: the Runtime will exist AFTER motion command was issued
+	smartServoRuntime = aRealtimeMotion.getRuntime();
+	smartServoRuntime.setMinimumTrajectoryExecutionTime(TRAJ_EXC_TIME);
+
+	// Reading the current a couple of times for safety reasons
+	smartServoRuntime.updateWithRealtimeSystem();
+	ThreadUtil.milliSleep(MS_TO_SLEEP);
+//	smartServoRuntime.updateWithRealtimeSystem(); //TODO @TOBI
+//	ThreadUtil.milliSleep(MS_TO_SLEEP);
+    }
+
+    /**
+     * Initializes the state machine.
+     */
+    private void initStateMachine() {
+	imesStatemachine = new LwrStatemachine(comDataProvider);
+	imesStatemachine.startVisual = true;
+
+	comDataProvider.readNewRobotData();
+	imesStatemachine.cmdPose = comDataProvider.getCurRobotDataSet()
+		.getCurPose();
+	imesStatemachine.controlMode = controlMode;
+	imesStatemachine.setVisualIfDatatype(VisualIFDatatypes.ROBOTBASE);
+
+    }
+
+    /**
+     * Parametrizes the cartesian control mode according to the defined
+     * constants.
+     * 
+     * @param mode
+     *            The control-mode-object, which has to be parameterized.
+     */
+    private void paramCartesianImpedanceMode(final IMotionControlMode mode) {
+	((CartesianImpedanceControlMode) mode).parametrize(CartDOF.TRANSL)
+		.setStiffness(TRANSL_STIFF);
+	((CartesianImpedanceControlMode) controlMode).parametrize(CartDOF.ROT)
+		.setStiffness(ROT_STIFF);
+	((CartesianImpedanceControlMode) mode)
+		.setNullSpaceStiffness(NULLSP_STIFF);
+	((CartesianImpedanceControlMode) mode).parametrize(CartDOF.ALL)
+		.setDamping(DAMPING);
+	((CartesianImpedanceControlMode) mode).setMaxPathDeviation(PATH_DEV_X,
+		PATH_DEV_Y, PATH_DEV_Z, PATH_DEV_A, PATH_DEV_B, PATH_DEV_C);
+    }
+    
+    
 
     /**
      * In this function the communication with the robot via RealTimePTP, the
@@ -591,9 +575,11 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    timer.loopBegin();
 
 		    /* Update with controller of LWR. */
+		    //TODO @TOBI weglassen
 		    try {
 			ThreadUtil.milliSleep(MS_TO_SLEEP);
 			smartServoRuntime.updateWithRealtimeSystem();
+			
 			logger.fine("Smart-servo-runtime updated.");
 
 		    } catch (Exception e) {
@@ -765,44 +751,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
     }
 
-    /**
-     * Stops all running communication threads And stops the motion.
-     */
-    public final void dispose() {
 
-	logger.entering(this.getClass().getName(), "dispose()");
-
-	// Stop the motion
-	final boolean motionStopped = smartServoRuntime.stopMotion();
-	if (!motionStopped) {
-	    logger.severe("Cannot stop motion of smartServoRuntime.");
-	} else {
-	    logger.fine("Motion stopped of smartServo.");
-	}
-
-	// Stop all threads.
-	logger.fine("Interrupting all threads...");
-	controlThread.interrupt();
-	visualizationThread.interrupt();
-	try {
-	    logger.fine("Waiting for threads to join for " + JOIN_TIME_THREADS
-		    + "ms...");
-	    controlThread.join(JOIN_TIME_THREADS);
-	    logger.fine("Control thread joined.");
-	    visualizationThread.join(JOIN_TIME_THREADS);
-	    logger.fine("visualization thread joined.");
-	} catch (InterruptedException e) {
-	    logger.log(Level.SEVERE,
-		    "Waiting for the ending of the communication threads "
-			    + "was interrupted.", e);
-	}
-
-	logger.info("State machine was disposed properly.");
-	logger.exiting(this.getClass().getName(), "dispose()");
-	logConfig.dispose();
-	super.dispose();
-
-    }
 
     /**
      * Method is invoked by application server, when the state of this robotic
@@ -854,6 +803,67 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		"onApplicationStateChanged(...)");
 
     }
+    
+    /**
+     * Prints timing statistics and communication parameters.
+     * 
+     */
+    private void printFinalInfos() {
+	// Print the timing statistics
+	logger.info("Displaying final states after loop "
+		+ controlMode.getClass().getName());
+	smartServoRuntime.setDetailedOutput(1);
+	logger.info(timer.getOverallStatistics());
+
+	if (timer.getMeanTimeMillis() > MS_TO_SLEEP
+		+ MAXIMUM_TIMING_DEVIATION_MS) {
+	    logger.info("Statistic Timing is unexpected slow, "
+		    + "you should try to optimize TCP/IP Transfer");
+	    logger.info("Under Windows, you should play with the registry, "
+		    + "see the e.g. the RealtimePTP Class javaDoc for details");
+	}
+    }
+    
+    /**
+     * Stops all running communication threads And stops the motion.
+     */
+    public final void dispose() {
+
+	logger.entering(this.getClass().getName(), "dispose()");
+
+	// Stop the motion
+	final boolean motionStopped = smartServoRuntime.stopMotion();
+	if (!motionStopped) {
+	    logger.severe("Cannot stop motion of smartServoRuntime.");
+	} else {
+	    logger.fine("Motion stopped of smartServo.");
+	}
+
+	// Stop all threads.
+	logger.fine("Interrupting all threads...");
+	controlThread.interrupt();
+	visualizationThread.interrupt();
+	try {
+	    logger.fine("Waiting for threads to join for " + JOIN_TIME_THREADS
+		    + "ms...");
+	    controlThread.join(JOIN_TIME_THREADS);
+	    logger.fine("Control thread joined.");
+	    visualizationThread.join(JOIN_TIME_THREADS);
+	    logger.fine("visualization thread joined.");
+	} catch (InterruptedException e) {
+	    logger.log(Level.SEVERE,
+		    "Waiting for the ending of the communication threads "
+			    + "was interrupted.", e);
+	}
+
+	logger.info("State machine was disposed properly.");
+	logger.exiting(this.getClass().getName(), "dispose()");
+	logConfig.dispose();
+	super.dispose();
+
+    }
+    
+    
 
     /**
      * Auto-generated method stub. Do not modify the contents of this method.

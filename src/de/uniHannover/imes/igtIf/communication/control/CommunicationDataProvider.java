@@ -48,7 +48,7 @@ import com.kuka.roboticsAPI.geometricModel.math.Matrix;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Vector;
 
-import de.uniHannover.imes.igtIf.communication.IOpenIGTLMsg;
+import de.uniHannover.imes.igtIf.communication.IIGTLMsgInterface;
 import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 
 /**
@@ -182,7 +182,7 @@ public class CommunicationDataProvider {
      *            the message received from another OpenIGTL client as a
      *            command.
      */
-    public final void readNewCmdMessage(final IOpenIGTLMsg message) {
+    public final void readNewCmdMessage(final IIGTLMsgInterface message) {
 
 	if (null == message) {
 	    throw new NullPointerException("Message argument is null");
