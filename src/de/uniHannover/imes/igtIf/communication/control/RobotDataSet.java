@@ -82,6 +82,7 @@ public class RobotDataSet {
 
     /**
      * Getter for the joint position of the robot.
+     * 
      * @return the curJntPose the joint position of the robot.
      */
     public final JointPosition getCurJntPose() {
@@ -90,6 +91,7 @@ public class RobotDataSet {
 
     /**
      * Getter for the matrix transformation to the end-effector.
+     * 
      * @return the matrix transformation to the end-effector.
      */
     public final MatrixTransformation getCurPose() {
@@ -98,9 +100,26 @@ public class RobotDataSet {
 
     /**
      * Getter for the tcp force vector.
+     * 
      * @return the tcp force vector.
      */
     public final Vector getTcpForce() {
 	return tcpForce;
+    }
+
+    /**
+     * Prints all details of the current robot dataset.
+     * 
+     * @return a string where all details are formatted.
+     */
+    public final String printRobotDataSet() {
+	StringBuilder builder = new StringBuilder();
+	builder.append("Overview about robot-dataset:");
+	builder.append("\t Joint position: " + getCurJntPose().toString()
+		+ "\n");
+	builder.append("\t Current cartesian position: "
+		+ getCurPose().toString() + "\n");
+	builder.append("\t Current TCP force: " + getTcpForce().toString());
+	return builder.toString();
     }
 }

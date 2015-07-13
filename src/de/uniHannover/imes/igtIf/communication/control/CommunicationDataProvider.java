@@ -183,6 +183,7 @@ public class CommunicationDataProvider {
      *            command.
      */
     public final void readNewCmdMessage(final IIGTLMsgInterface message) {
+	logger.entering(this.getClass().getName(), "readNewCmdMessage(...)");
 
 	if (null == message) {
 	    throw new NullPointerException("Message argument is null");
@@ -203,16 +204,37 @@ public class CommunicationDataProvider {
 	String tmpCmdString;
 	MatrixTransformation tmpExtTrafo;
 
-	// Read uid only if message type was a command.
+	/*
+	 * Preprocessing of message. This means extracting the message type and
+	 * checking the uid. If the message's UID is old or already known, then
+	 * skip the message. Only messages of type cmd contain a UID!
+	 */
 	if (messageType.equalsIgnoreCase(IgtlMsgType.Command.getTypeName())) {
 	    tmpMsgType = IgtlMsgType.Command;
-	    tmpUid = getUid(deviceName);
-	    logger.fine("Current received message's uid: " + tmpUid);
+	    tmpUid = getUid(deviceName); // device-name contains uid.
 	    updateUIDStatistics(tmpUid);
 	    tmpTransformReceived = false;
+	    // if current's msg uid is already known skip whole msg.
 	    if (getCurrentCmdPacket().getUid() == tmpUid) {
+		logger.fine("Skipping current received msg, "
+			+ "because uid is already known.");
+		logger.exiting(this.getClass().getName(),
+			"readNewCmdMessage(...)");
+		if (!curPacket.getCmdString().equalsIgnoreCase(
+			getCommandString(message.getBody()))) {
+		    throw new IllegalStateException("Current system's uid: "
+			    + getCurrentCmdPacket().getUid()
+			    + " and received message's uid: " + tmpUid
+			    + " are equal but the command-strings aren't: "
+			    + curPacket.getCmdString() + " vs. "
+			    + getCommandString(message.getBody()));
+
+		}
 		return;
 	    }
+	} else { // otherwise the current msg must hold a transform
+	    tmpTransformReceived = true;
+	    tmpMsgType = IgtlMsgType.Transform;
 	}
 
 	/*
@@ -222,43 +244,47 @@ public class CommunicationDataProvider {
 	 */
 
 	if (getCurrentCmdPacket().getUid() < tmpUid || tmpTransformReceived) {
-
+	    logger.fine("Processing new message...");
 	    /*
 	     * Process body bytes and extract information.
 	     */
-	    if (messageType.equalsIgnoreCase(IgtlMsgType.Command.getTypeName())) {
+	    switch (tmpMsgType) {
+	    case Command:
 		tmpCmdString = getCommandString(message.getBody());
-		logger.fine("Received message with command: " + tmpCmdString);
+		logger.fine("New command-message: CmdString: " + tmpCmdString
+			+ ", UID: " + tmpUid);
+		// use old trafo for filling up field.
 		tmpExtTrafo = getCurrentCmdPacket().getTrafo();
-
-	    } else if (messageType.equalsIgnoreCase(IgtlMsgType.Transform
-		    .getTypeName())) {
-		tmpCmdString = getCurrentCmdPacket().getCmdString(); // when
-								     // transform
-		// received cmd string
-		// doesn't change
-		tmpMsgType = IgtlMsgType.Transform;
-		tmpUid = getCurrentCmdPacket().getUid(); // ignore new uid when
-							 // command is
-		// transform
+		break;
+	    case Transform:
+		// Use old cmd string to fill up field.
+		tmpCmdString = getCurrentCmdPacket().getCmdString();
+		// Use old uid to fill up field.
+		tmpUid = getCurrentCmdPacket().getUid();
 		tmpExtTrafo = getTrafo(message.getBody());
 		tmpTransformReceived = true;
-
-	    } else {
+		logger.fine("New transform-message: ExtTrafo: "
+			+ tmpExtTrafo.toString());
+		break;
+	    default:
 		throw new UnknownCommandException("Message type: "
 			+ messageType + " is unknown.");
-	    }
 
+	    }
 	    // Set here new command packet.
 	    curPacket = new CommandPacket(tmpCmdString, tmpMsgType, tmpUid,
 		    tmpExtTrafo, tmpTransformReceived);
+	    logger.finest("New message saved.");
 
 	} else {
+	    logger.exiting(this.getClass().getName(), "readNewCmdMessage(...)");
 	    throw new IllegalStateException(
 		    "UID failure. UID of the received msg (" + tmpUid
 			    + ") is older than " + "the state machine's one ("
 			    + curPacket.getUid() + ").");
 	}
+
+	logger.exiting(this.getClass().getName(), "readNewCmdMessage(...)");
 
     }
 
@@ -266,7 +292,7 @@ public class CommunicationDataProvider {
      * Reads new robot data in a current robot dataset.
      */
     public final void readNewRobotData() {
-
+	logger.entering(this.getClass().getName(), "readNewRobotData()");
 	MatrixTransformation currentTcpPose = MatrixTransformation
 		.of(robotDataSink.getCurrentCartesianPosition(
 			robotDataSink.getFlange()).transformationFromWorld());
@@ -278,14 +304,19 @@ public class CommunicationDataProvider {
 	if (null == curRobotDataSet) {
 	    curRobotDataSet = new RobotDataSet(currentJointPosition,
 		    currentTcpPose, tcpForce);
+	    logger.finest("Initialized new robot dataset..."
+		    + curRobotDataSet.printRobotDataSet());
 	}
 	// only synchronized access is allowed
 	synchronized (curRobotDataSet) {
 	    curRobotDataSet = new RobotDataSet(currentJointPosition,
 		    currentTcpPose, tcpForce);
+	    logger.finest("Saving new robot dataset..."
+		    + curRobotDataSet.printRobotDataSet());
 	}
 
 	poseUid++;
+	logger.exiting(this.getClass().getName(), "readNewRobotData()");
     }
 
     /**
@@ -296,6 +327,7 @@ public class CommunicationDataProvider {
      *            the uid of the current message.
      */
     private void updateUIDStatistics(final long uid) {
+	logger.entering(this.getClass().getName(), "updateUIDStatistics(...)");
 	uidDelay = uid - curPacket.getUid();
 	if (uidDelay == 0) {
 	    if (uidRepeat == 0) {
@@ -317,6 +349,7 @@ public class CommunicationDataProvider {
 	} else if (uidDelay == 1) {
 	    uidRepeat = 0;
 	}
+	logger.exiting(this.getClass().getName(), "updateUIDStatistics(...)");
     }
 
     /**
