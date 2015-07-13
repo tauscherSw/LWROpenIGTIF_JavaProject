@@ -40,7 +40,6 @@ package de.uniHannover.imes.igtIf.stateMachine;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.XyzAbcTransformation;
 import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
@@ -52,7 +51,6 @@ import de.uniHannover.imes.igtIf.stateMachine.states.LwrIdle;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrMoveToPose;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrPathImp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrVirtualFixtures;
-import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread.VisualIFDatatypes;
@@ -318,6 +316,7 @@ public class LwrStatemachine {
      *            openIGTL client.
      */
     public LwrStatemachine(final CommunicationDataProvider dataProvider) {
+	logger.entering(this.getClass().getName(), "Constructor(...)");
 	if (null == dataProvider) {
 	    throw new NullPointerException(
 		    "Communication data provider argument is null");
@@ -329,7 +328,7 @@ public class LwrStatemachine {
 	stateChanged = true;
 	transformReceivedFlag = false;
 	ErrorCode = OpenIGTLinkErrorCode.Ok;
-
+	logger.exiting(this.getClass().getName(), "Constructor(...)");
     }
 
     // ***************************Methods***********************/
@@ -344,8 +343,10 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public final void updateCtrlParam() {
+	logger.entering(this.getClass().getName(), "updateCtrlParam()");
 	getCurrentState().calcControlParam(this, dataSink.getCurRobotDataSet());
 	printCtrlParameters();
+	logger.exiting(this.getClass().getName(), "updateCtrlParam()");
 
     }
 
@@ -387,7 +388,10 @@ public class LwrStatemachine {
      * </pre>
      */
     public void checkTransitionRequest() {
-	logger.fine("Checking transition request.");
+	logger.entering(this.getClass().getName(), "checkTransitionRequest()");
+
+	logger.fine("Checking transition request. Old state is currently "
+		+ RobotState.toString());
 	// First Check if the received OpenIGTLink was a String
 	if (this.igtlDatatype.equals("STRING")) {
 	    // this.InitFlag = false;
@@ -638,6 +642,9 @@ public class LwrStatemachine {
 	} else {
 	    this.stateChanged = false;
 	}
+	logger.fine("Current state "
+		+ RobotState.toString());
+	logger.exiting(this.getClass().getName(), "checkTransitionRequest()");
 
     }
 
@@ -648,6 +655,7 @@ public class LwrStatemachine {
      *            flag, if set to true details will be printed out.
      */
     public final void errHandler(final boolean debugInfo) {
+	logger.entering(this.getClass().getName(), "errHandler(...)");
 	if (this.ErrorFlag) {
 	    if (!this.lastPrintedErr.equals(ErrorMessage)) {
 		// Print the new ErrorMessage
@@ -677,6 +685,7 @@ public class LwrStatemachine {
 	} else {
 	    this.lastPrintedErr = "";
 	}
+	logger.exiting(this.getClass().getName(), "errHandler(...)");
     }
 
     /**
@@ -690,7 +699,9 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public final void interpretCmdPacket() {
+	logger.entering(this.getClass().getName(), "interpretCmdPacket()");
 	getCurrentState().interpretCmdPacket(this, currentPacket);
+	logger.exiting(this.getClass().getName(), "interpretCmdPacket()");
     }
 
     /**
@@ -704,7 +715,9 @@ public class LwrStatemachine {
      * @see LwrMoveToPose
      */
     public final void setAckPacket() {
+	logger.entering(this.getClass().getName(), "setAckPacket()");
 	getCurrentState().setAckPacket(this);
+	logger.exiting(this.getClass().getName(), "setAckPacket()");
     }
 
     /**
@@ -713,12 +726,14 @@ public class LwrStatemachine {
      * transform received flag and its igtldatatype.
      */
     public final void updateStateControlData() {
+	logger.entering(this.getClass().getName(), "updateStateControlData()");
 	currentPacket = dataSink.getCurrentCmdPacket();
 	if (currentPacket.isTransformReceived()) {
 	    igtlDatatype = "TRANSFORM";
 	} else {
 	    igtlDatatype = "STRING";
 	}
+	logger.exiting(this.getClass().getName(), "updateStateControlData()");
 
     }
 
@@ -794,16 +809,15 @@ public class LwrStatemachine {
      */
     private void printCtrlParameters() {
 	StringBuilder toBePrinted = new StringBuilder();
-	toBePrinted.append("Current state: "
+	toBePrinted.append("\tCurrent state: "
 		+ this.getCurrentState().getClass().getSimpleName() + "\n");
 	XyzAbcTransformation cartPose = XyzAbcTransformation.of(
 		this.cmdPose.getTranslation(), this.cmdPose.getRotation());
-	toBePrinted.append("Commanded pose: " + cartPose.toString() + "\n");
-	toBePrinted.append("Control mode: " + this.controlMode + "\n");
-	toBePrinted.append("Stiffness param: "
+	toBePrinted.append("\tCommanded pose: " + cartPose.toString() + "\n");
+	toBePrinted.append("\tControl mode: " + this.controlMode + "\n");
+	toBePrinted.append("\tStiffness param: "
 		+ Arrays.toString(this.curCartStiffness) + "\n");
-	logger.fine("Overview new Ctrl parameters after update from "
-		+ this.getClass().getSimpleName() + ":\n"
+	logger.fine("Overview over control parameters:\n"
 		+ toBePrinted.toString());
 
     }
