@@ -40,11 +40,9 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 
-import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLComPort;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
@@ -139,10 +137,11 @@ public class VisualizationThread extends Thread {
      */
     public VisualizationThread(final CommunicationDataProvider comDataProvider)
 	    throws IOException {
+	logger.entering(this.getClass().getName(), "Constructor(...)");
 
 	/* Process arguments */
 	if (null == comDataProvider) {
-	    throw new IllegalArgumentException("Arument "
+	    throw new NullPointerException("Arument "
 		    + CommunicationDataProvider.class.getSimpleName()
 		    + " is null.");
 
@@ -155,6 +154,8 @@ public class VisualizationThread extends Thread {
 	cyclicDataLock = new Object();
 	setSenderConfiguration(null, false);
 
+	logger.exiting(this.getClass().getName(), "Constructor(...)");
+
     }
 
     // ***************************Methods***********************/
@@ -164,18 +165,18 @@ public class VisualizationThread extends Thread {
      * collected.
      */
     public final void run() {
+	logger.entering(this.getClass().getName(), "run()");
+
 	// Definition of variables here´
 	RuntimeException exc = null;
 
 	try {
 	    // Initialize functions here
-	    logger.info(this.getClass().getSimpleName()
-		    + " is setting up its communication.");
 	    setup();
+	    logger.info("Initialization done");
 
 	    // Main loop until thread is interrupted from the outside
-	    logger.info(this.getClass().getSimpleName()
-		    + " is entering its main loop.");
+	    logger.info("Entering main loop.");
 	    while (!this.isInterrupted()) {
 		// Statistics
 		timer.loopBegin();
@@ -224,11 +225,12 @@ public class VisualizationThread extends Thread {
 
 	    // throw any runtime exceptions except interrupted exception.
 	    if (null != exc) {
+		logger.exiting(this.getClass().getName(), "run()");
 		throw exc;
 	    }
 
 	}
-
+	logger.exiting(this.getClass().getName(), "run()");
     }
 
     /**
@@ -264,8 +266,9 @@ public class VisualizationThread extends Thread {
      *             when setup of the igtl-communication fails.
      */
     private void setup() throws IOException {
-
+	logger.entering(this.getClass().getName(), "setup()");
 	port.setup();
+	logger.exiting(this.getClass().getName(), "setup()");
 
     }
 
@@ -279,7 +282,9 @@ public class VisualizationThread extends Thread {
      *             when sleeping between invalid messages is interrupted.
      */
     private void work() throws IOException, InterruptedException {
+	// logger.entering(this.getClass().getName(), "work()");
 	// nothing programmed yet
+	// logger.exiting(this.getClass().getName(), "work()");
     }
 
     /**
@@ -289,10 +294,13 @@ public class VisualizationThread extends Thread {
      *             when sending fails.
      */
     private void conditionalWork() throws IOException {
+	logger.entering(this.getClass().getName(), "conditionalWork()");
 	if (getCondWork()) {
+	    logger.info("Sending transformation...");
 	    sendTransformation(currentDataSet, currentSenderConfig);
 
 	}
+	logger.exiting(this.getClass().getName(), "conditionalWork()");
     }
 
     /**
@@ -327,20 +335,21 @@ public class VisualizationThread extends Thread {
      * interrupted and its main while loop ended.
      */
     private void dispose() {
+	logger.entering(this.getClass().getName(), "dispose()");
+	if (null != timer) {
+	    logger.info("Final statistics: \n" + timer.getOverallStatistics());
+	}
 	if (null != port) {
 	    try {
 		port.dispose();
-		logger.info(this.getClass().getSimpleName()
-			+ " was properly disposed.");
+		logger.info("Disposed properly.");
 	    } catch (IOException e) {
 		logger.log(Level.SEVERE,
 			"Disposing of a igtl communication channel failed.", e);
 	    }
 	}
+	logger.exiting(this.getClass().getName(), "dispose()");
 
-	if (null != timer) {
-	    logger.info("Final statistics: \n" + timer.getOverallStatistics());
-	}
     }
 
     /**
@@ -355,7 +364,7 @@ public class VisualizationThread extends Thread {
      */
     private void sendTransformation(final VisualSenderData data,
 	    final VisualSenderConfig config) throws IOException {
-
+	logger.entering(this.getClass().getName(), "sendTransformation(...)");
 	float[] transformTmp = new float[12];
 	transformTmp[9] = (float) data.getCartPoseRobotBase().getTranslation()
 		.getX();
@@ -453,13 +462,15 @@ public class VisualizationThread extends Thread {
 	    }
 	    port.sendIGTLTransform("T_EE", transformTmp);
 	}
-
+	logger.exiting(this.getClass().getName(), "sendTransformation(...)");
     }
 
     /**
      * Updates the data send to slicer.
      */
     public final void updateData() {
+
+	logger.entering(this.getClass().getName(), "updateData()");
 
 	/*
 	 * This section updates the data, which is send to slicer by this
@@ -481,8 +492,8 @@ public class VisualizationThread extends Thread {
 	    internalDataProvider.readNewRobotData();
 	    RobotDataSet dataSet = internalDataProvider.getCurRobotDataSet();
 	    // Construct current data set.
-	    if (null == trafoExternalBase) // no external trafo was received
-	    {
+	    if (null == trafoExternalBase) { // no external trafo was received
+
 		currentDataSet.setData(dataSet.getCurJntPose(),
 			dataSet.getTcpForce(), dataSet.getCurPose(),
 			dataSet.getCurPose());
@@ -491,8 +502,10 @@ public class VisualizationThread extends Thread {
 			dataSet.getTcpForce(), dataSet.getCurPose(),
 			trafoExternalBase.compose(dataSet.getCurPose()));
 	    }
+	    logger.fine("Current dataset written.");
 
 	}
+	logger.exiting(this.getClass().getName(), "updateData()");
     }
 
     /**
@@ -505,8 +518,11 @@ public class VisualizationThread extends Thread {
      *            set flag to true if tcp force should be send to slicer also.
      * 
      */
-    public final void setSenderConfiguration(VisualIFDatatypes datatype,
+    public final void setSenderConfiguration(final VisualIFDatatypes datatype,
 	    final boolean sendTcpForce) {
+
+	logger.entering(this.getClass().getName(),
+		"setSenderConfiguration(...)");
 
 	synchronized (cyclicDataLock) {
 
@@ -515,16 +531,23 @@ public class VisualizationThread extends Thread {
 		currentSenderConfig = new VisualSenderConfig();
 		currentSenderConfig
 			.setData(VisualIFDatatypes.JOINTSPACE, false);
+		logger.fine("Current sender configuration set to "
+			+ currentSenderConfig.getRequestedDatatype().toString()
+			+ ", transmitting of force data set to false");
 	    }
 
 	    if (datatype == null) {
 		currentSenderConfig.setData(
 			currentSenderConfig.getRequestedDatatype(),
 			sendTcpForce);
+		logger.fine("Current sender configuration set to "
+			+ currentSenderConfig.getRequestedDatatype().toString()
+			+ ", transmitting of force data set to " + sendTcpForce);
 
 	    }
 
 	}
+	logger.exiting(this.getClass().getName(), "setSenderConfiguration(...)");
 
     }
 }
