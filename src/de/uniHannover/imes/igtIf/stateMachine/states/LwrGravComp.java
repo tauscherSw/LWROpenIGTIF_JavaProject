@@ -44,7 +44,6 @@ import com.kuka.roboticsAPI.motionModel.controlModeModel.CartesianImpedanceContr
 
 import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
 import de.uniHannover.imes.igtIf.stateMachine.LwrStatemachine;
-import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
 
