@@ -48,7 +48,7 @@ public final class LwrIgtlLogConfigurator {
     /** IP of the machine, which runs a Logging-Viewer (for example otros). */
     public static final String DEBUG_VIEWER_IP = "172.31.1.1";
     /** Port of the Logging-Viewer (for example otros). */
-    public static final int DEBUG_VIEWER_PORT = 20000;
+    public static final int DEBUG_VIEWER_PORT = 49003;
     /** Singleton instance. */
     private static LwrIgtlLogConfigurator instance;
     /** The current logging file. */
@@ -61,9 +61,6 @@ public final class LwrIgtlLogConfigurator {
     private SmartPadLogHandler normalSmartPadHandler;
     /** the logging object. */
     private Logger logger;
-
-    /** the log forwarding type used here. */
-    private LogForwardType forwardType;
 
     /**
      * Intentionally privatized constructor.
@@ -102,12 +99,13 @@ public final class LwrIgtlLogConfigurator {
 
 	logger = Logger.getLogger(LOGGERS_NAME);
 	logger.setUseParentHandlers(false); // remove console handler
+	logger.setLevel(Level.ALL);
 	SimpleFormatter formatter = new SimpleFormatter();
 
 	// Add smartpadLogHandler as default log handler.
 	normalSmartPadHandler = new SmartPadLogHandler(smartPadLogger);
-	normalSmartPadHandler.setLevel(Level.INFO);
 	normalSmartPadHandler.setFormatter(formatter);
+	normalSmartPadHandler.setLevel(Level.ALL);
 	logger.addHandler(normalSmartPadHandler); // add file handler
 
 	// If debug mode is enabled add additional debug logger
@@ -163,6 +161,7 @@ public final class LwrIgtlLogConfigurator {
 	if (null != debugSocketHandler) {
 	    debugSocketHandler.close();
 	}
+	System.out.println("Loggers disposed.");
     }
 
 }

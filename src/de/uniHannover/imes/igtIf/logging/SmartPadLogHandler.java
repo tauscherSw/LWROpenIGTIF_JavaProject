@@ -35,7 +35,7 @@ class SmartPadLogHandler extends Handler {
     @Override
     public void publish(final LogRecord logRecord) {
 	// Skip all logRecords which are lower than the parametrized loglevel
-	if (logRecord.getLevel().intValue() >= this.getLevel().intValue()) {
+	if (logRecord.getLevel().intValue() >= Level.INFO.intValue()) {
 	    records.add(logRecord);
 	}
     }

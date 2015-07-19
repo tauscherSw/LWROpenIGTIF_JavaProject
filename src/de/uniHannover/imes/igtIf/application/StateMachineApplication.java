@@ -295,11 +295,11 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * The tool object describing the physical properties of the tool attached
      * to the robot's flange.
      */
-    // private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.4,
-    // MatrixTransformation.ofTranslation(-5,0,50), Inertia.ZERO));
-    // TODO dummy tool used for debugging
-    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.0,
-	    MatrixTransformation.ofTranslation(0, 0, 0), Inertia.ZERO));
+     private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.44,
+     MatrixTransformation.ofTranslation(-5,0,50), Inertia.ZERO));
+//     TODO dummy tool used for debugging
+//    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.0,
+//	    MatrixTransformation.ofTranslation(0, 0, 0), Inertia.ZERO));
 
     /**
      * Object of the state machine interface class for the communication with a
@@ -341,10 +341,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
     // ***************************Methods***********************/
 
-
-
-
-
     /**
      * In this function the robot, tool etc are initialized.
      **/
@@ -370,7 +366,12 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	FileSystemUtil.loadSwigDll();
 	logger.finest("SWIG library loaded.");
 
-	/* Init all robot-hardware corresponding objects. */
+	/* Reset Sunrise controller and ack possible errors. */
+	ServoMotionUtilities.resetControllerAndKILLALLMOTIONS(imesLBR);
+	ServoMotionUtilities.acknowledgeError(imesLBR);
+	logger.finest("Resetted sunrise controller and acked all errors.");
+	
+	/* Initialize all robot-hardware corresponding objects. */
 	imesLBR = (LBR) ServoMotionUtilities.locateLBR(getContext());
 	logger.finest("Robot object successfully created.");
 	imesTool.addDefaultMotionFrame("TCP", toolTCP);
@@ -378,23 +379,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	imesTool.attachTo(imesLBR.getFlange());
 	logger.finest("Tool attached to the robot object.");
 
-	/* Reset Sunrise controller and ack possible errors. */
-	ServoMotionUtilities.resetControllerAndKILLALLMOTIONS(imesLBR);
-	ServoMotionUtilities.acknowledgeError(imesLBR);
-	logger.finest("Resetted sunrise controller and acked all errors.");
-
 	/*
 	 * Check load data and then move to initial position. User interaction
 	 * via the smartPad is needed therefore.
 	 */
-	logger.info("Checking load data...");
-	if (!SmartServo.validateForImpedanceMode(imesLBR)) {
-	    logger.severe("Validation of load data failed.");
-	    throw new IllegalStateException("Load data is incorrect.");
-	} else {
-	    logger.info("Load data is validated succesfully.");
-	}
-
 	logger.finest("Show SmartPad dialog about going to intial pose.");
 	final int answerOnDialog = this.getApplicationUI().displayModalDialog(
 		ApplicationDialogType.WARNING,
@@ -411,6 +399,14 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	    throw new IllegalStateException(
 		    "Robot cannot move to intitial pose, "
 			    + "because user dialog was cancelled.");
+	}
+
+	logger.info("Checking load data...");
+	if (!SmartServo.validateForImpedanceMode(imesLBR)) {
+	    logger.severe("Validation of load data failed.");
+	    throw new IllegalStateException("Load data is incorrect.");
+	} else {
+	    logger.info("Load data is validated succesfully.");
 	}
 
 	/*
@@ -447,7 +443,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	logger.exiting(this.getClass().getName(), "initialize()");
 
     }
-    
+
     /**
      * Initializes the slicer control interface thread and the slicer
      * visualization interface thread.
@@ -495,8 +491,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	// Reading the current a couple of times for safety reasons
 	smartServoRuntime.updateWithRealtimeSystem();
 	ThreadUtil.milliSleep(MS_TO_SLEEP);
-//	smartServoRuntime.updateWithRealtimeSystem(); //TODO @TOBI
-//	ThreadUtil.milliSleep(MS_TO_SLEEP);
+	// smartServoRuntime.updateWithRealtimeSystem(); //TODO @TOBI
+	// ThreadUtil.milliSleep(MS_TO_SLEEP);
     }
 
     /**
@@ -509,6 +505,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	comDataProvider.readNewRobotData();
 	imesStatemachine.cmdPose = comDataProvider.getCurRobotDataSet()
 		.getCurPose();
+
 	imesStatemachine.controlMode = controlMode;
 	imesStatemachine.setVisualIfDatatype(VisualIFDatatypes.ROBOTBASE);
 
@@ -533,8 +530,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	((CartesianImpedanceControlMode) mode).setMaxPathDeviation(PATH_DEV_X,
 		PATH_DEV_Y, PATH_DEV_Z, PATH_DEV_A, PATH_DEV_B, PATH_DEV_C);
     }
-    
-    
 
     /**
      * In this function the communication with the robot via RealTimePTP, the
@@ -575,19 +570,18 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    timer.loopBegin();
 
 		    /* Update with controller of LWR. */
-		    //TODO @TOBI weglassen
+		    // TODO @TOBI weglassen
 		    try {
-			ThreadUtil.milliSleep(MS_TO_SLEEP);
+			// ThreadUtil.milliSleep(MS_TO_SLEEP);
 			smartServoRuntime.updateWithRealtimeSystem();
-			
+
 			logger.fine("Smart-servo-runtime updated.");
 
 		    } catch (Exception e) {
 
 			logger.log(Level.WARNING,
-				"Failed to update the smart servo runtime. "
-					+ "Reinitializing smartServo...", e);
-			initSmartServo();
+				"Failed to update the smart servo runtime.");
+			// initSmartServo();
 		    }
 
 		    /* Collect new data from the robot. */
@@ -691,14 +685,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		     */
 		    try {
 			logger.fine("Apply new control parameters...");
-			logger.finest("Setting control mode settings for mode "
+			logger.finest("Setting control mode settings for mode and destination..."
 				+ imesStatemachine.controlMode.toString());
 			smartServoRuntime
 				.changeControlModeSettings(imesStatemachine.controlMode);
-			ThreadUtil.milliSleep(3);
-			logger.finest("Commanding new robot-pose "
-				+ imesStatemachine.cmdPose.toString());
-
 			smartServoRuntime
 				.setDestination(imesStatemachine.cmdPose);
 			logger.fine("New control parameters applied");
@@ -706,13 +696,13 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			logger.log(Level.SEVERE,
 				"Cannot change control mode settings or command a new pose. "
 					+ "Resetting smart servo", e);
-			logger.fine("Resetting controller, ack errors and reinit "
-				+ "smartServo...");
-			ServoMotionUtilities
-				.resetControllerAndKILLALLMOTIONS(imesLBR);
-			ServoMotionUtilities.acknowledgeError(imesLBR);
-			initSmartServo();
-			logger.fine("Resetting done.");
+			// logger.fine("Resetting controller, ack errors and reinit "
+			// + "smartServo...");
+			// ServoMotionUtilities
+			// .resetControllerAndKILLALLMOTIONS(imesLBR);
+			// ServoMotionUtilities.acknowledgeError(imesLBR);
+			// initSmartServo();
+			// logger.fine("Resetting done.");
 		    }
 
 		    // Defining the acknowledgment String for Control Interface
@@ -750,8 +740,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	logger.exiting(this.getClass().getName(), "run()");
 
     }
-
-
 
     /**
      * Method is invoked by application server, when the state of this robotic
@@ -803,7 +791,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		"onApplicationStateChanged(...)");
 
     }
-    
+
     /**
      * Prints timing statistics and communication parameters.
      * 
@@ -823,7 +811,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		    + "see the e.g. the RealtimePTP Class javaDoc for details");
 	}
     }
-    
+
     /**
      * Stops all running communication threads And stops the motion.
      */
@@ -862,8 +850,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	super.dispose();
 
     }
-    
-    
 
     /**
      * Auto-generated method stub. Do not modify the contents of this method.
