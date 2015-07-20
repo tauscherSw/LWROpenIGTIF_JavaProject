@@ -50,15 +50,15 @@ import de.uniHannover.imes.igtIf.util.StatisticalTimer;
 
 /**
  * This Class for the Communication with a control system using the openIGTLink
- * protocol is based on the igtlink4j class developed at the WPI. For Further
- * information see WPI website. The LWRStateMachineInterface Thread is operated
- * with a 20ms cycle. An Example of the use of this class for the communication
- * with a State Control Software e.g. 3D Slicer see imesStateApplication.
- * According of the data type of the OpenIGTMessage the data is packed and send
- * to the state control. Supported data types are "STATUS", "STRING" and
- * "TRANSFORM". Later on "POINT" will be supported.
+ * protocol. It is used as a thread, which reads cyclically control commands
+ * (for the operation of the statemachine) from the openIGTLink interface and
+ * stores it in an internal data provider {@link CommunicationDataProvider}.
+ * Furthermore it sends acknowledgements for received commands to the
+ * communication partner over openIGTLink. Timing statistics for the loop
+ * iteration times are collected and outputted when the thread will be
+ * interrupted. This thread is operated by default with a 20ms cycle.
  * 
- * @see SimpleStateExample
+ *
  */
 public class ControlThread extends Thread {
 
