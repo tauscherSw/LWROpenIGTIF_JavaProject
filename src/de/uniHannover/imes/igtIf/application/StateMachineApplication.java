@@ -75,75 +75,14 @@ import com.kuka.roboticsAPI.uiModel.ApplicationDialogType;
 import com.kuka.roboticsAPI.userInterface.ServoMotionUtilities;
 
 /**
- * This is an example robot application for an LBR 4 and a Sunrise controller
- * using the LWRVisualization and LWRStatemachineInterface. For the
- * Communication with the robot the SmartServo interface is used. For further
- * information on this topic see the SmartServo documentation. To use the
- * Visualization- and StateControlInterface class you need to declare the object
- * in the main program of your robotAPI e.g the
- * runRealtimeMotion(IMotionControlMode controlMode) function.
+ * This is an example robot application for an LWR 5-14kg and the Sunrise
+ * controller, which installs a statemachine on the controller and communicates
+ * via openIGTLink with external clients for statemachine control. The states
+ * represent different robot behavior (commanded via SmartServo -> see KUKA
+ * documentation for more detail) like gravity compensation and so on. For
+ * further information and setup see {@linkplain
+ * https://github.com/tauscherSw/LWROpenIGTIF_JavaProject/tree/master}
  * 
- * <pre>
- * <code>
- * {@code
- * //Flag to indicate if the Visualization is active or not
- * boolean VisualON=false;
- * 
- * // To set the Visualization active at the start of the program just set the StartVisual flag of the lwrStatemachine Object imesStatemachine to true,
- * // e.g. imesStatemachine.StartVisual=true. Else this flag is set if the StateControl sends the Command "Visual;true;img/rob/jnt"
- * //imesStatemachine.StartVisual=true;
- * 
- * // Declaration of a LWRStateMachineInterface Object for the communication with a State Control using OpenIGTLink
- * LWRStateMachineInterface SlicerControlIf = new LWRStateMachineInterface();
- * 
- * //Declaration of a LWRVisualizationInterface Object for the communication with Visualization using OpenIGTLink e.g. 3D Slicer OpenIGTIF
- * LWRVisualizationInterface SlicerVisualIF = new LWRVisualizationInterface();
- * 
- * //Setting the port for the Control Interface supported ports are 49001 to 49005. Default Value is 49001
- * SlicerControlIf.port =49001;
- * 
- * //Setting the port for the Visualization Interface supported ports are 49001 to 49005. Default Value is 49002
- * SlicerVisualIF.port = 49002;
- * }
- * </code>
- * </pre>
- * 
- * After this the SmartServo Motion needs to be initialized (see SmartServo
- * Documentation) and the SlicerControl thread is started.
- * 
- * <pre>
- * {@code
- * //initializing and starting of the AliveThread for the Communication with the State controller
- * SlicerControlIf.start();
- * }
- * </pre>
- * 
- * After the current position of the robot was read from the SmartServoRuntime
- * the current Position of the imesStatemachine is initialized with these
- * values. *
- * 
- * <pre>
- * {@code
- * //Setting the imes State machine member variables such as the control Mode
- * imesStatemachine.curPose= MatrixTransformation.of(SmartServoRuntime.getCartFrmMsrOnController());
- * imesStatemachine.controlMode = controlMode;
- * imesStatemachine.cmdPose = MatrixTransformation.of(SmartServoRuntime.getCartFrmMsrOnController());
- * 
- * //Initialize some of the Visualization Interface member variables
- * SlicerVisualIF.jntPose_StateM = SmartServoRuntime.getAxisQMsrOnController();
- * SlicerVisualIF.cartPose_StateM = imesStatemachine.curPose;
- * }
- * </pre>
- * 
- * When these initializing routine is done the main loop is entered. The loop
- * stopps when: - the command Shutdown/End/Quit were received from the state
- * control - when there was no packet received from the state control for
- * _numRuns loops
- * 
- * 
- * @author Sebastian Tauscher
- * @version 0.2
- * @see
  */
 public class StateMachineApplication extends RoboticsAPIApplication {
 
@@ -295,11 +234,11 @@ public class StateMachineApplication extends RoboticsAPIApplication {
      * The tool object describing the physical properties of the tool attached
      * to the robot's flange.
      */
-     private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.44,
-     MatrixTransformation.ofTranslation(-5,0,50), Inertia.ZERO));
-//     TODO dummy tool used for debugging
-//    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.0,
-//	    MatrixTransformation.ofTranslation(0, 0, 0), Inertia.ZERO));
+    private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.44,
+	    MatrixTransformation.ofTranslation(-5, 0, 50), Inertia.ZERO));
+    // TODO dummy tool used for debugging
+    // private final Tool imesTool = new Tool("Imes Tool", new LoadData(0.0,
+    // MatrixTransformation.ofTranslation(0, 0, 0), Inertia.ZERO));
 
     /**
      * Object of the state machine interface class for the communication with a
@@ -370,7 +309,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	ServoMotionUtilities.resetControllerAndKILLALLMOTIONS(imesLBR);
 	ServoMotionUtilities.acknowledgeError(imesLBR);
 	logger.finest("Resetted sunrise controller and acked all errors.");
-	
+
 	/* Initialize all robot-hardware corresponding objects. */
 	imesLBR = (LBR) ServoMotionUtilities.locateLBR(getContext());
 	logger.finest("Robot object successfully created.");
@@ -685,10 +624,14 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		     */
 		    try {
 			logger.fine("Apply new control parameters...");
-			logger.finest("Setting control mode settings for mode and destination..."
+			logger.finest("Setting control mode settings for mode "
+				+ "and destination..."
 				+ imesStatemachine.controlMode.toString());
 			smartServoRuntime
 				.changeControlModeSettings(imesStatemachine.controlMode);
+			logger.finest("Waiting for smartServo to read new control data...");
+			smartServoRuntime.waitForTransferred();
+
 			smartServoRuntime
 				.setDestination(imesStatemachine.cmdPose);
 			logger.fine("New control parameters applied");
@@ -696,6 +639,10 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 			logger.log(Level.SEVERE,
 				"Cannot change control mode settings or command a new pose. "
 					+ "Resetting smart servo", e);
+			logger.warning("Activating waitForPause during "
+				+ "setDestination on smartServo interface");
+			smartServoRuntime
+				.activatewaitForPauseDuringSetDestination(true);
 			// logger.fine("Resetting controller, ack errors and reinit "
 			// + "smartServo...");
 			// ServoMotionUtilities
