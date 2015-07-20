@@ -52,8 +52,13 @@ import de.uniHannover.imes.igtIf.util.SleepUtil;
 import de.uniHannover.imes.igtIf.util.StatisticalTimer;
 
 /**
- * This Class for the Communication with a Visualization system using the
- * opnIGTLink protocol is based on the igtlink4j class developed at the WPI.
+ * This class is used for the visualization of robot parameters (joint-angles,
+ * cartesian position, tcp force) on a remote openIGTLink client. This thread
+ * sends the corresponding data cyclically (by default 25ms) to a defined
+ * openIGTLink client (by default port 49002). This thread's operation can be
+ * activated or deactivated by calling setCondWork(...). Timing statistics of
+ * the loop iteration times are collected and outputted, when the thread will be
+ * interrupted.
  * 
  * @see SimpleStateExample
  */

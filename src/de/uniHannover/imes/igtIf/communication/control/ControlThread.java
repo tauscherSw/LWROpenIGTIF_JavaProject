@@ -49,13 +49,14 @@ import de.uniHannover.imes.igtIf.util.SleepUtil;
 import de.uniHannover.imes.igtIf.util.StatisticalTimer;
 
 /**
- * This Class for the Communication with a control system using the openIGTLink
- * protocol. It is used as a thread, which reads cyclically control commands
- * (for the operation of the statemachine) from the openIGTLink interface and
- * stores it in an internal data provider {@link CommunicationDataProvider}.
- * Furthermore it sends acknowledgements for received commands to the
- * communication partner over openIGTLink. Timing statistics for the loop
- * iteration times are collected and outputted when the thread will be
+ * This class is used for the communication with a control system using the
+ * openIGTLink protocol. It is used as a thread, which reads cyclically control
+ * commands (for the operation of the statemachine) from the openIGTLink
+ * interface and stores it in an internal data provider
+ * {@link CommunicationDataProvider}. Furthermore it sends acknowledgements for
+ * received commands to the communication partner over openIGTLink. By default
+ * all data will be exchanged via port 49001. Timing statistics of the loop
+ * iteration times are collected and outputted, when the thread will be
  * interrupted. This thread is operated by default with a 20ms cycle.
  * 
  *

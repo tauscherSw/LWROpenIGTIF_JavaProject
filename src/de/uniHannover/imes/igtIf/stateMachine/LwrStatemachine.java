@@ -53,14 +53,20 @@ import de.uniHannover.imes.igtIf.stateMachine.states.LwrPathImp;
 import de.uniHannover.imes.igtIf.stateMachine.states.LwrVirtualFixtures;
 import de.uniHannover.imes.igtIf.communication.control.CommandPacket;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
+import de.uniHannover.imes.igtIf.communication.control.ControlThread;
 import de.uniHannover.imes.igtIf.communication.visualization.VisualizationThread.VisualIFDatatypes;
 
 /**
- * State machine class using the LWRState interface and its sub class/states.
- * This class owns a object of this LWRState interface class which changed its
- * class according to the CMDIGTMessage. Currently implemented states are : -
- * LWRIdle - LWRGravComp - LWRVirtualFixtures - LWRMoveToPose - LWRPathImp An
- * example use of a state machine application see the imesStateApplication.
+ * This class implements a statemachine, which executes different states (i.e.
+ * robot behavior) and which is operated / controlled via an external
+ * openIGTLink client. Control data is exchanged via the {@link ControlThread}.
+ * All executable states have to implement the {@link ILwrState} interface.
+ * Furthermore the states have to be implemented in the commanding openIGTLink
+ * client. As described above states represent a specific robot behavior like
+ * gravity compensation ({@link LwrGravComp} and become active, when the
+ * corresponding state transition is executed. This statemachine also handles
+ * the acknowledgement message generation for the control commands received via
+ * an external openIGTLink client.
  * 
  * @see ILwrState
  * @see LwrIdle
@@ -642,8 +648,7 @@ public class LwrStatemachine {
 	} else {
 	    this.stateChanged = false;
 	}
-	logger.fine("Current state "
-		+ RobotState.toString());
+	logger.fine("Current state " + RobotState.toString());
 	logger.exiting(this.getClass().getName(), "checkTransitionRequest()");
 
     }
