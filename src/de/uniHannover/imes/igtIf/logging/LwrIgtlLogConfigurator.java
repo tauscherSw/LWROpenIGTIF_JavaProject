@@ -120,7 +120,7 @@ public final class LwrIgtlLogConfigurator {
 				+ LOGGERS_NAME
 				+ " additionally to the smartPad console output.");
 		debugFileHandler = new FileHandler(
-			curLogFile.getAbsolutePath(), false);
+			DEBUG_LOGFILE.getAbsolutePath(), false);
 		debugFileHandler.setLevel(Level.ALL);
 		debugFileHandler.setFormatter(formatter);
 		logger.addHandler(debugFileHandler); // add file handler
