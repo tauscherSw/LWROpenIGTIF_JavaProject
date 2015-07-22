@@ -222,12 +222,12 @@ public class CommunicationDataProvider {
 			"readNewCmdMessage(...)");
 		if (!curPacket.getCmdString().equalsIgnoreCase(
 			getCommandString(message.getBody()))) {
-		    throw new IllegalStateException("Current system's uid: "
-			    + getCurrentCmdPacket().getUid()
-			    + " and received message's uid: " + tmpUid
-			    + " are equal but the command-strings aren't: "
-			    + curPacket.getCmdString() + " vs. "
-			    + getCommandString(message.getBody()));
+//		    throw new IllegalStateException("Current system's uid: "
+//			    + getCurrentCmdPacket().getUid()
+//			    + " and received message's uid: " + tmpUid
+//			    + " are equal but the command-strings aren't: "
+//			    + curPacket.getCmdString() + " vs. "
+//			    + getCommandString(message.getBody()));
 
 		}
 		return;

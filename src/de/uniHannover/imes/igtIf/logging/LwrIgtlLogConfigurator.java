@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.SocketHandler;
+import java.util.logging.XMLFormatter;
 
 import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 
@@ -51,8 +52,6 @@ public final class LwrIgtlLogConfigurator {
     public static final int DEBUG_VIEWER_PORT = 49003;
     /** Singleton instance. */
     private static LwrIgtlLogConfigurator instance;
-    /** The current logging file. */
-    private File curLogFile;
     /** the file handler for logging output. */
     private FileHandler debugFileHandler;
     /** Debug socket-handler. */
@@ -122,7 +121,7 @@ public final class LwrIgtlLogConfigurator {
 		debugFileHandler = new FileHandler(
 			DEBUG_LOGFILE.getAbsolutePath(), false);
 		debugFileHandler.setLevel(Level.ALL);
-		debugFileHandler.setFormatter(formatter);
+		debugFileHandler.setFormatter(new XMLFormatter());
 		logger.addHandler(debugFileHandler); // add file handler
 		break;
 	    case Network:
@@ -134,10 +133,12 @@ public final class LwrIgtlLogConfigurator {
 				+ " with the port "
 				+ LwrIgtlLogConfigurator.DEBUG_VIEWER_PORT
 				+ " additionally to the smartPad console output.");
+		
+		
 		debugSocketHandler = new SocketHandler(DEBUG_VIEWER_IP,
 			DEBUG_VIEWER_PORT);
 		debugSocketHandler.setLevel(Level.ALL);
-		debugSocketHandler.setFormatter(formatter);
+		debugSocketHandler.setFormatter(new XMLFormatter());
 		logger.addHandler(debugSocketHandler);
 		break;
 	    default:

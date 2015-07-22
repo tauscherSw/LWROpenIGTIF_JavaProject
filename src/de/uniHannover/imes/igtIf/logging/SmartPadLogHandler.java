@@ -29,22 +29,19 @@ class SmartPadLogHandler extends Handler {
 	logger = extLogger;
     }
 
-    /** Saves all log records until its flushed. */
-    private final List<LogRecord> records = new ArrayList<LogRecord>();
-
     @Override
     public void publish(final LogRecord logRecord) {
 	// Skip all logRecords which are lower than the parametrized loglevel
 	if (logRecord.getLevel().intValue() >= Level.INFO.intValue()) {
-	    records.add(logRecord);
+	    flushImmediately(logRecord);
 	}
     }
 
-    @Override
-    public void flush() {
-
-	// Iterate over all saved records
-	for (LogRecord rec : records) {
+    /**
+     * Flushes immediately the message to the output.
+     * @param rec the logrecord.
+     */
+    private void flushImmediately(LogRecord rec) {
 
 	    /*
 	     * Check loglevels and transfer message and further information to
@@ -74,9 +71,7 @@ class SmartPadLogHandler extends Handler {
 		logger.warn(rec.getSourceClassName() + "|"
 			+ rec.getSourceMethodName() + ": " + rec.getMessage());
 	    }
-	}
-	// Clear records after logging
-	records.clear();
+
     }
 
     @Override
@@ -84,5 +79,11 @@ class SmartPadLogHandler extends Handler {
 	// nothing to do
 
     }
+
+	@Override
+	public void flush() {
+		// Intentionally empty
+		
+	}
 
 }
