@@ -65,11 +65,10 @@ public class CommunicationDataProvider {
     public enum IgtlMsgType {
 
 	/** A message containing just a command string. */
-	Command("STRING"),
-	/**
-	 * A message containing an transformation matrix to an external
-	 * reference frame.
-	 */
+	Command("STRING"), /**
+			    * A message containing an transformation matrix to
+			    * an external reference frame.
+			    */
 	Transform("TRANSFORM");
 
 	/**
@@ -222,12 +221,12 @@ public class CommunicationDataProvider {
 			"readNewCmdMessage(...)");
 		if (!curPacket.getCmdString().equalsIgnoreCase(
 			getCommandString(message.getBody()))) {
-//		    throw new IllegalStateException("Current system's uid: "
-//			    + getCurrentCmdPacket().getUid()
-//			    + " and received message's uid: " + tmpUid
-//			    + " are equal but the command-strings aren't: "
-//			    + curPacket.getCmdString() + " vs. "
-//			    + getCommandString(message.getBody()));
+		    // throw new IllegalStateException("Current system's uid: "
+		    // + getCurrentCmdPacket().getUid()
+		    // + " and received message's uid: " + tmpUid
+		    // + " are equal but the command-strings aren't: "
+		    // + curPacket.getCmdString() + " vs. "
+		    // + getCommandString(message.getBody()));
 
 		}
 		return;
@@ -267,14 +266,13 @@ public class CommunicationDataProvider {
 			+ tmpExtTrafo.toString());
 		break;
 	    default:
-		throw new UnknownCommandException("Message type: "
-			+ messageType + " is unknown.");
+		throw new UnknownCommandException(
+			"Message type: " + messageType + " is unknown.");
 
 	    }
 	    // Set here new command packet.
-	    if(!tmpCmdString.equals(curPacket.getCmdString()))
-	    {
-	    	logger.info("Received new command: " + tmpCmdString);
+	    if (!tmpCmdString.equals(curPacket.getCmdString())) {
+		logger.info("Received new command: " + tmpCmdString);
 	    }
 	    curPacket = new CommandPacket(tmpCmdString, tmpMsgType, tmpUid,
 		    tmpExtTrafo, tmpTransformReceived);
@@ -298,12 +296,13 @@ public class CommunicationDataProvider {
     public final void readNewRobotData() {
 	logger.entering(this.getClass().getName(), "readNewRobotData()");
 	MatrixTransformation currentTcpPose = MatrixTransformation
-		.of(robotDataSink.getCurrentCartesianPosition(
-			robotDataSink.getFlange()).transformationFromWorld());
+		.of(robotDataSink
+			.getCurrentCartesianPosition(robotDataSink.getFlange())
+			.transformationFromWorld());
 	JointPosition currentJointPosition = robotDataSink
 		.getCurrentJointPosition();
-	Vector tcpForce = robotDataSink.getExternalForceTorque(
-		robotDataSink.getFlange()).getForce();
+	Vector tcpForce = robotDataSink
+		.getExternalForceTorque(robotDataSink.getFlange()).getForce();
 	// for initialization no synchronized access to curRobotDataSet
 	if (null == curRobotDataSet) {
 	    curRobotDataSet = new RobotDataSet(currentJointPosition,
@@ -342,8 +341,9 @@ public class CommunicationDataProvider {
 		uidRepeatMax = uidRepeat;
 	    }
 	    if (uidRepeat >= MAX_EQUAL_UIDS) {
-		logger.severe("State machine interface: UID has not changed for the "
-			+ uidRepeat + ". time!! Check state control!");
+		logger.severe(
+			"State machine interface: UID has not changed for the "
+				+ uidRepeat + ". time!! Check state control!");
 	    }
 	} else if (uidDelay > 1) {
 	    uidMiss = uidMiss + uidDelay - 1;
@@ -417,8 +417,7 @@ public class CommunicationDataProvider {
 	int enddata = 0;
 	final int readBeginPos = 14;
 	for (int j = readBeginPos; j < readBeginPos
-		+ IGTLheader.IGTL_HEADER_DEVSIZE
-		&& enddata == 0; j++) {
+		+ IGTLheader.IGTL_HEADER_DEVSIZE && enddata == 0; j++) {
 	    tmpDeviceName[l] = headerBytes[j];
 	    if (headerBytes[j] == 0) {
 		enddata = l;
@@ -469,8 +468,8 @@ public class CommunicationDataProvider {
 		rot[i] = bodyBuff.getDouble(i * Double.SIZE);
 	    } else if (i >= SIZE_OF_TRANS
 		    && i < SIZE_OF_ROTATION + SIZE_OF_TRANS) {
-		trans[i - SIZE_OF_ROTATION] = bodyBuff.getDouble(i
-			* Double.SIZE);
+		trans[i - SIZE_OF_ROTATION] = bodyBuff
+			.getDouble(i * Double.SIZE);
 	    }
 	}
 	return MatrixTransformation.of(Vector.of(trans[0], trans[1], trans[2]),
@@ -500,8 +499,8 @@ public class CommunicationDataProvider {
 	// For initialization
 	if (curPacket == null) {
 	    // initialize the current command packet.
-	    curPacket = new CommandPacket("IDLE;", IgtlMsgType.Command, 0,
-		    null, false);
+	    curPacket = new CommandPacket("IDLE;", IgtlMsgType.Command, 0, null,
+		    false);
 	}
 
 	synchronized (curPacket) {
