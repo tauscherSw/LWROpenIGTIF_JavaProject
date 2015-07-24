@@ -77,6 +77,9 @@ import com.kuka.roboticsAPI.userInterface.ServoMotionUtilities;
 public class StateMachineApplication extends RoboticsAPIApplication {
 
     // **************************Constants**********************/
+    
+    /** Name of the tool defined in the template section of sunrise workbench.*/
+    private static final String TEMPLATE_TOOL_NAME = "openIGTLProjectTool";
 
     /** Time in milliseconds for waiting for communication threads to end. */
     private static final int JOIN_TIME_THREADS = 2500;
@@ -108,10 +111,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
     /**
      * Defines how log messages are processed.
      */
-    public static final LogForwardType DEBUG_LOG_FORWARD_TYPE = LogForwardType.File;
-
-    /** Flag to indicate if main loop is active. */
-    private boolean mainLoopActive = false;
+    public static final LogForwardType DEBUG_LOG_FORWARD_TYPE 
+    	= LogForwardType.File;
 
     // **************************Components*********************/
 
@@ -210,7 +211,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 	// check if user has defined template tool otherwise a default tool will
 	// be attached.
-	Tool userTool = createFromTemplate("openIGTLProjectTool");
+	Tool userTool = createFromTemplate(TEMPLATE_TOOL_NAME);
 	robotCom.init(imesLwr, getApplicationUI(), userTool);
 
 	robotCom.setup();
@@ -299,7 +300,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 	    // Main loop
 	    logger.info("State machine running...");
-	    mainLoopActive = true;
 
 	    while (stateMachineRun && controlThreadNotAlive < N_OF_RUNS) {
 
@@ -435,7 +435,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 
 		    logger.log(Level.SEVERE, "Interruption during main loop."
 			    + "All connections will be closed.", e);
-		    mainLoopActive = false;
 		}
 		logger.fine("End main loop");
 	    } // end while
@@ -443,7 +442,6 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	} finally {
 	    // Print final infos.
 	    printFinalInfos();
-	    mainLoopActive = false;
 	}
 
 	logger.exiting(this.getClass().getName(), "run()");

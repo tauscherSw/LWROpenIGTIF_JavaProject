@@ -234,12 +234,16 @@ public final class RobotMotionCommander {
 	robot = lwRobot;
 
 	if (null != lwrTool) {
+	    logger.info("Template-defined-tool " + lwrTool.getName()
+		    + " will be used.");
 	    tool = lwrTool;
 
 	} else {
 	    if (null == IMES_TOOL.getDefaultMotionFrame()) {
 		IMES_TOOL.addDefaultMotionFrame("TCP", TOOL_TCP_OFFSET);
 	    }
+	    logger.info("Default tool will be used.");
+
 	    tool = IMES_TOOL;
 
 	}
