@@ -301,7 +301,7 @@ public class VisualizationThread extends Thread {
     private void conditionalWork() throws IOException {
 	logger.entering(this.getClass().getName(), "conditionalWork()");
 	if (getCondWork()) {
-	    logger.info("Sending transformation...");
+	    logger.fine("Sending transformation...");
 	    sendTransformation(currentDataSet, currentSenderConfig);
 
 	}
@@ -316,10 +316,10 @@ public class VisualizationThread extends Thread {
      *            true means enabling the sender false disables it.
      */
     public final void setCondWork(final boolean setting) {
-	if (getCondWork() == false && setting == true) {
+	if (!getCondWork() && setting) {
 	    logger.info("Sending of visualization data was enabled.");
 	}
-	if (getCondWork() == true && setting == false) {
+	if (getCondWork() && !setting) {
 	    logger.info("Sending of visualization data was disabled.");
 	}
 	condWorkActive = setting;

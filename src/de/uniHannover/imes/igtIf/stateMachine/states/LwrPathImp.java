@@ -176,7 +176,7 @@ public class LwrPathImp implements ILwrState {
 		lwrStatemachine.cmdPose = MatrixTransformation
 			.of(targetOrientation.withTranslation(targetPosition));
 		if (!endOfPath) {
-		    logger.info("Path Impedance: Reached End of path ("
+		    logger.fine("Path Impedance: Reached End of path ("
 			    + targetPosition + ")");
 		}
 		endOfPath = true;

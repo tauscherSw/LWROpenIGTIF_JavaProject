@@ -271,7 +271,7 @@ public class ControlThread extends Thread {
 
 	// Try to receive a new message. If no msg is in the in-buffer a null
 	// message will be returned.
-	logger.info("Waiting for a new message...");
+	logger.fine("Waiting for a new message...");
 	receivedMsg = port.receiveMsg();
 
 	// Read the new message. Null messages (no message) will be skipped.

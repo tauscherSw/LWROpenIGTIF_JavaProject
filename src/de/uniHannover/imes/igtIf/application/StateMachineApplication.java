@@ -59,7 +59,6 @@ import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplication;
 import com.kuka.roboticsAPI.applicationModel.RoboticsAPIApplicationState;
 
 import com.kuka.roboticsAPI.deviceModel.LBR;
-import com.kuka.roboticsAPI.motionModel.controlModeModel.IMotionControlMode;
 import com.kuka.roboticsAPI.uiModel.ApplicationDialogType;
 import com.kuka.roboticsAPI.userInterface.ServoMotionUtilities;
 
