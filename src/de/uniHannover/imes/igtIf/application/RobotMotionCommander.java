@@ -427,6 +427,8 @@ public final class RobotMotionCommander {
 		}
 
 		logger.exiting(this.getClass().getName(), "dispose()");
+		instance = null;
+		
 	}
 
 	/**

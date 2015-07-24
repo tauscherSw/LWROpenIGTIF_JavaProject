@@ -37,6 +37,7 @@
 
 package de.uniHannover.imes.igtIf.application;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -101,7 +102,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	 * Turn this flag to true if debugging should be enabled. A debug-Logging
 	 * output will be saved in a File-Logger in user.home.
 	 */
-	public static final boolean DEBUG_MODE = true;
+	public static final boolean DEBUG_MODE = false;
 
 	/**
 	 * Defines how log messages are processed.
@@ -175,6 +176,8 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 	 **/
 	@Override
 	public final void initialize() {
+		//Garbage collection
+		System.gc();
 
 		// Parameterize project logging mechanism
 		logConfig = LwrIgtlLogConfigurator.getInstance();
@@ -192,8 +195,13 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		logger.entering(this.getClass().getName(), "initialize()");
 
 		/* Load swig library. */
+		try{
 		FileSystemUtil.loadSwigDll();
 		logger.finest("SWIG library loaded.");
+		}
+		catch(Exception e){
+			logger.log(Level.SEVERE,"Cannot load swig dll",e);
+		}
 
 		/* Initialize all robot-hardware corresponding objects. */
 		imesLwr = (LBR) ServoMotionUtilities.locateLBR(getContext());
@@ -538,6 +546,7 @@ public class StateMachineApplication extends RoboticsAPIApplication {
 		logger.exiting(this.getClass().getName(), "dispose()");
 		logConfig.dispose();
 		super.dispose();
+		System.gc();
 
 	}
 

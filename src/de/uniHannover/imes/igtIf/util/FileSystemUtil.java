@@ -49,7 +49,7 @@ import java.util.jar.JarFile;
  * controller.
  */
 public final class FileSystemUtil {
-	
+
 	// **************************Constants**********************/
 	/**
 	 * External swig library.
@@ -68,130 +68,132 @@ public final class FileSystemUtil {
 			+ File.separatorChar + "SWIG" + File.separatorChar
 			+ "SWIG_communication.jar";
 
-    // *************************Constructors********************/
-    /** Privatized constructor, because this class shouldn't be instantiated. */
-    private FileSystemUtil() {
-	super();
-    }
+	// *************************Constructors********************/
+	/** Privatized constructor, because this class shouldn't be instantiated. */
+	private FileSystemUtil() {
+		super();
+	}
 
-    // ***************************Methods***********************/
-    /**
-     * Extracts a file from a jar archive. This means this methods searches for
-     * this file and copies it to a specified destination
-     * 
-     * @param sourceJar
-     *            the jar-file, which holds the file to be searched for.
-     * @param destinationFile
-     *            the desired absolute path (and full name) of the local copy *
-     * @param filename
-     *            the name, the algorithm is looking for in the jar-archive
-     * @throws IOException
-     *             if extraction of the file fails.
-     */
-    public static void extractFileFromJar(final File sourceJar,
-	    final File destinationFile, final String filename)
-	    throws IOException {
-
-	/*
-	 * Preliminary checks if arguments are correct
+	// ***************************Methods***********************/
+	/**
+	 * Extracts a file from a jar archive. This means this methods searches for
+	 * this file and copies it to a specified destination
+	 * 
+	 * @param sourceJar
+	 *            the jar-file, which holds the file to be searched for.
+	 * @param destinationFile
+	 *            the desired absolute path (and full name) of the local copy *
+	 * @param filename
+	 *            the name, the algorithm is looking for in the jar-archive
+	 * @throws IOException
+	 *             if extraction of the file fails.
 	 */
-	if (!sourceJar.exists() || !sourceJar.isFile()) {
-	    throw new IllegalArgumentException(sourceJar.getAbsolutePath()
-		    + " does not exist or is no file.");
-	}
-	if (destinationFile.isDirectory()) {
-	    throw new IllegalArgumentException("the argument "
-		    + destinationFile.getAbsolutePath() + " is no file");
-	}
-	if (!destinationFile.exists()) {
-	    if (!destinationFile.createNewFile()) {
-		throw new IOException("Failed to create "
-			+ destinationFile.getAbsolutePath());
-	    }
+	public static void extractFileFromJar(final File sourceJar,
+			final File destinationFile, final String filename)
+			throws IOException {
 
-	}
-
-	/*
-	 * Setup the variables needed for the algorithm
-	 */
-	JarFile jFile = new JarFile(sourceJar);
-	JarEntry jEntry = null;
-	FileOutputStream outPut = null;
-	InputStream dllStream = null;
-
-	try {
-
-	    /*
-	     * Begin search for file in jar-archive and copy it.
-	     */
-
-	    jEntry = jFile.getJarEntry(filename);
-	    if (jEntry == null) {
-		jFile.close();
-		throw new IllegalArgumentException("The file " + filename
-			+ " cant be found in " + sourceJar.getName());
-	    }
-
-	    dllStream = jFile.getInputStream(jEntry);
-	    outPut = new FileOutputStream(destinationFile);
-
-	    // Check write access, check if file is lockable
-	    if (!destinationFile.canWrite() || !destinationFile.setReadOnly()) {
-		jFile.close();
-		outPut.close();
-		throw new IOException("Cannot write & lock file "
-			+ destinationFile.getAbsolutePath());
-	    }
-
-	    while (true) {
-		int bytesRead = dllStream.read();
-		// check if all bytes were read.
-		if (bytesRead == -1) {
-		    break;
+		/*
+		 * Preliminary checks if arguments are correct
+		 */
+		if (!sourceJar.exists() || !sourceJar.isFile()) {
+			throw new IllegalArgumentException(sourceJar.getAbsolutePath()
+					+ " does not exist or is no file.");
 		}
-		outPut.write(bytesRead);
-	    }
-	} finally {
-	    if (null != outPut) {
-		outPut.close();
-	    }
-	    if (null != dllStream) {
-		dllStream.close();
-	    }
-	    if (null != jFile) {
-		jFile.close();
-	    }
-	    destinationFile.setWritable(true);
+		if (destinationFile.isDirectory()) {
+			throw new IllegalArgumentException("the argument "
+					+ destinationFile.getAbsolutePath() + " is no file");
+		}
+		if (!destinationFile.exists()) {
+			if (!destinationFile.createNewFile()) {
+				throw new IOException("Failed to create "
+						+ destinationFile.getAbsolutePath());
+			}
+
+		}
+
+		/*
+		 * Setup the variables needed for the algorithm
+		 */
+		JarFile jFile = new JarFile(sourceJar);
+		JarEntry jEntry = null;
+		FileOutputStream outPut = null;
+		InputStream dllStream = null;
+
+		try {
+
+			/*
+			 * Begin search for file in jar-archive and copy it.
+			 */
+
+			jEntry = jFile.getJarEntry(filename);
+			if (jEntry == null) {
+				jFile.close();
+				throw new IllegalArgumentException("The file " + filename
+						+ " cant be found in " + sourceJar.getName());
+			}
+
+			dllStream = jFile.getInputStream(jEntry);
+			outPut = new FileOutputStream(destinationFile);
+
+			// Check write access, check if file is lockable
+			if (!destinationFile.canWrite() || !destinationFile.setReadOnly()) {
+				jFile.close();
+				outPut.close();
+				throw new IOException("Cannot write & lock file "
+						+ destinationFile.getAbsolutePath());
+			}
+
+			while (true) {
+				int bytesRead = dllStream.read();
+				// check if all bytes were read.
+				if (bytesRead == -1) {
+					break;
+				}
+				outPut.write(bytesRead);
+			}
+		} finally {
+			if (null != outPut) {
+				outPut.close();
+			}
+			if (null != dllStream) {
+				dllStream.close();
+			}
+			if (null != jFile) {
+				jFile.close();
+			}
+			destinationFile.setWritable(true);
+		}
+
 	}
 
-    }
-    
-    /**
-     * Loads the swig library used for openIgtl communication.
-     */
-    public static void loadSwigDll(){
+	/**
+	 * Loads the swig library used for openIgtl communication.
+	 */
+	public static void loadSwigDll() {
 
-    		/*
-    		 * To load the correct swig library we need to extract the file. It is
-    		 * packed by sunrise workbench to a jar-archive. The dll-file can be
-    		 * found in another jar-archive.
-    		 */
-    		// Get path to jar
-    		File projParentDir = new File(System.getProperty("user.dir")
-    				+ File.separatorChar + "Git" + File.separatorChar);
-    		File[] dirs = projParentDir.listFiles();
-    		File projectDir = dirs[0];
-    		File jarSrc = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
-    		File jarDest = new File(projectDir.getAbsolutePath()
-    				+ File.separatorChar + SWIG_DLL);
-    		try {
-    			FileSystemUtil.extractFileFromJar(jarSrc, jarDest, SWIG_DLL_RELPATH
-    					+ SWIG_DLL);
-    		} catch (IOException e) {
-    			e.printStackTrace();
-    		}
-    		System.load(jarDest.getAbsolutePath());
+		/*
+		 * To load the correct swig library we need to extract the file. It is
+		 * packed by sunrise workbench to a jar-archive. The dll-file can be
+		 * found in another jar-archive.
+		 */
+		// Get path to jar
+		File projParentDir = new File(System.getProperty("user.dir")
+				+ File.separatorChar + "Git" + File.separatorChar);
+		File[] dirs = projParentDir.listFiles();
+		File projectDir = dirs[0];
+		File jarSrc = new File(projectDir.getAbsolutePath() + LIB_PATH_REL);
+		File jarDest = new File(projectDir.getAbsolutePath()
+				+ File.separatorChar + SWIG_DLL);
+		//Extract file if it was not already extracted before.
+		if (!jarDest.isFile()) {
+			try {
+				FileSystemUtil.extractFileFromJar(jarSrc, jarDest,
+						SWIG_DLL_RELPATH + SWIG_DLL);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		System.load(jarDest.getAbsolutePath());
 
-
-    }
+	}
 }

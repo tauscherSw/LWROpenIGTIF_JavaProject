@@ -163,6 +163,7 @@ public final class LwrIgtlLogConfigurator {
 	    debugSocketHandler.close();
 	}
 	System.out.println("Loggers disposed.");
+    
+    instance = null;
     }
-
 }

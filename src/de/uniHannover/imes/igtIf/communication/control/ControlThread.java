@@ -317,8 +317,7 @@ public class ControlThread extends Thread {
     private void dispose() {
 	logger.entering(this.getClass().getName(), "dispose()");
 	if (null != timer) {
-	    logger.fine("Final timer statistics: \n"
-		    + timer.getOverallStatistics());
+	    logger.info("Final statistics: \n" + timer.getOverallStatistics());
 	}
 
 	if (null != port) {

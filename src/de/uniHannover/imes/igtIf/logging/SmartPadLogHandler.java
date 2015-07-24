@@ -1,7 +1,5 @@
 package de.uniHannover.imes.igtIf.logging;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -18,6 +16,9 @@ class SmartPadLogHandler extends Handler {
 
     /** Can output logs to the smartPad. */
     private ITaskLogger logger;
+    
+    /** Last published message.*/
+    private String lastMsg = null;
 
     /**
      * Creates a new SmartPadLogger.
@@ -33,7 +34,12 @@ class SmartPadLogHandler extends Handler {
     public void publish(final LogRecord logRecord) {
 	// Skip all logRecords which are lower than the parametrized loglevel
 	if (logRecord.getLevel().intValue() >= Level.INFO.intValue()) {
-	    flushImmediately(logRecord);
+
+	    if(lastMsg != logRecord.getMessage())
+	    {
+		    flushImmediately(logRecord);
+		    lastMsg = logRecord.getMessage();
+	    }
 	}
     }
 

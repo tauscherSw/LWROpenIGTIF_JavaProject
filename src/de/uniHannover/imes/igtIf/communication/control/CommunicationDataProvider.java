@@ -272,6 +272,10 @@ public class CommunicationDataProvider {
 
 	    }
 	    // Set here new command packet.
+	    if(!tmpCmdString.equals(curPacket.getCmdString()))
+	    {
+	    	logger.info("Received new command: " + tmpCmdString);
+	    }
 	    curPacket = new CommandPacket(tmpCmdString, tmpMsgType, tmpUid,
 		    tmpExtTrafo, tmpTransformReceived);
 	    logger.finest("New message saved.");
