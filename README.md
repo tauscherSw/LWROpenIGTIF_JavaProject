@@ -36,7 +36,7 @@ Steps to setup the robot and the software
  * <i>Fast Robot Interface</i>
  * <i>Smart Servo Motion Extension</i>
 0. Install the Sunrise-project on the robot controller.
-0. Create a tool template in your workspace and name it: <i>openIGTLProjectTool</i>. Add your specific load data. If no tool is mounted on your robot's flange do not modify the new tool's data.
+0. Create a tool template in your workspace and name it: <i>openIGTLProjectTool</i>. Add your specific load data and your tcp. If no tool is defined as template, a default tool will be used instead.
 0. Synchronize your sunrise project
 
 Usage
