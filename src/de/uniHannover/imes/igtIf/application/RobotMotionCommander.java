@@ -236,6 +236,10 @@ public final class RobotMotionCommander {
 	if (null != lwrTool) {
 	    logger.info("Template-defined-tool " + lwrTool.getName()
 		    + " will be used.");
+	    if (null == lwrTool.getDefaultMotionFrame()) {
+		throw new IllegalStateException(
+			"Please define a tcp on your template-defined-tool.");
+	    }
 	    tool = lwrTool;
 
 	} else {

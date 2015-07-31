@@ -3,6 +3,7 @@ package de.uniHannover.imes.igtIf.logging;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -30,8 +31,7 @@ public final class LwrIgtlLogConfigurator {
      */
     public enum LogForwardType {
 	/** Log records are send to a file. */
-	File,
-	/** Log records are send to a network host. */
+	File, /** Log records are send to a network host. */
 	Network;
     }
 
@@ -82,6 +82,7 @@ public final class LwrIgtlLogConfigurator {
 
     /**
      * Sets up the loggers for the LWRopenIGTL project. Depending
+     * 
      * @param smartPadLogger
      *            the Sunrise-Logging-mechanism
      * @param debugModeEnabled
@@ -94,9 +95,13 @@ public final class LwrIgtlLogConfigurator {
      */
     public void setup(final ITaskLogger smartPadLogger,
 	    final boolean debugModeEnabled, final LogForwardType type)
-	    throws IOException {
+		    throws IOException {
 
 	logger = Logger.getLogger(LOGGERS_NAME);
+	//Remove all handlers from logger
+	for (Handler handler : logger.getHandlers()) {
+	    logger.removeHandler(handler);
+	}
 	logger.setUseParentHandlers(false); // remove console handler
 	logger.setLevel(Level.ALL);
 	SimpleFormatter formatter = new SimpleFormatter();
@@ -115,8 +120,7 @@ public final class LwrIgtlLogConfigurator {
 		smartPadLogger
 			.warn("DEBUG LOGGER is enabled. All logging-output "
 				+ "(all log-levels) will be "
-				+ "directed to the file: "
-				+ LOGGERS_NAME
+				+ "directed to the file: " + LOGGERS_NAME
 				+ " additionally to the smartPad console output.");
 		debugFileHandler = new FileHandler(
 			DEBUG_LOGFILE.getAbsolutePath(), false);
@@ -133,8 +137,7 @@ public final class LwrIgtlLogConfigurator {
 				+ " with the port "
 				+ LwrIgtlLogConfigurator.DEBUG_VIEWER_PORT
 				+ " additionally to the smartPad console output.");
-		
-		
+
 		debugSocketHandler = new SocketHandler(DEBUG_VIEWER_IP,
 			DEBUG_VIEWER_PORT);
 		debugSocketHandler.setLevel(Level.ALL);
@@ -153,17 +156,16 @@ public final class LwrIgtlLogConfigurator {
      * Closes all log-handlers.
      */
     public void dispose() {
-	if (null != debugFileHandler) {
-	    debugFileHandler.close();
-	}
-	if (null != normalSmartPadHandler) {
-	    normalSmartPadHandler.close();
-	}
-	if (null != debugSocketHandler) {
-	    debugSocketHandler.close();
+
+	Handler[] handlers = logger.getHandlers();
+
+	for (Handler handler : handlers) {
+	    handler.close();
+	    logger.removeHandler(handler);
+	    
 	}
 	System.out.println("Loggers disposed.");
-    
-    instance = null;
+
+	instance = null;
     }
 }
