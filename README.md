@@ -45,5 +45,19 @@ Usage
 Software overview
 ===================
 
+Debugging
+---------
+To enable the Debug-Mode in the project, open the file StateMachineApplication.java and set the Flag DEBUG_MODE to true. Log_Forward_Type specifies the way log-messages are forwarded. Up to now, forwarding to logfiles or network clients is enabled.
+Logging is principally generated via Java-Util-Logging in XMLFormatting. All logging-messages with level INFO or higher will also be displayed on the KUKA SmartPAD.
+
+File-Forwarding:
+Logging-messages will be written to a file placed on the HDD of the robot controller (\krc\ApplicationServer\Logs). A detailed path will be displayed, when the statemachine will be started. Utilize a logfile-viewer like Otros to open the logfiles.
+<b>When debugging is activated, the size of the logfiles grow quickly. In further releases, the maximum-file size will be limited.</b>
+
+
+Network-Forwarding:
+This option isn't working actually. Problems occur because the controller's firewall blocks the messages.
+
+
 Contribute
 ==========
