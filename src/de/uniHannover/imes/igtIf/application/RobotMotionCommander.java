@@ -247,8 +247,11 @@ public final class RobotMotionCommander {
 		IMES_TOOL.addDefaultMotionFrame("TCP", TOOL_TCP_OFFSET);
 	    }
 	    logger.info("Default tool will be used.");
-
 	    tool = IMES_TOOL;
+	    logger.info("Tool data: \n" + "LoadData:" + tool.getLoadData().toString() + "\n"
+	    		+ "TCP: " + tool.getDefaultMotionFrame().toString());
+
+	    
 
 	}
     }

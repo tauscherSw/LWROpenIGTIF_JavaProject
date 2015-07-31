@@ -181,10 +181,14 @@ public class LwrVirtualFixtures implements ILwrState {
 	    if (this.activeVirtualFixture == VirtualFixtureType.Cone) {
 		awaredist = 10;
 		lwrStatemachine.stateChanged = false;
+		for (int i = 0; i < NUM_FORCE_NORM_VECTORS; i++) {
+		    lastNormVectorsForce[i] = Vector.of(0, 0, 1.0);
+		}
 
 	    } else {
 		awaredist = 20;
 		lwrStatemachine.stateChanged = false;
+		
 	    }
 	}
 	if (this.activeVirtualFixture == VirtualFixtureType.Plane) {

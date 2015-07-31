@@ -464,12 +464,12 @@ public class CommunicationDataProvider {
 	double[] rot = new double[SIZE_OF_ROTATION];
 	double[] trans = new double[SIZE_OF_TRANS];
 	for (int i = 0; i < SIZE_OF_ROTATION + SIZE_OF_TRANS; i++) {
-	    if (i < SIZE_OF_TRANS) {
-		rot[i] = bodyBuff.getDouble(i * Double.SIZE);
-	    } else if (i >= SIZE_OF_TRANS
+	    if (i < SIZE_OF_ROTATION) {
+		rot[i] = bodyBuff.getFloat(i * Float.SIZE/8);
+	    } else if (i >= SIZE_OF_ROTATION
 		    && i < SIZE_OF_ROTATION + SIZE_OF_TRANS) {
 		trans[i - SIZE_OF_ROTATION] = bodyBuff
-			.getDouble(i * Double.SIZE);
+			.getFloat(i * Float.SIZE/8);
 	    }
 	}
 	return MatrixTransformation.of(Vector.of(trans[0], trans[1], trans[2]),

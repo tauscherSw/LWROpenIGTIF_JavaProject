@@ -120,7 +120,7 @@ public final class LwrIgtlLogConfigurator {
 		smartPadLogger
 			.warn("DEBUG LOGGER is enabled. All logging-output "
 				+ "(all log-levels) will be "
-				+ "directed to the file: " + LOGGERS_NAME
+				+ "directed to the file: " + DEBUG_LOGFILE.getAbsolutePath().toString()
 				+ " additionally to the smartPad console output.");
 		debugFileHandler = new FileHandler(
 			DEBUG_LOGFILE.getAbsolutePath(), false);

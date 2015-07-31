@@ -10,86 +10,89 @@ import com.kuka.roboticsAPI.applicationModel.tasks.ITaskLogger;
 /**
  * Converts all logging done via {@link Logger} to a log displayed on the KUKA
  * SmartPad.
- *
+ * 
  */
 class SmartPadLogHandler extends Handler {
 
-    /** Can output logs to the smartPad. */
-    private ITaskLogger logger;
-    
-    /** Last published message.*/
-    private String lastMsg = null;
+	/** Can output logs to the smartPad. */
+	private ITaskLogger logger;
 
-    /**
-     * Creates a new SmartPadLogger.
-     * 
-     * @param extLogger
-     *            the logger of the Sunrise application.
-     */
-    public SmartPadLogHandler(final ITaskLogger extLogger) {
-	logger = extLogger;
-    }
+	/** Last published message. */
+	private String lastMsg = null;
 
-    @Override
-    public void publish(final LogRecord logRecord) {
-	// Skip all logRecords which are lower than the parametrized loglevel
-	if (logRecord.getLevel().intValue() >= Level.INFO.intValue()) {
-
-	    if(lastMsg != logRecord.getMessage())
-	    {
-		    flushImmediately(logRecord);
-		    lastMsg = logRecord.getMessage();
-	    }
+	/**
+	 * Creates a new SmartPadLogger.
+	 * 
+	 * @param extLogger
+	 *            the logger of the Sunrise application.
+	 */
+	public SmartPadLogHandler(final ITaskLogger extLogger) {
+		logger = extLogger;
 	}
-    }
 
-    /**
-     * Flushes immediately the message to the output.
-     * @param rec the logrecord.
-     */
-    private void flushImmediately(LogRecord rec) {
+	@Override
+	public void publish(final LogRecord logRecord) {
+		// Skip all logRecords which are lower than the parametrized loglevel
+		if (logRecord.getLevel().intValue() >= Level.INFO.intValue()) {
 
-	    /*
-	     * Check loglevels and transfer message and further information to
-	     * the SunriseLogger.
-	     */
-	    if (rec.getLevel().intValue() == Level.INFO.intValue()) {
-		logger.info(rec.getSourceClassName() + "|"
-			+ rec.getSourceMethodName() + ": " + rec.getMessage());
-	    } else if (rec.getLevel().intValue() == Level.SEVERE.intValue()) {
-		if (null != rec.getThrown()) {
-		    logger.error(
-			    rec.getSourceClassName() + "|"
-				    + rec.getSourceMethodName() + ": "
-				    + rec.getMessage(), rec.getThrown());
+			if (lastMsg != logRecord.getMessage()) {
+				flushImmediately(logRecord);
+				lastMsg = logRecord.getMessage();
+			}
+		}
+	}
+
+	/**
+	 * Flushes immediately the message to the output.
+	 * 
+	 * @param rec
+	 *            the logrecord.
+	 */
+	private void flushImmediately(LogRecord rec) {
+
+		/*
+		 * Check loglevels and transfer message and further information to the
+		 * SunriseLogger.
+		 */
+		String className;
+		String[] classNameParts = rec.getSourceClassName().split("\\.");
+		if (classNameParts.length == 0) {
+			className = rec.getSourceClassName();
 		} else {
-		    logger.error(rec.getSourceClassName() + "|"
-			    + rec.getSourceMethodName() + ": "
-			    + rec.getMessage());
+			className = classNameParts[classNameParts.length - 1];
+		}
+		if (rec.getLevel().intValue() == Level.INFO.intValue()) {
+			logger.info(className + "|" + rec.getSourceMethodName() + ": "
+					+ rec.getMessage());
+		} else if (rec.getLevel().intValue() == Level.SEVERE.intValue()) {
+			if (null != rec.getThrown()) {
+				logger.error(className + "|" + rec.getSourceMethodName() + ": "
+						+ rec.getMessage(), rec.getThrown());
+			} else {
+				logger.error(className + "|" + rec.getSourceMethodName() + ": "
+						+ rec.getMessage());
+			}
+
+		} else if (rec.getLevel().intValue() == Level.WARNING.intValue()) {
+			logger.warn(className + "|" + rec.getSourceMethodName() + ": "
+					+ rec.getMessage(), rec.getThrown());
+		} else {
+			logger.warn(className + "|" + rec.getSourceMethodName() + ": "
+					+ rec.getMessage());
 		}
 
-	    } else if (rec.getLevel().intValue() == Level.WARNING.intValue()) {
-		logger.warn(
-			rec.getSourceClassName() + "|"
-				+ rec.getSourceMethodName() + ": "
-				+ rec.getMessage(), rec.getThrown());
-	    } else {
-		logger.warn(rec.getSourceClassName() + "|"
-			+ rec.getSourceMethodName() + ": " + rec.getMessage());
-	    }
+	}
 
-    }
+	@Override
+	public void close() {
+		// nothing to do
 
-    @Override
-    public void close() {
-	// nothing to do
-
-    }
+	}
 
 	@Override
 	public void flush() {
 		// Intentionally empty
-		
+
 	}
 
 }
