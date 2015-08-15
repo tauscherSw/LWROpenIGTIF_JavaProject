@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLComPort;
 import de.uniHannover.imes.igtIf.communication.IIGTLMsgInterface;
 import de.uniHannover.imes.igtIf.logging.LwrIgtlLogConfigurator;
@@ -317,7 +318,17 @@ public class ControlThread extends Thread {
     private void dispose() {
 	logger.entering(this.getClass().getName(), "dispose()");
 	if (null != timer) {
-	    logger.info("Final statistics: \n" + timer.getOverallStatistics());
+		if (!StateMachineApplication.PERFORMANCE_MEASUREMENT) {
+		    logger.info(
+			    "Performance measurement. Overview about cycle-times of "
+				    + this.getClass().getSimpleName());
+		    logger.info(timer.getOverallStatistics());
+		} else {
+		    System.out.println(
+			    "Performance measurement. Overview about cycle-times of "
+				    + this.getClass().getSimpleName());
+		    System.out.println(timer.getOverallStatistics());
+		}
 	}
 
 	if (null != port) {

@@ -43,6 +43,7 @@ import java.util.logging.Logger;
 import com.kuka.roboticsAPI.geometricModel.math.MatrixTransformation;
 import com.kuka.roboticsAPI.geometricModel.math.Rotation;
 
+import de.uniHannover.imes.igtIf.application.StateMachineApplication;
 import de.uniHannover.imes.igtIf.communication.IGTLComPort;
 import de.uniHannover.imes.igtIf.communication.control.CommunicationDataProvider;
 import de.uniHannover.imes.igtIf.communication.control.RobotDataSet;
@@ -342,7 +343,17 @@ public class VisualizationThread extends Thread {
     private void dispose() {
 	logger.entering(this.getClass().getName(), "dispose()");
 	if (null != timer) {
-	    logger.info("Final statistics: \n" + timer.getOverallStatistics());
+		if (!StateMachineApplication.PERFORMANCE_MEASUREMENT) {
+		    logger.info(
+			    "Performance measurement. Overview about cycle-times of "
+				    + this.getClass().getSimpleName());
+		    logger.info(timer.getOverallStatistics());
+		} else {
+		    System.out.println(
+			    "Performance measurement. Overview about cycle-times of "
+				    + this.getClass().getSimpleName());
+		    System.out.println(timer.getOverallStatistics());
+		}
 	}
 	if (null != port) {
 	    try {
